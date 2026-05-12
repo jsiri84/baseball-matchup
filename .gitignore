@@ -1,0 +1,37 @@
+# ----- Python -----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ----- IDE / OS -----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ----- Data + caches -----
+# Cached Statcast pulls (regenerable, can be huge)
+data/
+
+# pybaseball http cache
+.pybaseball/
+
+# ----- Generated reports -----
+# Single-matchup outputs (regenerable)
+*_matchup.md
+*_matchup.html
+
+# Lineup outputs
+lineup_*.md
+lineup_*.html
+
+# Per-player summary scratch outputs (regenerable)
+*_summary.md
+*_pitcher_summary.md
+
+# Misc
+*.log
