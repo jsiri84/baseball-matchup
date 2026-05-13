@@ -58,6 +58,9 @@ def get_player_id(last: str, first: str, fallback: int | None = None) -> int:
             print(f"  lookup miss; using known MLBAM id {fallback}")
             return fallback
         raise SystemExit(f"No player found for {first} {last}")
+
+    ids = ids.copy()
+    ids["mlb_played_last"] = pd.to_numeric(ids["mlb_played_last"], errors="coerce").fillna(0)
     row = ids.sort_values("mlb_played_last", ascending=False).iloc[0]
     return int(row["key_mlbam"])
 
