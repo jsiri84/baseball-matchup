@@ -14,8 +14,11 @@ env/
 Thumbs.db
 
 # ----- Data + caches -----
-# Cached Statcast pulls (regenerable, can be huge)
-data/
+# Cached Statcast pulls are organized into data/<year>/ subfolders.
+# Prior-season folders are immutable and committed to the repo so codespaces
+# start warm. The current-season folder rolls forward daily and is ignored.
+# Update this line at the start of each new MLB season.
+data/2026/
 
 # pybaseball http cache
 .pybaseball/

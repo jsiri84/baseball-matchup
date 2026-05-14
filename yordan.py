@@ -66,9 +66,19 @@ def get_player_id(last: str, first: str, fallback: int | None = None) -> int:
 
 
 def pull(player_id: int, start: str, end: str) -> pd.DataFrame:
-    cache_path = DATA_DIR / f"statcast_{player_id}_{start}_{end}.parquet"
+    year = start.split("-")[0]
+    year_dir = DATA_DIR / year
+    year_dir.mkdir(parents=True, exist_ok=True)
+    cache_path = year_dir / f"statcast_{player_id}_{start}_{end}.parquet"
+
+    # Back-compat: pick up legacy flat-layout files if a year-folder file does
+    # not yet exist (pre-2026-05 layout was data/statcast_*.parquet).
+    legacy_path = DATA_DIR / cache_path.name
+    if not cache_path.exists() and legacy_path.exists():
+        legacy_path.rename(cache_path)
+
     if cache_path.exists():
-        print(f"  using cached file {cache_path.name}")
+        print(f"  using cached file {year}/{cache_path.name}")
         return pd.read_parquet(cache_path)
 
     print(f"  fetching from Baseball Savant: {start} -> {end} ...")

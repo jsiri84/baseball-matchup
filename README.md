@@ -120,7 +120,7 @@ Tune `SEASON_WEIGHTS` at the top of `matchup.py` (index 0 = current, index 1 = p
 
 ### Caching
 
-- All pulls are cached to `data/statcast_*_<start>_<end>.parquet`
+- All pulls are cached to `data/<year>/statcast_*_<start>_<end>.parquet`. Prior-season folders (e.g. `data/2024/`, `data/2025/`) are committed to the repo so codespaces start warm; the current-season folder is git-ignored because it rolls daily.
 - The `end` date is rounded to **yesterday** so all matchups run on a given day share the same cache file
 - An in-process `dict[player_id, DataFrame]` deduplicates pulls within a `--batch` run, so a 50-matchup batch across 30 unique players does 30 disk reads, not 100
 

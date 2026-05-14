@@ -26,6 +26,7 @@ import csv
 import html
 import math
 import os
+import subprocess
 import sys
 import threading
 import warnings
@@ -3027,26 +3028,91 @@ def _resolve_inputs(batter_arg: str | None, pitcher_arg: str | None,
     return bid, pid
 
 
+def _slugify(text: str) -> str:
+    out = []
+    for ch in text.lower():
+        if ch.isalnum():
+            out.append(ch)
+        elif ch in (" ", "-", "_"):
+            out.append("_")
+    slug = "".join(out)
+    while "__" in slug:
+        slug = slug.replace("__", "_")
+    return slug.strip("_")
+
+
 def run_batch(csv_path: Path, season: int) -> None:
-    rows: list[tuple[str, str]] = []
+    legacy_rows: list[tuple[str, str]] = []
+    # Lineup format groups: (matchup_key, pitcher_name) -> [(position, hitter_name), ...]
+    lineup_groups: dict[tuple[str, str], list[tuple[int, str]]] = {}
+
     with csv_path.open("r", encoding="utf-8", newline="") as f:
         reader = csv.reader(f)
         for row in reader:
             row = [c.strip() for c in row if c.strip()]
             if len(row) < 2:
                 continue
-            
-            # Handle both legacy (batter,pitcher) and lineup (away@home,hitter,pitcher,pos) formats
-            if len(row) == 2:
-                # Legacy format: batter,pitcher
-                rows.append((row[0], row[1]))
-            elif len(row) >= 3:
-                # Lineup format: away@home,hitter_name,pitcher_name,lineup_position
-                # Extract batter (column 1) and pitcher (column 2)
-                rows.append((row[1], row[2]))
 
+            if len(row) >= 4 and "@" in row[0]:
+                # Lineup format: away@home,hitter_name,pitcher_name,lineup_position
+                matchup_key, hitter_name, pitcher_name = row[0], row[1], row[2]
+                try:
+                    pos = int(row[3])
+                except ValueError:
+                    pos = len(lineup_groups.get((matchup_key, pitcher_name), [])) + 1
+                lineup_groups.setdefault((matchup_key, pitcher_name), []).append(
+                    (pos, hitter_name)
+                )
+            else:
+                # Legacy format: batter,pitcher (any extra columns ignored)
+                legacy_rows.append((row[0], row[1]))
+
+    # ----- lineup batch mode --------------------------------------------------
+    if lineup_groups:
+        print(f"Batch (lineup mode): {len(lineup_groups)} team lineups from {csv_path.name}")
+
+        # Pre-resolve unique players once.
+        all_hitters: set[str] = set()
+        all_pitchers: set[str] = set()
+        for (_mk, pname), batters in lineup_groups.items():
+            all_pitchers.add(pname)
+            for _, h in batters:
+                all_hitters.add(h)
+
+        hitter_id_map = {h: _resolve_player(h) for h in all_hitters}
+        pitcher_id_map = {p: _resolve_player(p) for p in all_pitchers}
+
+        unique_b = set(hitter_id_map.values())
+        unique_p = set(pitcher_id_map.values())
+        print(f"  unique batters: {len(unique_b)}, unique pitchers: {len(unique_p)}")
+        preload_player_data(unique_b, unique_p, season)
+
+        for (matchup_key, pitcher_name), batters in lineup_groups.items():
+            batters_sorted = [name for _, name in sorted(batters, key=lambda x: x[0])]
+            pid = pitcher_id_map[pitcher_name]
+            batter_ids = [hitter_id_map[name] for name in batters_sorted]
+
+            print(f"\n--- {matchup_key} lineup vs {pitcher_name} ---")
+            try:
+                _, md, html_doc = analyze_lineup(batter_ids, pid, season)
+            except SystemExit as exc:
+                print(f"  skipped {matchup_key} vs {pitcher_name}: {exc}")
+                continue
+
+            match_slug = matchup_key.replace("@", "_at_").lower()
+            pit_slug = _slugify(pitcher_name)
+            out_stem = f"{match_slug}_vs_{pit_slug}_{season}"
+
+            md_path = ROOT / f"{out_stem}.md"
+            html_path = ROOT / f"{out_stem}.html"
+            md_path.write_text(md, encoding="utf-8")
+            html_path.write_text(html_doc, encoding="utf-8")
+            print(f"  wrote {md_path.name} + {html_path.name}")
+        return
+
+    # ----- legacy per-row mode ------------------------------------------------
+    rows = legacy_rows
     print(f"Batch: {len(rows)} matchups from {csv_path.name}")
-    # Pre-resolve all unique players (warms cache).
     unique_b: set[int] = set()
     unique_p: set[int] = set()
     resolved: list[tuple[int, int]] = []
@@ -3067,6 +3133,90 @@ def run_batch(csv_path: Path, season: int) -> None:
         md_path.write_text(md, encoding="utf-8")
         html_path.write_text(html_doc, encoding="utf-8")
         print(f"  wrote {md_path.name} + {html_path.name}")
+
+
+def _git(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args], cwd=ROOT, capture_output=True, text=True, check=False
+    )
+
+
+def commit_prior_season_cache(current_season: int, push: bool = True) -> None:
+    """Stage, commit, and (optionally) push any new prior-season parquets.
+
+    Skips silently if:
+      - we're not in a git repo,
+      - data/ has no prior-season subfolders,
+      - there are no new/modified prior-season parquets to add.
+    """
+    data_dir = ROOT / "data"
+    if not data_dir.exists():
+        return
+
+    # Year subfolders strictly less than the current season.
+    prior_dirs: list[Path] = []
+    for sub in sorted(data_dir.iterdir()):
+        if not sub.is_dir():
+            continue
+        try:
+            year = int(sub.name)
+        except ValueError:
+            continue
+        if year < current_season:
+            prior_dirs.append(sub)
+
+    if not prior_dirs:
+        print("[commit-cache] no prior-season folders under data/, nothing to commit")
+        return
+
+    # Confirm we're in a git repo.
+    rev = _git("rev-parse", "--git-dir")
+    if rev.returncode != 0:
+        print("[commit-cache] not a git repo, skipping")
+        return
+
+    rel_paths = [str(p.relative_to(ROOT)).replace("\\", "/") for p in prior_dirs]
+
+    # Check what's actually new/modified under the prior-season folders. We
+    # use --intent-to-add-free `git status --porcelain -- <paths>` so we don't
+    # touch anything that isn't already a candidate to commit.
+    status = _git("status", "--porcelain", "--", *rel_paths)
+    if status.returncode != 0:
+        print(f"[commit-cache] git status failed: {status.stderr.strip()}")
+        return
+    if not status.stdout.strip():
+        print("[commit-cache] no new prior-season parquets to commit")
+        return
+
+    add = _git("add", "--", *rel_paths)
+    if add.returncode != 0:
+        print(f"[commit-cache] git add failed: {add.stderr.strip()}")
+        return
+
+    # Check that we actually staged something under those paths.
+    staged = _git("diff", "--cached", "--name-only", "--", *rel_paths)
+    if not staged.stdout.strip():
+        print("[commit-cache] nothing staged after git add; skipping")
+        return
+
+    n_files = len(staged.stdout.strip().splitlines())
+    today = date.today().isoformat()
+    msg = f"cache: add prior-season parquets ({n_files} files) from {today} run"
+    commit = _git("commit", "-m", msg, "--", *rel_paths)
+    if commit.returncode != 0:
+        print(f"[commit-cache] git commit failed: {commit.stderr.strip()}")
+        return
+    print(f"[commit-cache] committed {n_files} prior-season parquet(s)")
+
+    if push:
+        push_res = _git("push")
+        if push_res.returncode != 0:
+            print(
+                f"[commit-cache] git push failed (commit is local): "
+                f"{push_res.stderr.strip()}"
+            )
+        else:
+            print("[commit-cache] pushed to origin")
 
 
 def main() -> None:
@@ -3095,10 +3245,19 @@ def main() -> None:
     ap.add_argument("--pa-per-batter", type=int, default=DEFAULT_PA_PER_BATTER,
                     help=f"projected PAs per batter for lineup rollups "
                          f"(default {DEFAULT_PA_PER_BATTER})")
+    ap.add_argument("--commit-cache", action="store_true",
+                    help="after the run completes, git add+commit+push any new "
+                         "prior-season parquets under data/<year>/ (skips if "
+                         "nothing new). Useful from codespaces/CI to keep the "
+                         "shared cache warm.")
+    ap.add_argument("--no-push", action="store_true",
+                    help="with --commit-cache, commit locally but do not push")
     args = ap.parse_args()
 
     if args.batch:
         run_batch(Path(args.batch), args.season)
+        if args.commit_cache:
+            commit_prior_season_cache(args.season, push=not args.no_push)
         return
 
     if args.lineup or args.lineup_csv:
@@ -3137,6 +3296,8 @@ def main() -> None:
         print(f"Lineup reports written:")
         print(f"  markdown: {md_path}")
         print(f"  html:     {html_path}")
+        if args.commit_cache:
+            commit_prior_season_cache(args.season, push=not args.no_push)
         return
 
     bid, pid = _resolve_inputs(args.batter, args.pitcher, args.batter_id, args.pitcher_id)
@@ -3152,6 +3313,8 @@ def main() -> None:
     print(f"Reports written:")
     print(f"  markdown: {md_path}")
     print(f"  html:     {html_path}")
+    if args.commit_cache:
+        commit_prior_season_cache(args.season, push=not args.no_push)
 
 
 if __name__ == "__main__":

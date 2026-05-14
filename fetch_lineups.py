@@ -188,6 +188,11 @@ def generate_csv_rows(games: List[Dict]) -> List[Tuple[str, str, str, str]]:
 
 def main():
     """Main entry point."""
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
     today = datetime.now().strftime("%Y-%m-%d")
     
     print(f"🔄 Fetching starting lineups for {today}...")
