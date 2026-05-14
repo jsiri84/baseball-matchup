@@ -24,6 +24,7 @@ import argparse
 import concurrent.futures
 import csv
 import html
+import json
 import math
 import os
 import subprocess
@@ -36,7 +37,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from yordan import (
+from batter import (
     PITCH_GROUPS,
     SWING_DESCRIPTIONS,
     WHIFF_DESCRIPTIONS,
@@ -260,7 +261,7 @@ def w_xwoba(group: pd.DataFrame) -> float:
     """Statcast-style xwOBA: per-PA weighted mean of estimated_woba_using_speedangle.
 
     Uses BIP estimates plus walk/HBP fixed weights, matching the convention in
-    yordan.py compute_stats.
+    batter.py compute_stats.
     """
     pa_rows = group[group["events"].notna()]
     if pa_rows.empty:
@@ -1397,19 +1398,27 @@ def to_markdown(
         lines.append("_no outcome distribution available_")
     else:
         lines.append(
-            "_For each outcome: probability it happens **at least once** across "
-            "N PAs, and **expected count** across N PAs (assumes independent PAs)._"
+            "_For each outcome: chance it happens **at least once** across N PAs "
+            "(with American odds), and **expected count** across N PAs "
+            "(assumes independent PAs)._"
         )
         lines.append("")
-        lines.append("| Outcome | 2 PA: ≥1 | 2 PA: E[#] | 3 PA: ≥1 | 3 PA: E[#] | 4 PA: ≥1 | 4 PA: E[#] |")
-        lines.append("|---|---:|---:|---:|---:|---:|---:|")
+        lines.append(
+            "| Outcome "
+            "| Over 2 PA: chance ≥1 | Odds | Avg # "
+            "| Over 3 PA: chance ≥1 | Odds | Avg # "
+            "| Over 4 PA: chance ≥1 | Odds | Avg # |"
+        )
+        lines.append(
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
+        )
         for _, r in multi_pa.iterrows():
-            lines.append(
-                f"| {r['Outcome']} | "
-                f"{r['P(>=1) in 2 PA']*100:.1f}% | {r['E[count] in 2 PA']:.2f} | "
-                f"{r['P(>=1) in 3 PA']*100:.1f}% | {r['E[count] in 3 PA']:.2f} | "
-                f"{r['P(>=1) in 4 PA']*100:.1f}% | {r['E[count] in 4 PA']:.2f} |"
-            )
+            cells = [r["Outcome"]]
+            for n in (2, 3, 4):
+                p = float(r[f"P(>=1) in {n} PA"])
+                ec = float(r[f"E[count] in {n} PA"])
+                cells += [f"{p*100:.1f}%", american_odds(p), f"{ec:.2f}"]
+            lines.append("| " + " | ".join(cells) + " |")
     lines.append("")
 
     # ----- Headline by TTO -----
@@ -1726,6 +1735,25 @@ table tbody tr:last-child td { border-bottom: none; }
 .note-list li { margin-bottom: 4px; font-size: 13px; }
 .subtitle { font-size: 13px; color: var(--muted); margin: 0 0 10px 0; }
 .divider-row td { background: #f8fafc; color: var(--muted); font-style: italic; }
+
+/* ----- Multi-PA outlook ----- */
+table.multi-pa thead tr:first-child th.pa-group {
+  text-align: center; text-transform: uppercase; font-size: 11px;
+  letter-spacing: 0.4px; color: var(--ink); background: #eef2f7;
+  border-bottom: 1px solid var(--line);
+}
+table.multi-pa thead tr:first-child th.pa-group + th.pa-group {
+  border-left: 1px solid var(--line);
+}
+table.multi-pa thead tr:nth-child(2) th { font-size: 11px; }
+table.multi-pa th.outcome-col { text-align: left; vertical-align: bottom; }
+table.multi-pa tbody td { white-space: nowrap; }
+table.multi-pa tbody td.odds { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody td.avg { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody tr td:nth-child(5),
+table.multi-pa tbody tr td:nth-child(8) { border-left: 1px solid #f1f5f9; }
+table.multi-pa thead tr:nth-child(2) th:nth-child(4),
+table.multi-pa thead tr:nth-child(2) th:nth-child(7) { border-left: 1px solid var(--line); }
 .kv { display: flex; flex-wrap: wrap; gap: 14px 24px; padding: 4px 0 8px 0; font-size: 13px; }
 .kv > div { color: var(--muted); }
 .kv > div b { color: var(--ink); font-weight: 600; }
@@ -1740,6 +1768,9 @@ footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
 .lineup-hero .stat { font-size: 13px; color: var(--muted); }
 .lineup-hero .stat b { display: block; font-size: 18px; color: var(--ink);
                        font-variant-numeric: tabular-nums; font-weight: 700; margin-top: 2px; }
+table.pitcher-bf tbody td { font-variant-numeric: tabular-nums; }
+table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
+                                        background: #fff7ed; }
 .lineup-grid td.spot { text-align: center; font-weight: 700; color: var(--muted); width: 32px; }
 .lineup-grid td.name { font-weight: 600; text-align: left; }
 .lineup-grid td.handpill { text-align: center; }
@@ -1942,21 +1973,30 @@ def to_html(
     # ----- Multi-PA outlook -----
     parts.append('<section class="card">')
     parts.append("<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>")
-    parts.append('<p class="subtitle">Probability the outcome happens at least once across N PAs, '
-                 'and expected count across N PAs (assumes independent PAs).</p>')
+    parts.append('<p class="subtitle">Chance the outcome happens at least once across N PAs '
+                 '(with American odds), and expected count across N PAs (assumes independent PAs).</p>')
     if multi_pa.empty:
         parts.append('<p class="note">no outcome distribution available</p>')
     else:
-        parts.append("<table><thead><tr>"
-                     "<th>Outcome</th>"
-                     "<th>2 PA: &ge;1</th><th>2 PA: E[#]</th>"
-                     "<th>3 PA: &ge;1</th><th>3 PA: E[#]</th>"
-                     "<th>4 PA: &ge;1</th><th>4 PA: E[#]</th>"
-                     "</tr></thead><tbody>")
+        parts.append('<table class="multi-pa">')
+        parts.append(
+            "<thead>"
+            "<tr>"
+            '<th rowspan="2" class="outcome-col">Outcome</th>'
+            '<th colspan="3" class="pa-group">Over 2 PAs</th>'
+            '<th colspan="3" class="pa-group">Over 3 PAs</th>'
+            '<th colspan="3" class="pa-group">Over 4 PAs</th>'
+            "</tr>"
+            "<tr>"
+            "<th>Chance &ge;1</th><th>Odds</th><th>Avg #</th>"
+            "<th>Chance &ge;1</th><th>Odds</th><th>Avg #</th>"
+            "<th>Chance &ge;1</th><th>Odds</th><th>Avg #</th>"
+            "</tr>"
+            "</thead><tbody>"
+        )
         for _, r in multi_pa.iterrows():
             outcome = r["Outcome"]
             favor_high, scale = _OUTCOME_RULES.get(outcome, (True, 0.04))
-            # League "at-least-one" baselines for highlighting by N
             lg_p = LG_OUTCOMES.get({
                 "Strikeout": "K", "Walk": "BB", "HBP": "HBP",
                 "Single": "1B", "Double": "2B", "Triple": "3B",
@@ -1968,12 +2008,12 @@ def to_html(
                 ec = float(r[f"E[count] in {n} PA"])
                 if outcome in ("Hit (any)", "On-base"):
                     lg_n = 1.0 - (1.0 - {"Hit (any)": 0.22, "On-base": 0.317}.get(outcome, 0.0)) ** n
-                    cls = edge_class(p_ge1, lg_n, scale * n / 1.5, favor_high)
                 else:
                     lg_n = 1.0 - (1.0 - lg_p) ** n
-                    cls = edge_class(p_ge1, lg_n, scale * n / 1.5, favor_high)
+                cls = edge_class(p_ge1, lg_n, scale * n / 1.5, favor_high)
                 row_cells.append(_td(f"{p_ge1*100:.1f}%", cls))
-                row_cells.append(_td(f"{ec:.2f}"))
+                row_cells.append(f'<td class="odds">{_h(american_odds(p_ge1))}</td>')
+                row_cells.append(f'<td class="avg">{ec:.2f}</td>')
             parts.append("<tr>" + "".join(row_cells) + "</tr>")
         parts.append("</tbody></table>")
     parts.append("</section>")
@@ -2651,6 +2691,77 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
     }
 
 
+def _pitches_per_pa(df: pd.DataFrame | None, cap: int = 10) -> float | None:
+    """Mean pitches per PA, with each PA winsorized at `cap` pitches.
+    Returns None if data is missing/insufficient."""
+    if df is None or df.empty:
+        return None
+    if "game_pk" not in df.columns or "at_bat_number" not in df.columns:
+        return None
+    counts = df.groupby(["game_pk", "at_bat_number"]).size()
+    if counts.empty:
+        return None
+    return float(counts.clip(upper=cap).mean())
+
+
+def project_pitcher_range(per_batter_pieces: list[dict],
+                          summary_rows: list[dict],
+                          bf_min: int = 20, bf_max: int = 30,
+                          default_pp: float = 3.9) -> dict | None:
+    """Project the pitcher's statline across a range of batters-faced totals.
+
+    For each BF in [bf_min, bf_max], cycles through the lineup that many times,
+    summing per-PA outcome probabilities and pitches. Each PA's pitch cost is
+    the average of the pitcher's P/PA and the batter's P/PA (both winsorized at
+    10). Returns one row per BF with Pitches/K/BB/Hits/HR/Outs.
+    """
+    if not per_batter_pieces or not summary_rows:
+        return None
+
+    pit_df = per_batter_pieces[0].get("pit_blended")
+    starter_pit = pit_df
+    if pit_df is not None and not pit_df.empty and "inning" in pit_df.columns and "game_pk" in pit_df.columns:
+        starter_games = pit_df.loc[pit_df["inning"] == 1, "game_pk"].unique()
+        if len(starter_games):
+            starter_pit = pit_df[pit_df["game_pk"].isin(starter_games)]
+    pitcher_pp = _pitches_per_pa(starter_pit) or default_pp
+
+    batter_pp: list[float] = []
+    for p in per_batter_pieces:
+        bp = _pitches_per_pa(p.get("bat_blended")) or default_pp
+        batter_pp.append(bp)
+
+    n = len(summary_rows)
+    rows = []
+    cum_pitches = 0.0
+    cum_k = cum_bb = cum_hits = cum_hr = cum_outs = 0.0
+    for pa_idx in range(bf_max):
+        i = pa_idx % n
+        r = summary_rows[i]
+        blended = (pitcher_pp + batter_pp[i]) / 2.0
+        cum_pitches += blended
+        cum_k += r["k_pct"]
+        cum_bb += r["bb_pct"]
+        cum_hits += r["hit_pct"]
+        cum_hr += r["hr_pct"]
+        cum_outs += (1.0 - r["ob_pct"])
+        bf = pa_idx + 1
+        if bf >= bf_min:
+            rows.append({
+                "bf": bf,
+                "pitches": cum_pitches,
+                "k": cum_k, "bb": cum_bb, "hits": cum_hits,
+                "hr": cum_hr, "outs": cum_outs,
+            })
+
+    return {
+        "pitcher_pp": pitcher_pp,
+        "lineup_avg_pp": sum(batter_pp) / len(batter_pp) if batter_pp else default_pp,
+        "rows": rows,
+        "bf_min": bf_min, "bf_max": bf_max,
+    }
+
+
 def _lineup_rollup(rows: list[dict], pa_per_batter: int) -> dict:
     """Aggregate expected outcomes across the lineup over `pa_per_batter` PAs each."""
     n = len(rows)
@@ -2688,11 +2799,17 @@ def _lineup_rollup(rows: list[dict], pa_per_batter: int) -> dict:
 
 def to_lineup_markdown(pitcher_meta: dict, season: int,
                        summary_rows: list[dict], rollup: dict,
-                       per_batter_pieces: list[dict]) -> str:
+                       per_batter_pieces: list[dict],
+                       projected: bool = False,
+                       pitcher_range: dict | None = None) -> str:
     lines: list[str] = []
     pname = pitcher_meta["name"]
     lines.append(f"# Lineup vs {pname} — matchup report")
     lines.append("")
+    if projected:
+        lines.append("> **Projected lineup** — actual lineup not yet posted; "
+                     "this is the team's most recent batting order vs a same-handed starter.")
+        lines.append("")
     lines.append(
         f"_pitcher: {pname} ({pitcher_meta['p_throws'] or '?'}HP) · "
         f"{rollup['n']} batters × {rollup['pa_per_batter']} PA each = "
@@ -2717,6 +2834,27 @@ def to_lineup_markdown(pitcher_meta: dict, season: int,
     lines.append(f"- **Expected times on base**: {rollup['e_ob']:.1f}")
     lines.append(f"- **P(>=1 HR somewhere in lineup)**: {rollup['p_at_least_one_hr']*100:.1f}%")
     lines.append("")
+
+    # Projected pitcher statline by batters faced
+    if pitcher_range and pitcher_range.get("rows"):
+        pr = pitcher_range
+        lines.append(f"## Projected pitcher line by BF ({pr['bf_min']}–{pr['bf_max']})")
+        lines.append("")
+        lines.append(
+            f"_Cycles through the order, blending {pname}'s {pr['pitcher_pp']:.2f} P/PA "
+            f"with the lineup's {pr['lineup_avg_pp']:.2f} P/PA average (long PAs "
+            f"winsorized at 10). Each row shows the cumulative line at that BF._"
+        )
+        lines.append("")
+        lines.append("| BF | Pitches | K | BB | Hits | HR | Outs |")
+        lines.append("|---:|---:|---:|---:|---:|---:|---:|")
+        for r in pr["rows"]:
+            lines.append(
+                f"| {r['bf']} | {r['pitches']:.0f} | "
+                f"{r['k']:.1f} | {r['bb']:.1f} | "
+                f"{r['hits']:.1f} | {r['hr']:.2f} | {r['outs']:.1f} |"
+            )
+        lines.append("")
 
     # Lineup grid
     lines.append("## Lineup grid")
@@ -2799,7 +2937,9 @@ def _summary_for_block(r: dict, pname: str) -> str:
 
 def to_lineup_html(pitcher_meta: dict, season: int,
                    summary_rows: list[dict], rollup: dict,
-                   per_batter_pieces: list[dict]) -> str:
+                   per_batter_pieces: list[dict],
+                   projected: bool = False,
+                   pitcher_range: dict | None = None) -> str:
     parts: list[str] = []
     pname = pitcher_meta["name"]
     title = f"Lineup vs {pname} - matchup report"
@@ -2820,6 +2960,14 @@ def to_lineup_html(pitcher_meta: dict, season: int,
         f'<h1>Lineup vs {_h(pname)} '
         f'<span class="badge">{_h(pitcher_meta["p_throws"] or "?")}HP</span></h1>'
     )
+    if projected:
+        parts.append(
+            '<div style="margin:8px 0;padding:8px 12px;background:#fff8dc;'
+            'border-left:4px solid #d4a017;color:#5a4500;font-weight:600;">'
+            'Projected lineup &mdash; actual lineup not yet posted; '
+            'this is the team\'s most recent batting order vs a same-handed starter.'
+            '</div>'
+        )
     parts.append(
         f'<div class="meta">{rollup["n"]} batters &times; {rollup["pa_per_batter"]} PA each '
         f'= {rollup["total_pa"]} projected PAs &middot; '
@@ -2860,6 +3008,40 @@ def to_lineup_html(pitcher_meta: dict, season: int,
     )
     parts.append('</div>')
     parts.append("</section>")
+
+    # ----- Projected pitcher line by BF -----
+    if pitcher_range and pitcher_range.get("rows"):
+        pr = pitcher_range
+        pname = pitcher_meta["name"]
+        parts.append('<section class="card">')
+        parts.append(
+            f"<h2>Projected pitcher line by BF "
+            f"({pr['bf_min']}&ndash;{pr['bf_max']})</h2>"
+        )
+        parts.append(
+            f'<p class="subtitle">Cycles through the order, blending {_h(pname)}\'s '
+            f'<b>{pr["pitcher_pp"]:.2f}</b> P/PA with the lineup\'s '
+            f'<b>{pr["lineup_avg_pp"]:.2f}</b> P/PA average (long PAs winsorized at 10). '
+            f'Each row shows the cumulative line at that BF.</p>'
+        )
+        parts.append('<table class="pitcher-bf"><thead><tr>'
+                     '<th>BF</th><th>Pitches</th><th>K</th><th>BB</th>'
+                     '<th>Hits</th><th>HR</th><th>Outs</th>'
+                     '</tr></thead><tbody>')
+        for r in pr["rows"]:
+            parts.append(
+                "<tr>"
+                f"<td><b>{r['bf']}</b></td>"
+                f"<td>{r['pitches']:.0f}</td>"
+                f"<td>{r['k']:.1f}</td>"
+                f"<td>{r['bb']:.1f}</td>"
+                f"<td>{r['hits']:.1f}</td>"
+                f"<td>{r['hr']:.2f}</td>"
+                f"<td>{r['outs']:.1f}</td>"
+                "</tr>"
+            )
+        parts.append("</tbody></table>")
+        parts.append("</section>")
 
     # ----- Lineup grid -----
     parts.append('<section class="card">')
@@ -2966,9 +3148,17 @@ def to_lineup_html(pitcher_meta: dict, season: int,
 
 def analyze_lineup(batter_ids: list[int], pitcher_id: int,
                    season: int = DEFAULT_SEASON,
-                   pa_per_batter: int = DEFAULT_PA_PER_BATTER) -> tuple[str, str, str]:
+                   pa_per_batter: int = DEFAULT_PA_PER_BATTER,
+                   projected: bool = False) -> tuple[str, str, str, dict]:
     """Run analyze_matchup for each batter against the same pitcher and assemble
-    a lineup-level report. Returns (output stem, markdown, html)."""
+    a lineup-level report.
+
+    Returns (output stem, markdown, html, roundup_data) where roundup_data is a
+    dict the day-level roundup script can consume without re-running the
+    expensive matchup compute. It contains the pitcher meta, the summary rows
+    (one per batter), and the pre-rendered per-batter HTML body for each batter
+    so they can be lifted directly into top/bottom-50 reports.
+    """
     if not batter_ids:
         raise SystemExit("No batters in lineup.")
 
@@ -2997,12 +3187,32 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
         print(f"  warning: skipped {len(skipped)} batter(s) with no usable data: {skipped}")
 
     rollup = _lineup_rollup(summary_rows, pa_per_batter)
-    md = to_lineup_markdown(pitcher_meta, season, summary_rows, rollup, pieces_per_batter)
-    html_doc = to_lineup_html(pitcher_meta, season, summary_rows, rollup, pieces_per_batter)
+    pitcher_range = project_pitcher_range(pieces_per_batter, summary_rows)
+    md = to_lineup_markdown(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
+                            projected=projected, pitcher_range=pitcher_range)
+    html_doc = to_lineup_html(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
+                              projected=projected, pitcher_range=pitcher_range)
 
     pit_slug = pitcher_meta["last"].lower().replace(" ", "_")
     out_stem = f"lineup_vs_{pit_slug}_{season}"
-    return out_stem, md, html_doc
+
+    roundup_data = {
+        "pitcher_meta": {
+            "name": pitcher_meta.get("name"),
+            "first": pitcher_meta.get("first"),
+            "last": pitcher_meta.get("last"),
+            "p_throws": pitcher_meta.get("p_throws"),
+            "id": pitcher_meta.get("id"),
+        },
+        "season": season,
+        "projected": projected,
+        "pa_per_batter": pa_per_batter,
+        "summary_rows": summary_rows,
+        "per_batter_html": [
+            _render_html_from_pieces(p, body_only=True) for p in pieces_per_batter
+        ],
+    }
+    return out_stem, md, html_doc, roundup_data
 
 
 # ---------- batch + CLI ---------------------------------------------------
@@ -3028,6 +3238,44 @@ def _resolve_inputs(batter_arg: str | None, pitcher_arg: str | None,
     return bid, pid
 
 
+def _report_dir() -> Path:
+    """Return (and create) today's report output directory: reports/<YYYY-MM-DD>/."""
+    d = ROOT / "reports" / date.today().isoformat()
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _roundup_data_dir() -> Path:
+    """Return (and create) today's sidecar data directory: reports/<date>/_data/.
+
+    Each lineup batch run drops one JSON per (matchup, pitcher) into this folder
+    so the day-level roundup script (`roundup.py`) can build the top-50 /
+    bottom-50 reports without re-running the matchup compute.
+    """
+    d = _report_dir() / "_data"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _write_roundup_sidecar(out_stem: str, matchup_key: str, hitter_team: str,
+                           pitcher_name: str, data: dict) -> None:
+    """Persist one lineup's summary rows + per-batter HTML body to JSON."""
+    payload = {
+        "out_stem": out_stem,
+        "matchup_key": matchup_key,
+        "hitter_team": hitter_team,
+        "pitcher_name": pitcher_name,
+        "pitcher_meta": data.get("pitcher_meta", {}),
+        "season": data.get("season"),
+        "projected": bool(data.get("projected")),
+        "pa_per_batter": data.get("pa_per_batter"),
+        "summary_rows": data.get("summary_rows", []),
+        "per_batter_html": data.get("per_batter_html", []),
+    }
+    path = _roundup_data_dir() / f"{out_stem}.json"
+    path.write_text(json.dumps(payload, default=str), encoding="utf-8")
+
+
 def _slugify(text: str) -> str:
     out = []
     for ch in text.lower():
@@ -3043,8 +3291,9 @@ def _slugify(text: str) -> str:
 
 def run_batch(csv_path: Path, season: int) -> None:
     legacy_rows: list[tuple[str, str]] = []
-    # Lineup format groups: (matchup_key, pitcher_name) -> [(position, hitter_name), ...]
-    lineup_groups: dict[tuple[str, str], list[tuple[int, str]]] = {}
+    # Lineup format groups:
+    #   (matchup_key, pitcher_name) -> list of (position, hitter_name, status, hitter_team)
+    lineup_groups: dict[tuple[str, str], list[tuple[int, str, str, str]]] = {}
 
     with csv_path.open("r", encoding="utf-8", newline="") as f:
         reader = csv.reader(f)
@@ -3054,14 +3303,16 @@ def run_batch(csv_path: Path, season: int) -> None:
                 continue
 
             if len(row) >= 4 and "@" in row[0]:
-                # Lineup format: away@home,hitter_name,pitcher_name,lineup_position
+                # Lineup format: away@home,hitter_name,pitcher_name,lineup_position[,status]
                 matchup_key, hitter_name, pitcher_name = row[0], row[1], row[2]
                 try:
                     pos = int(row[3])
                 except ValueError:
                     pos = len(lineup_groups.get((matchup_key, pitcher_name), [])) + 1
+                status = row[4].lower() if len(row) >= 5 else "confirmed"
+                hitter_team = row[5].strip().upper() if len(row) >= 6 and row[5].strip() else ""
                 lineup_groups.setdefault((matchup_key, pitcher_name), []).append(
-                    (pos, hitter_name)
+                    (pos, hitter_name, status, hitter_team)
                 )
             else:
                 # Legacy format: batter,pitcher (any extra columns ignored)
@@ -3076,7 +3327,7 @@ def run_batch(csv_path: Path, season: int) -> None:
         all_pitchers: set[str] = set()
         for (_mk, pname), batters in lineup_groups.items():
             all_pitchers.add(pname)
-            for _, h in batters:
+            for _pos, h, _status, _team in batters:
                 all_hitters.add(h)
 
         hitter_id_map = {h: _resolve_player(h) for h in all_hitters}
@@ -3088,13 +3339,22 @@ def run_batch(csv_path: Path, season: int) -> None:
         preload_player_data(unique_b, unique_p, season)
 
         for (matchup_key, pitcher_name), batters in lineup_groups.items():
-            batters_sorted = [name for _, name in sorted(batters, key=lambda x: x[0])]
+            batters_sorted = sorted(batters, key=lambda x: x[0])
+            names_sorted = [name for _pos, name, _s, _t in batters_sorted]
+            teams_sorted = [team for _pos, _n, _s, team in batters_sorted]
+            is_projected = any(s == "projected" for _p, _n, s, _t in batters)
+            # The hitters' team is the same for the whole group; pick the first
+            # non-empty value as the canonical team code.
+            hitter_team = next((t for t in teams_sorted if t), "")
             pid = pitcher_id_map[pitcher_name]
-            batter_ids = [hitter_id_map[name] for name in batters_sorted]
+            batter_ids = [hitter_id_map[name] for name in names_sorted]
 
-            print(f"\n--- {matchup_key} lineup vs {pitcher_name} ---")
+            print(f"\n--- {matchup_key} lineup vs {pitcher_name}"
+                  f"{' (projected)' if is_projected else ''} ---")
             try:
-                _, md, html_doc = analyze_lineup(batter_ids, pid, season)
+                _, md, html_doc, roundup_data = analyze_lineup(
+                    batter_ids, pid, season, projected=is_projected,
+                )
             except SystemExit as exc:
                 print(f"  skipped {matchup_key} vs {pitcher_name}: {exc}")
                 continue
@@ -3103,11 +3363,12 @@ def run_batch(csv_path: Path, season: int) -> None:
             pit_slug = _slugify(pitcher_name)
             out_stem = f"{match_slug}_vs_{pit_slug}_{season}"
 
-            md_path = ROOT / f"{out_stem}.md"
-            html_path = ROOT / f"{out_stem}.html"
-            md_path.write_text(md, encoding="utf-8")
+            html_path = _report_dir() / f"{out_stem}.html"
             html_path.write_text(html_doc, encoding="utf-8")
-            print(f"  wrote {md_path.name} + {html_path.name}")
+            print(f"  wrote {html_path.relative_to(ROOT)}")
+
+            _write_roundup_sidecar(out_stem, matchup_key, hitter_team,
+                                   pitcher_name, roundup_data)
         return
 
     # ----- legacy per-row mode ------------------------------------------------
@@ -3128,11 +3389,9 @@ def run_batch(csv_path: Path, season: int) -> None:
     for (b_arg, p_arg), (bid, pid) in zip(rows, resolved):
         print(f"\n--- {b_arg} vs {p_arg} ---")
         out_stem, md, html_doc = analyze_matchup(bid, pid, season)
-        md_path = ROOT / f"{out_stem}.md"
-        html_path = ROOT / f"{out_stem}.html"
-        md_path.write_text(md, encoding="utf-8")
+        html_path = _report_dir() / f"{out_stem}.html"
         html_path.write_text(html_doc, encoding="utf-8")
-        print(f"  wrote {md_path.name} + {html_path.name}")
+        print(f"  wrote {html_path.relative_to(ROOT)}")
 
 
 def _git(*args: str) -> subprocess.CompletedProcess:
@@ -3285,34 +3544,26 @@ def main() -> None:
             pid = _resolve_player(args.pitcher)
 
         print(f"Lineup ({len(batter_ids)}) vs pitcher id {pid}")
-        out_stem, md, html_doc = analyze_lineup(
+        out_stem, md, html_doc, _data = analyze_lineup(
             batter_ids, pid, args.season, args.pa_per_batter,
         )
-        md_path = ROOT / f"{out_stem}.md"
-        html_path = ROOT / f"{out_stem}.html"
-        md_path.write_text(md, encoding="utf-8")
+        html_path = _report_dir() / f"{out_stem}.html"
         html_path.write_text(html_doc, encoding="utf-8")
         print()
-        print(f"Lineup reports written:")
-        print(f"  markdown: {md_path}")
-        print(f"  html:     {html_path}")
+        print(f"Lineup report written: {html_path.relative_to(ROOT)}")
         if args.commit_cache:
             commit_prior_season_cache(args.season, push=not args.no_push)
         return
 
     bid, pid = _resolve_inputs(args.batter, args.pitcher, args.batter_id, args.pitcher_id)
     out_stem, md, html_doc = analyze_matchup(bid, pid, args.season)
-    md_path = ROOT / f"{out_stem}.md"
-    html_path = ROOT / f"{out_stem}.html"
-    md_path.write_text(md, encoding="utf-8")
+    html_path = _report_dir() / f"{out_stem}.html"
     html_path.write_text(html_doc, encoding="utf-8")
 
     print()
     print(md)
     print()
-    print(f"Reports written:")
-    print(f"  markdown: {md_path}")
-    print(f"  html:     {html_path}")
+    print(f"Report written: {html_path.relative_to(ROOT)}")
     if args.commit_cache:
         commit_prior_season_cache(args.season, push=not args.no_push)
 

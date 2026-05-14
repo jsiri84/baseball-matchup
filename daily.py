@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""Daily run:
+
+1. fetch today's lineups (with projected-lineup fallback for missing teams)
+2. generate one matchup report per posted lineup
+3. commit + push any new prior-season cache pulls (handled by matchup.py
+   --commit-cache, which appends to data/<year>/ folders for 2024/2025)
+4. build the day-level top-50 / bottom-50 hitter roundup reports from the
+   sidecars matchup.py just dropped under reports/<date>/_data/
+5. commit + push today's reports/<date>/ folder (force-added because
+   reports/ is .gitignored)
+
+Usage:
+    python daily.py                # full run
+    python daily.py --no-push      # commit locally, do not push
+    python daily.py --no-commit    # skip both git commits (just generate)
+"""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+ROOT = Path(__file__).parent
+PY = sys.executable
+
+
+def run(cmd: list[str], label: str) -> None:
+    """Run a subprocess in ROOT, streaming output. Exit on failure."""
+    print(f"\n=== {label} ===")
+    print(f"$ {' '.join(cmd)}")
+    r = subprocess.run(cmd, cwd=ROOT)
+    if r.returncode != 0:
+        sys.exit(f"\n[daily] step failed: {label} (exit {r.returncode})")
+
+
+def git(*args: str, check: bool = True) -> subprocess.CompletedProcess:
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+    if check and r.returncode != 0:
+        sys.exit(f"[daily] git {' '.join(args)} failed: {r.stderr.strip()}")
+    return r
+
+
+def commit_reports(today: str, push: bool) -> None:
+    reports_dir = ROOT / "reports" / today
+    if not reports_dir.exists():
+        print(f"\n[daily] no reports directory at reports/{today}; nothing to commit")
+        return
+
+    rel = f"reports/{today}"
+    # reports/ is gitignored, so force-add. Once added, future modifications
+    # are tracked normally even though the ignore pattern remains. Force-add
+    # only the .html / .md outputs (skip the _data/ sidecar JSONs that the
+    # roundup consumes -- they're regenerable and noisy).
+    for pattern in ("*.html", "*.md"):
+        git("add", "-f", "--", f"{rel}/{pattern}", check=False)
+
+    status = git("status", "--porcelain", "--", rel)
+    if not status.stdout.strip():
+        print(f"\n[daily] no new/changed files under {rel}; nothing to commit")
+        return
+
+    n = sum(1 for _ in status.stdout.strip().splitlines())
+    msg = f"reports: daily run {today} ({n} file{'s' if n != 1 else ''})"
+    git("commit", "-m", msg)
+    print(f"\n[daily] committed {n} report file(s): {msg!r}")
+
+    if push:
+        pr = git("push", check=False)
+        if pr.returncode == 0:
+            print("[daily] pushed reports to origin")
+        else:
+            print(f"[daily] git push failed (commit is local): {pr.stderr.strip()}")
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--no-push", action="store_true",
+                    help="commit locally but skip git push (for both cache and reports)")
+    ap.add_argument("--no-commit", action="store_true",
+                    help="generate reports but skip all git operations")
+    args = ap.parse_args()
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    print(f"[daily] run for {today}")
+
+    # 1. fetch lineups -> matchups_YYYY-MM-DD.csv
+    run([PY, "fetch_lineups.py"], "fetch lineups")
+
+    csv_path = ROOT / f"matchups_{today}.csv"
+    if not csv_path.exists():
+        sys.exit(f"[daily] expected {csv_path.name} not found after fetch_lineups")
+
+    # 2. + 3. run matchups; --commit-cache handles prior-season parquet commit/push
+    matchup_cmd = [PY, "matchup.py", "--batch", csv_path.name]
+    if not args.no_commit:
+        matchup_cmd.append("--commit-cache")
+        if args.no_push:
+            matchup_cmd.append("--no-push")
+    run(matchup_cmd, "generate matchup reports")
+
+    # 4. day-level roundup (top-50 / bottom-50 hitters by projected xwOBA)
+    run([PY, "roundup.py", "--date", today], "build top/bottom-50 roundup")
+
+    # 5. commit today's reports
+    if args.no_commit:
+        print("\n[daily] --no-commit set; skipping reports commit")
+    else:
+        commit_reports(today, push=not args.no_push)
+
+    print("\n[daily] done.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

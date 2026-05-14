@@ -24,17 +24,15 @@ data/2026/
 .pybaseball/
 
 # ----- Generated reports -----
-# Single-matchup outputs (regenerable)
-*_matchup.md
-*_matchup.html
-
-# Lineup outputs
-lineup_*.md
-lineup_*.html
+# All matchup/lineup reports go to reports/<YYYY-MM-DD>/ and are regenerable.
+reports/
 
 # Per-player summary scratch outputs (regenerable)
 *_summary.md
 *_pitcher_summary.md
+
+# Daily lineup pulls from fetch_lineups.py
+matchups_*.csv
 
 # Misc
 *.log

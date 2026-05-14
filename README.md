@@ -1,12 +1,36 @@
 # baseball-matchup
 
-A Python toolkit for **batter-vs-pitcher** and **lineup-vs-pitcher** matchup analysis built on [pybaseball](https://github.com/jldbc/pybaseball) and Statcast / Baseball Savant data. Generates rich markdown + styled HTML reports with projected xwOBA, per-PA outcome odds, multi-PA outlooks, count-conditional pitch mix, shape-aware comps, vertical-approach-angle bat-tracking interaction, and more.
+A Python toolkit for **batter-vs-pitcher** and **lineup-vs-pitcher** matchup analysis built on [pybaseball](https://github.com/jldbc/pybaseball) and Statcast / Baseball Savant data. Generates rich markdown + styled HTML reports with projected xwOBA, per-PA outcome odds (with American odds), multi-PA outlooks, count-conditional pitch mix, shape-aware comps, vertical-approach-angle bat-tracking interaction, a projected pitcher statline by batters faced, and more.
+
+## Daily workflow
+
+The intended way to use this is a two-step daily run:
+
+```bash
+# 1. Pull today's MLB.com starting lineups, fall back to projected lineups
+#    (most-recent same-handed batting order from MLB StatsAPI) for any team
+#    that hasn't posted yet. Writes matchups_YYYY-MM-DD.csv.
+python fetch_lineups.py
+
+# 2. Generate one HTML/MD report per posted lineup, against the announced SP.
+python matchup.py --batch matchups_2026-05-14.csv
+
+# 3. Build the day-level top-50 / bottom-50 hitter roundup from the
+#    sidecars matchup.py just dropped under reports/<date>/_data/
+python roundup.py
+```
+
+Reports land in `reports/<YYYY-MM-DD>/`, one HTML file per `<away>_at_<home>_vs_<pitcher>_<season>` lineup, plus the two roundup files `top50_<date>.html` and `bottom50_<date>.html`. Lineups that came from the StatsAPI fallback (rather than MLB.com's posted lineup) are flagged in the CSV with a 5th `projected` column, and the resulting report carries a yellow "Projected lineup" banner so you don't mistake it for confirmed. The 6th CSV column is the hitter's own team code, used by the roundup to label each row.
+
+For the fully automated daily run (lineups -> matchups -> roundup -> commit + push), use `python daily.py`.
+
+Other entry points are available for ad-hoc work — single matchups, custom lineups, etc.:
 
 ```bash
 # single matchup
 python matchup.py --batter "Yordan Alvarez" --pitcher "Paul Skenes"
 
-# entire lineup vs one pitcher
+# custom lineup vs one pitcher (no batch CSV)
 python matchup.py --pitcher "Paul Skenes" --lineup "Yordan Alvarez,Aaron Judge,Jose Altuve"
 ```
 
@@ -23,40 +47,47 @@ A reference for `<batter>_vs_<pitcher>_<season>_matchup.{md,html}` and `lineup_v
 ## Table of contents
 
 1. [Quick start](#quick-start)
-2. [Where the data comes from](#where-the-data-comes-from)
-3. [Methodology overview](#methodology-overview)
-4. [Section-by-section reading guide](#section-by-section-reading-guide)
-   1. [Header](#1-header)
+2. [CSV format (`matchups_*.csv`)](#csv-format-matchups_csv)
+3. [Where the data comes from](#where-the-data-comes-from)
+4. [Methodology overview](#methodology-overview)
+5. [Section-by-section reading guide](#section-by-section-reading-guide)
+   1. [Header (and projected-lineup banner)](#1-header)
    2. [Verdict](#2-verdict)
    3. [Per-PA outcome distribution](#3-per-pa-outcome-distribution)
    4. [Multi-PA outlook](#4-multi-pa-outlook)
-   5. [Projection by times through the order](#5-projection-by-times-through-the-order)
-   6. [Side-by-side profile](#6-side-by-side-profile-platoon-filtered)
-   7. [Pitch-mix projection](#7-pitch-mix-projection)
-   8. [Count-state pitch mix](#8-count-state-pitch-mix)
-   9. [Shape-aware comps](#9-shape-aware-comps)
-   10. [Zone overlay](#10-zone-overlay)
-   11. [Bat-tracking interaction](#11-bat-tracking-interaction)
-   12. [First-pitch & two-strike sub-profiles](#12-first-pitch--two-strike-sub-profiles)
-   13. [Edge analysis](#13-edge-analysis)
-   14. [Deception & shape signature](#14-deception--shape-signature)
-   15. [Defensive alignment](#15-defensive-alignment)
-   16. [Notes & caveats](#16-notes--caveats)
-5. [Cell-coloring legend (HTML)](#cell-coloring-legend-html)
-6. [Glossary of metrics](#glossary-of-metrics)
-7. [Caveats and what is not modeled](#caveats-and-what-is-not-modeled)
+   5. [Projected pitcher line by BF (lineup mode only)](#5-projected-pitcher-line-by-bf-lineup-mode-only)
+   6. [Projection by times through the order](#6-projection-by-times-through-the-order)
+   7. [Side-by-side profile](#7-side-by-side-profile-platoon-filtered)
+   8. [Pitch-mix projection](#8-pitch-mix-projection)
+   9. [Count-state pitch mix](#9-count-state-pitch-mix)
+   10. [Shape-aware comps](#10-shape-aware-comps)
+   11. [Zone overlay](#11-zone-overlay)
+   12. [Bat-tracking interaction](#12-bat-tracking-interaction)
+   13. [First-pitch & two-strike sub-profiles](#13-first-pitch--two-strike-sub-profiles)
+   14. [Edge analysis](#14-edge-analysis)
+   15. [Deception & shape signature](#15-deception--shape-signature)
+   16. [Defensive alignment](#16-defensive-alignment)
+   17. [Notes & caveats](#17-notes--caveats)
+6. [Cell-coloring legend (HTML)](#cell-coloring-legend-html)
+7. [Glossary of metrics](#glossary-of-metrics)
+8. [Caveats and what is not modeled](#caveats-and-what-is-not-modeled)
 
 ---
 
 ## Quick start
 
 ```bash
+# --- daily workflow ---
+python fetch_lineups.py                                               # writes matchups_YYYY-MM-DD.csv
+python matchup.py --batch matchups_2026-05-14.csv                     # one report per posted lineup
+
+# --- ad-hoc ---
 python matchup.py                                                     # default: Yordan Alvarez vs Paul Skenes
 python matchup.py --batter "Aaron Judge" --pitcher "Tarik Skubal"
 python matchup.py --batter-id 670541 --pitcher-id 694973 --season 2026
-python matchup.py --batch matchups.csv                                # one row per matchup
+python matchup.py --batch matchups.csv                                # any 2-col or 4/5-col CSV
 
-# Lineup mode: one report covering N batters vs the same pitcher
+# Lineup mode (no batch): one report covering N batters vs the same pitcher
 python matchup.py --pitcher "Paul Skenes" --lineup "Yordan Alvarez,Aaron Judge,Jose Altuve"
 python matchup.py --pitcher "Tarik Skubal" --lineup-csv lineup.txt --pa-per-batter 3
 ```
@@ -87,6 +118,35 @@ CLI flags specific to lineup mode:
 - `--pa-per-batter N` (default 3) — used only for the rollup math (expected K / BB / hits / HR / on-base, and the `P(>=1 HR)` independence calculation)
 
 If a single batter in the lineup fails to resolve or has no rows, the lineup run logs a warning and continues with the rest — it doesn't abort the whole report.
+
+---
+
+## CSV format (`matchups_*.csv`)
+
+`fetch_lineups.py` writes one row per hitter, no header:
+
+```csv
+<away>@<home>,<hitter_name>,<opposing_pitcher_name>,<lineup_position>,<status>,<hitter_team>
+```
+
+| Column | Example | Notes |
+|---|---|---|
+| matchup | `STL@ATH` | MLB.com 2-3 letter team codes |
+| hitter | `Brent Rooker` | full display name |
+| pitcher | `Matthew Liberatore` | the *opposing* SP this hitter will face |
+| position | `4` | batting order spot (1-9) |
+| status | `confirmed` or `projected` | 5th column, optional for back-compat |
+| hitter_team | `ATH` | 6th column, optional; the hitter's own team code (used by `roundup.py` to label rows in the top/bottom-50 grid) |
+
+When MLB.com hasn't posted a team's lineup yet, `fetch_lineups.py` falls back to the **MLB StatsAPI**: it pulls the team's most recent Final game where the opposing starter threw the **same hand** as today's announced SP, and copies that batting order. Those rows are written with `status = projected`. Any lineup whose rows are flagged projected gets a yellow "Projected lineup" banner at the top of its generated report.
+
+`matchup.py --batch` accepts three formats and dispatches automatically:
+
+- **Lineup mode** (4, 5, or 6 cols, `@` in first col) — groups rows by `(matchup, pitcher)` and produces one lineup report per group.
+- **Legacy 2-col** (`batter,pitcher`) — produces one single-matchup report per row.
+- Trailing columns are optional, so legacy 4-col and 5-col CSVs still work.
+
+While running in lineup mode, `matchup.py` also drops one JSON sidecar per `(matchup, pitcher)` group into `reports/<date>/_data/`. These sidecars carry the per-batter summary rows + the pre-rendered per-batter detail HTML, and are what `roundup.py` consumes (no need to re-run any matchup compute). The sidecars are intentionally not committed by `daily.py`.
 
 ---
 
@@ -121,6 +181,7 @@ Tune `SEASON_WEIGHTS` at the top of `matchup.py` (index 0 = current, index 1 = p
 ### Caching
 
 - All pulls are cached to `data/<year>/statcast_*_<start>_<end>.parquet`. Prior-season folders (e.g. `data/2024/`, `data/2025/`) are committed to the repo so codespaces start warm; the current-season folder is git-ignored because it rolls daily.
+- All generated reports are written as HTML to `reports/<YYYY-MM-DD>/<stem>.html`. The `reports/` directory is git-ignored.
 - The `end` date is rounded to **yesterday** so all matchups run on a given day share the same cache file
 - An in-process `dict[player_id, DataFrame]` deduplicates pulls within a `--batch` run, so a 50-matchup batch across 30 unique players does 30 disk reads, not 100
 
@@ -211,6 +272,14 @@ handedness: LHB vs RHP
 - **Window line** — one entry per season in `SEASON_WEIGHTS` with its weight, plus raw row counts for both players (one number per season, joined with `+`)
 - **Handedness** — `B`HB (batter stands) vs `P`HP (pitcher throws). All downstream layers are platoon-filtered to this matchup.
 
+#### Projected-lineup banner (lineup mode)
+
+If any hitter row in this lineup carried `status = projected` in the input CSV, the report header displays a yellow callout immediately under the title:
+
+> **Projected lineup** — actual lineup not yet posted; this is the team's most recent batting order vs a same-handed starter.
+
+Treat the projection as directional only — the actual batting order may differ when it's posted closer to first pitch.
+
 ### 2. Verdict
 
 This is the headline takeaway. Three components, top to bottom:
@@ -281,17 +350,49 @@ P(at least one in N PAs) = 1 - (1 - p)^N
 E[count over N PAs]      = N * p
 ```
 
-#### Columns
+The HTML version uses a two-row header that groups columns under `OVER 2 PAS / OVER 3 PAS / OVER 4 PAS`, with three sub-columns under each:
 
-- **Outcome** — same set as the per-PA distribution
-- **N PA: ≥1** — chance the outcome happens at least once across N PAs
-- **N PA: E[#]** — expected count across N PAs
+- **Chance ≥1** — chance the outcome happens at least once across N PAs
+- **Odds** — that chance expressed as American sportsbook odds (e.g., `+150` for ~40%, `-200` for ~67%)
+- **Avg #** — expected count across N PAs (`N * p`)
 
-Cell coloring uses the per-PA league baseline scaled to N — e.g., the league chance of at least one HR in 4 PAs is `1 - (1 - 0.030)^4 = 11.5%`, so a 19.5% projection shades green.
+The `Chance ≥1` cells are colored against the per-PA league baseline scaled to N — e.g., the league chance of at least one HR in 4 PAs is `1 - (1 - 0.030)^4 = 11.5%`, so a 19.5% projection shades green. `Odds` and `Avg #` are styled as muted/secondary so the eye lands on `Chance ≥1` first.
+
+The markdown version preserves the same columns but flattens the header (no colspan in markdown).
 
 > **Assumption**: PAs are treated as independent draws from the per-PA distribution. Real PAs share context (pitcher fatigue, count-state momentum, lineup turn), which the TTO section addresses separately.
 
-### 5. Projection by times through the order
+### 5. Projected pitcher line by BF (lineup mode only)
+
+In a lineup report, this section projects the **opposing pitcher's statline at every batters-faced count from 20 to 30**, so you can read off the line that matches the game script you're modeling (e.g. quality start ≈ BF 26, short outing ≈ BF 21).
+
+Computed by walking the lineup PA-by-PA in order, accumulating cumulative pitches and per-PA outcome probabilities. Each PA's pitch cost is the **average of the pitcher's P/PA and that batter's P/PA**, both **winsorized at 10 pitches per PA** so a single 14-pitch outlier in a small sample doesn't blow up the projection.
+
+```
+P/PA (per player) = mean over (game_pk, at_bat_number) groups,
+                    each group's pitch count clipped at 10
+PA pitch cost      = (pitcher_P/PA + batter_P/PA) / 2
+```
+
+For the pitcher, P/PA is restricted to **starter outings only** (games where they threw a 1st-inning pitch), so high-leverage relief PAs don't bias the rate. Per-PA outcome probabilities (K/BB/Hits/HR/Outs) come straight from each batter's per-PA outcome distribution row in the lineup grid:
+
+```
+K     += batter_K%
+BB    += batter_BB%
+Hits  += batter_Hit%        (1B + 2B + 3B + HR)
+HR    += batter_HR%
+Outs  += 1 - batter_OB%     (PAs that don't reach base)
+```
+
+#### Columns
+
+- **BF** — batters faced (rows from 20 to 30)
+- **Pitches** — cumulative blended pitch count at that BF
+- **K / BB / Hits / HR / Outs** — cumulative expected counts at that BF
+
+There is no fixed pitch-leash assumption here — you pick the BF row that matches the workload you're projecting. If you want a single "expected" line, the row matching the pitcher's typical BF/start is the right read; for a betting/prop range, scan multiple rows.
+
+### 6. Projection by times through the order
 
 Pitchers degrade ~10-20 wOBA points per time through the order. This table shows the headline projection bumped by the per-TTO xwOBA delta the pitcher has historically allowed:
 
@@ -309,7 +410,7 @@ projected_xwOBA(TTO=t) = base_projection_xwOBA + (pitcher_xwOBA_allowed_at_TTO_t
 
 Use this when a player will face the pitcher more than once in a game ("leadoff in the first" projects differently than "with two on in the sixth").
 
-### 6. Side-by-side profile (platoon-filtered)
+### 7. Side-by-side profile (platoon-filtered)
 
 Both players' overall numbers, restricted to the relevant platoon:
 
@@ -329,7 +430,7 @@ Cell coloring uses the **same direction in both columns** because the metric sem
 
 Plain-English notes are auto-generated when threshold combinations fire (e.g., GB-heavy pitcher meeting an air-ball hitter).
 
-### 7. Pitch-mix projection
+### 8. Pitch-mix projection
 
 The Layer 1 projection broken down by pitch type. One row per pitch in the pitcher's arsenal, sorted by marginal usage.
 
@@ -344,13 +445,13 @@ The Layer 1 projection broken down by pitch type. One row per pitch in the pitch
 
 All three xwOBA columns are colored against `LG_XWOBA = 0.315`. A row with three green cells means: the batter is good against this pitch, the pitcher gives up a lot on this pitch, and the projected matchup result is well above league.
 
-### 8. Count-state pitch mix
+### 9. Count-state pitch mix
 
 Compact pitch × count matrix from `pit_vs_bat`. Rows are the pitcher's top 6 pitches (by overall usage); columns are the most common counts plus 0-0 / 0-2 / 3-2 always. Cell value is the percentage of pitches in that count that were of that type.
 
 This shows the pitcher's *sequencing* — fastball-heavy in 0-0, splitter-heavy in 1-2, etc. The Layer 1 projection already incorporates this; the table is here for context.
 
-### 9. Shape-aware comps
+### 10. Shape-aware comps
 
 Per arsenal pitch, finds comparable pitches in the batter's history and reports the batter's results against that shape — not just against pitches with the same name.
 
@@ -379,7 +480,7 @@ xwOBA and Whiff% cells are colored vs league baselines. Treat `low` confidence r
 
 The pitch-mix table aggregates "all sliders" — but a sweeper at 84 mph with 11 inches of horizontal break plays nothing like a slider at 89 mph with 4 inches of break. Shape comps cut through pitch-name aliasing. If the pitcher's sweeper has a tiny number of close comps (`low` confidence), the batter has rarely seen anything like it — a real edge for the pitcher even if the pitcher's "Sweeper" line in the pitch-mix table looks ordinary.
 
-### 10. Zone overlay
+### 11. Zone overlay
 
 Where the pitcher attacks with each pitch type, crossed with where the batter does damage.
 
@@ -404,7 +505,7 @@ Zones 11-14 outside the strike zone:
 
 The intersection xwOBA is the most important number here. A pitcher who lives in zones the batter handles poorly (low batter xwOBA there) gets a low intersection — the pitch projects worse than its raw pitch-type xwOBA suggests. This catches the "Skenes lives down-and-away with the splitter where Yordan does nothing" effect.
 
-### 11. Bat-tracking interaction
+### 12. Bat-tracking interaction
 
 Compares the batter's average swing path to the pitcher's average pitch plane.
 
@@ -429,7 +530,7 @@ The per-arsenal-pitch table compares the **batter's attack angle on this specifi
 
 The HTML version colors the cell green for "on plane", mild red for `|gap| > 3°`, and strong red for `|gap| > 6°`.
 
-### 12. First-pitch & two-strike sub-profiles
+### 13. First-pitch & two-strike sub-profiles
 
 Two pitch-count slices that decide a lot of PAs.
 
@@ -446,7 +547,7 @@ Two pitch-count slices that decide a lot of PAs.
 
 If the pitcher's putaway% is high and the batter's two-strike K% is high, expect strikeouts. If the batter's two-strike xwOBA holds up well, they're a tough out even when behind.
 
-### 13. Edge analysis
+### 14. Edge analysis
 
 Two compact tables. For each pitch in the arsenal:
 
@@ -461,7 +562,7 @@ Each row shows the usage %, batter xwOBA, and pitcher xwOBA allowed. The HTML hi
 
 This is a quick-glance answer to "which 3 pitches do I want to see, and which 3 should I lay off?".
 
-### 14. Deception & shape signature
+### 15. Deception & shape signature
 
 **Release-point cluster** — the average distance (in inches) of each pitch's release point from the pitcher's center of mass across all pitch types:
 - `< 1.5 in` → **tight (deceptive)** — every pitch comes from nearly the same slot, the hitter can't tell pitch type from release
@@ -474,7 +575,7 @@ Per-arsenal-pitch table columns:
 
 A handedness verdict (LHB vs RHP — opposite-side platoon advantage to the hitter, etc.) follows the table.
 
-### 15. Defensive alignment
+### 16. Defensive alignment
 
 How the batter does on grounders by infield alignment, and how the pitcher's defense typically aligns:
 
@@ -483,7 +584,7 @@ How the batter does on grounders by infield alignment, and how the pitcher's def
 
 The displayed sample sizes (`Sample (eff GB)`) are weighted GB counts. Single-season samples here are tiny — treat this as a directional adjustment, not a precise number.
 
-### 16. Notes & caveats
+### 17. Notes & caveats
 
 A short footer block listing the methodology assumptions and what is *not* modeled. Always worth re-reading on your first matchup.
 
@@ -596,7 +697,7 @@ Used by Layer 2 (shape comps) and the count-state mix.
 
 - **delta_run_exp** — Statcast's per-pitch change in run expectancy from the offense's perspective. Positive = good for offense.
 - **delta_pitcher_run_exp** — same, from the pitcher's perspective. Positive = good for pitcher.
-- **Batting / Pitching Run Value** — sum of `delta_run_exp` over a window. Used in the standalone `yordan.py` and `pitcher.py` summaries; not surfaced directly in the matchup report.
+- **Batting / Pitching Run Value** — sum of `delta_run_exp` over a window. Used in the standalone `batter.py` and `pitcher.py` summaries; not surfaced directly in the matchup report.
 
 ### Game-state metrics
 
