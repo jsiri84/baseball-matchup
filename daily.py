@@ -24,6 +24,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from log_setup import setup_logging
+
 ROOT = Path(__file__).parent
 PY = sys.executable
 
@@ -84,8 +86,10 @@ def main() -> int:
                     help="generate reports but skip all git operations")
     args = ap.parse_args()
 
+    log_path = setup_logging("daily")
     today = datetime.now().strftime("%Y-%m-%d")
     print(f"[daily] run for {today}")
+    print(f"[daily] logging to {log_path.relative_to(ROOT)}")
 
     # 1. fetch lineups -> matchups_YYYY-MM-DD.csv
     run([PY, "fetch_lineups.py"], "fetch lineups")

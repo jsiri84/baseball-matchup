@@ -18,6 +18,8 @@ from pathlib import Path
 import pandas as pd
 from pybaseball import cache, playerid_lookup, statcast_pitcher
 
+from log_setup import setup_logging
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 pd.set_option("display.width", 160)
 pd.set_option("display.max_columns", 30)
@@ -622,6 +624,8 @@ def to_markdown(name: str, mlbam_id: int, start: str, end: str,
 # ---------- entry point ---------------------------------------------------
 
 def main() -> None:
+    log_path = setup_logging("pitcher")
+    print(f"[pitcher] logging to {log_path}")
     print(f"Looking up {PLAYER_NAME}'s MLBAM id...")
     pid = get_player_id(PLAYER_LAST, PLAYER_FIRST, fallback=PLAYER_FALLBACK_ID)
     print(f"  MLBAM id = {pid}")

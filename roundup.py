@@ -39,6 +39,7 @@ from matchup import (
     _td,
     edge_class,
 )
+from log_setup import setup_logging
 
 ROOT = Path(__file__).parent
 
@@ -243,6 +244,9 @@ def main() -> int:
     ap.add_argument("--reports-dir", default=None,
                     help="Override reports directory (default reports/<date>/).")
     args = ap.parse_args()
+
+    log_path = setup_logging("roundup")
+    print(f"[roundup] logging to {log_path}")
 
     if args.reports_dir:
         report_dir = Path(args.reports_dir)

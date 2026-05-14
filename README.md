@@ -24,6 +24,8 @@ Reports land in `reports/<YYYY-MM-DD>/`, one HTML file per `<away>_at_<home>_vs_
 
 For the fully automated daily run (lineups -> matchups -> roundup -> commit + push), use `python daily.py`.
 
+Every script in this repo tees its console output to `logs/<YYYY-MM-DD_HH-MM-SS>/<script>.log` via [`log_setup.py`](log_setup.py). When `daily.py` runs, it pins the timestamp folder via the `BASEBALL_BOT_LOG_TS` env var so all child scripts (`fetch_lineups`, `matchup`, `roundup`) drop their logs into the same `logs/<ts>/` directory for that run. The `logs/` folder is git-ignored.
+
 Other entry points are available for ad-hoc work — single matchups, custom lineups, etc.:
 
 ```bash

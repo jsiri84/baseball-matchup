@@ -27,6 +27,11 @@ data/2026/
 # All matchup/lineup reports go to reports/<YYYY-MM-DD>/ and are regenerable.
 reports/
 
+# ----- Per-run logs -----
+# Each script run tees stdout/stderr to logs/<timestamp>/<script>.log via
+# log_setup.py. Keep them out of version control.
+logs/
+
 # Per-player summary scratch outputs (regenerable)
 *_summary.md
 *_pitcher_summary.md

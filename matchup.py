@@ -52,6 +52,7 @@ from batter import (
     pull as _pull_batter_raw,
 )
 from pitcher import pull as _pull_pitcher_raw
+from log_setup import setup_logging
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 pd.set_option("display.width", 160)
@@ -3483,6 +3484,9 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
     except (AttributeError, ValueError):
         pass
+
+    log_path = setup_logging("matchup")
+    print(f"[matchup] logging to {log_path}")
 
     ap = argparse.ArgumentParser(description="batter-vs-pitcher matchup analysis")
     ap.add_argument("--batter", type=str, default=None,

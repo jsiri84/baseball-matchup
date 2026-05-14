@@ -19,6 +19,8 @@ from typing import Optional, Dict, List, Tuple
 import sys
 from bs4 import BeautifulSoup
 
+from log_setup import setup_logging
+
 STARTING_LINEUPS_URL = "https://www.mlb.com/starting-lineups"
 STATSAPI = "https://statsapi.mlb.com/api/v1"
 
@@ -314,9 +316,11 @@ def main():
     except (AttributeError, ValueError):
         pass
 
+    log_path = setup_logging("fetch_lineups")
     today = datetime.now().strftime("%Y-%m-%d")
-    
+
     print(f"🔄 Fetching starting lineups for {today}...")
+    print(f"   logging to {log_path}")
     
     # Fetch page
     html = fetch_starting_lineups_page()
