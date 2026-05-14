@@ -11,6 +11,7 @@ Usage:
     python fetch_lineups.py
 """
 
+import argparse
 import requests
 import csv
 from datetime import datetime, timedelta
@@ -250,7 +251,17 @@ def parse_games(html_content: str) -> List[Dict]:
     return games
 
 
-def generate_csv_rows(games: List[Dict]) -> List[Tuple[str, str, str, str, str, str]]:
+def _normal_pitcher_names(pitcher_name: str, opener_bulk: Dict[str, str]) -> List[str]:
+    names: list[str] = []
+    if pitcher_name:
+        names.append(pitcher_name)
+        bulk_name = opener_bulk.get(pitcher_name)
+        if bulk_name and bulk_name != pitcher_name:
+            names.append(bulk_name)
+    return names
+
+
+def generate_csv_rows(games: List[Dict], opener_bulk: Dict[str, str]) -> List[Tuple[str, str, str, str, str, str]]:
     """
     Generate CSV rows from parsed games.
 
@@ -272,13 +283,18 @@ def generate_csv_rows(games: List[Dict]) -> List[Tuple[str, str, str, str, str, 
         away_status = "projected" if game.get('away_projected') else "confirmed"
         home_status = "projected" if game.get('home_projected') else "confirmed"
 
+        home_pitcher_names = _normal_pitcher_names(home_pitcher, opener_bulk)
+        away_pitcher_names = _normal_pitcher_names(away_pitcher, opener_bulk)
+
         for hitter_name, position in game.get('away_hitters', []):
-            rows.append((matchup_key, hitter_name, home_pitcher, str(position),
-                         away_status, away_team))
+            for pitcher_name in home_pitcher_names:
+                rows.append((matchup_key, hitter_name, pitcher_name, str(position),
+                             away_status, away_team))
 
         for hitter_name, position in game.get('home_hitters', []):
-            rows.append((matchup_key, hitter_name, away_pitcher, str(position),
-                         home_status, home_team))
+            for pitcher_name in away_pitcher_names:
+                rows.append((matchup_key, hitter_name, pitcher_name, str(position),
+                             home_status, home_team))
 
     return rows
 
@@ -309,8 +325,34 @@ def fill_missing_lineups(games: List[Dict]) -> None:
                 print(f"  ⚠ no projected lineup found for {team_code} vs {opp_pitcher}")
 
 
-def main():
+def load_opener_bulk_map(path: Path) -> Dict[str, str]:
+    opener_bulk: Dict[str, str] = {}
+    if not path.exists():
+        return opener_bulk
+
+    with path.open("r", encoding="utf-8") as f:
+        for line_no, line in enumerate(f, start=1):
+            text = line.strip()
+            if not text or text.startswith("#"):
+                continue
+            parts = [part.strip() for part in text.split(",", 1)]
+            if len(parts) != 2 or not parts[0] or not parts[1]:
+                print(f"⚠ skipping invalid opener/bulk line {line_no}: {text}")
+                continue
+            opener, bulk = parts
+            if opener == bulk:
+                continue
+            opener_bulk[opener] = bulk
+    return opener_bulk
+
+
+def main(argv=None):
     """Main entry point."""
+    ap = argparse.ArgumentParser(description="Fetch MLB starting lineups and write matchups CSV")
+    ap.add_argument("--opener-bulk-file", type=str, default="opener_bulk.csv",
+                    help="optional opener/bulk mapping file with lines opener_name,bulk_name")
+    args = ap.parse_args(argv)
+
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except (AttributeError, ValueError):
@@ -318,6 +360,14 @@ def main():
 
     log_path = setup_logging("fetch_lineups")
     today = datetime.now().strftime("%Y-%m-%d")
+
+    opener_bulk_map = load_opener_bulk_map(Path(args.opener_bulk_file))
+    if opener_bulk_map:
+        print(f"✓ Loaded {len(opener_bulk_map)} opener/bulk mapping(s) from {args.opener_bulk_file}")
+    elif args.opener_bulk_file and Path(args.opener_bulk_file).exists():
+        print(f"✓ No opener/bulk mappings found in {args.opener_bulk_file}")
+    elif args.opener_bulk_file != "opener_bulk.csv":
+        print(f"✓ opener/bulk file {args.opener_bulk_file} not found; continuing without opener/bulk mappings")
 
     print(f"🔄 Fetching starting lineups for {today}...")
     print(f"   logging to {log_path}")
@@ -354,7 +404,7 @@ def main():
     print()
 
     # Generate CSV rows
-    all_rows = generate_csv_rows(games)
+    all_rows = generate_csv_rows(games, opener_bulk_map)
     
     if not all_rows:
         print("✗ No lineup data collected")

@@ -95,7 +95,11 @@ def main() -> int:
     print(f"[daily] logging to {log_path.relative_to(ROOT)}")
 
     # 1. fetch lineups -> matchups_YYYY-MM-DD.csv
-    run([PY, "fetch_lineups.py"], "fetch lineups")
+    fetch_cmd = [PY, "fetch_lineups.py"]
+    opener_bulk_path = ROOT / "opener_bulk.csv"
+    if opener_bulk_path.exists():
+        fetch_cmd.extend(["--opener-bulk-file", str(opener_bulk_path)])
+    run(fetch_cmd, "fetch lineups")
 
     csv_path = ROOT / f"matchups_{today}.csv"
     if not csv_path.exists():

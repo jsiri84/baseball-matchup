@@ -3358,6 +3358,13 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
 
         def _process_lineup(item) -> None:
             (matchup_key, pitcher_name), batters = item
+            
+            # Skip if pitcher is TBD (to be determined)
+            if "TBD" in pitcher_name.upper():
+                print(f"\n--- {matchup_key} vs {pitcher_name} ---")
+                print(f"  skipped {matchup_key} vs {pitcher_name}: pitcher TBD")
+                return
+            
             batters_sorted = sorted(batters, key=lambda x: x[0])
             names_sorted = [name for _pos, name, _s, _t in batters_sorted]
             teams_sorted = [team for _pos, _n, _s, team in batters_sorted]
@@ -3427,6 +3434,13 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
 
     def _process_row(item) -> None:
         (b_arg, p_arg), (bid, pid) = item
+        
+        # Skip if pitcher is TBD (to be determined)
+        if "TBD" in p_arg.upper():
+            print(f"\n--- {b_arg} vs {p_arg} ---")
+            print(f"  skipped {b_arg} vs {p_arg}: pitcher TBD")
+            return
+        
         print(f"\n--- {b_arg} vs {p_arg} ---")
         try:
             out_stem, md, html_doc = analyze_matchup(bid, pid, season)
