@@ -84,6 +84,9 @@ def main() -> int:
                     help="commit locally but skip git push (for both cache and reports)")
     ap.add_argument("--no-commit", action="store_true",
                     help="generate reports but skip all git operations")
+    ap.add_argument("--workers", type=int, default=None,
+                    help="forwarded to matchup.py --workers; parallel report "
+                         "generation thread count (default: matchup.py's own default)")
     args = ap.parse_args()
 
     log_path = setup_logging("daily")
@@ -100,6 +103,8 @@ def main() -> int:
 
     # 2. + 3. run matchups; --commit-cache handles prior-season parquet commit/push
     matchup_cmd = [PY, "matchup.py", "--batch", csv_path.name]
+    if args.workers is not None:
+        matchup_cmd.extend(["--workers", str(args.workers)])
     if not args.no_commit:
         matchup_cmd.append("--commit-cache")
         if args.no_push:

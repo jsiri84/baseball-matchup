@@ -26,6 +26,8 @@ For the fully automated daily run (lineups -> matchups -> roundup -> commit + pu
 
 Every script in this repo tees its console output to `logs/<YYYY-MM-DD_HH-MM-SS>/<script>.log` via [`log_setup.py`](log_setup.py). When `daily.py` runs, it pins the timestamp folder via the `BASEBALL_BOT_LOG_TS` env var so all child scripts (`fetch_lineups`, `matchup`, `roundup`) drop their logs into the same `logs/<ts>/` directory for that run. The `logs/` folder is git-ignored.
 
+Report generation in `matchup.py --batch` is multi-threaded across `(matchup, pitcher)` lineup groups (default `min(8, cpu_count)` workers). Tune via `python matchup.py --batch ... --workers N` or `python daily.py --workers N`. The Statcast data preload is already parallelized across players (up to `min(32, cpu_count*5)` threads) and is the main thing that makes a daily slate fast.
+
 Other entry points are available for ad-hoc work — single matchups, custom lineups, etc.:
 
 ```bash

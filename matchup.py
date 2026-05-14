@@ -3290,7 +3290,19 @@ def _slugify(text: str) -> str:
     return slug.strip("_")
 
 
-def run_batch(csv_path: Path, season: int) -> None:
+def _resolve_workers(workers: int | None) -> int:
+    """Pick a sensible thread-pool size for parallel report generation.
+
+    Defaults to min(8, cpu_count). Capped because each worker holds a chunk
+    of pandas/HTML state in memory; going wider rarely speeds things up
+    once the network preload is done.
+    """
+    if workers is not None:
+        return max(1, int(workers))
+    return min(8, os.cpu_count() or 1)
+
+
+def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
     legacy_rows: list[tuple[str, str]] = []
     # Lineup format groups:
     #   (matchup_key, pitcher_name) -> list of (position, hitter_name, status, hitter_team)
@@ -3339,7 +3351,11 @@ def run_batch(csv_path: Path, season: int) -> None:
         print(f"  unique batters: {len(unique_b)}, unique pitchers: {len(unique_p)}")
         preload_player_data(unique_b, unique_p, season)
 
-        for (matchup_key, pitcher_name), batters in lineup_groups.items():
+        n_workers = _resolve_workers(workers)
+        print(f"  generating reports across {n_workers} worker thread(s)")
+
+        def _process_lineup(item) -> None:
+            (matchup_key, pitcher_name), batters = item
             batters_sorted = sorted(batters, key=lambda x: x[0])
             names_sorted = [name for _pos, name, _s, _t in batters_sorted]
             teams_sorted = [team for _pos, _n, _s, team in batters_sorted]
@@ -3350,15 +3366,15 @@ def run_batch(csv_path: Path, season: int) -> None:
             pid = pitcher_id_map[pitcher_name]
             batter_ids = [hitter_id_map[name] for name in names_sorted]
 
-            print(f"\n--- {matchup_key} lineup vs {pitcher_name}"
-                  f"{' (projected)' if is_projected else ''} ---")
+            tag = f"{matchup_key} vs {pitcher_name}" + (" (projected)" if is_projected else "")
+            print(f"\n--- {tag} ---")
             try:
                 _, md, html_doc, roundup_data = analyze_lineup(
                     batter_ids, pid, season, projected=is_projected,
                 )
             except SystemExit as exc:
-                print(f"  skipped {matchup_key} vs {pitcher_name}: {exc}")
-                continue
+                print(f"  skipped {tag}: {exc}")
+                return
 
             match_slug = matchup_key.replace("@", "_at_").lower()
             pit_slug = _slugify(pitcher_name)
@@ -3370,6 +3386,23 @@ def run_batch(csv_path: Path, season: int) -> None:
 
             _write_roundup_sidecar(out_stem, matchup_key, hitter_team,
                                    pitcher_name, roundup_data)
+
+        items = list(lineup_groups.items())
+        if n_workers <= 1 or len(items) <= 1:
+            for item in items:
+                _process_lineup(item)
+        else:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=n_workers, thread_name_prefix="report",
+            ) as ex:
+                futures = {ex.submit(_process_lineup, it): it[0] for it in items}
+                for fut in concurrent.futures.as_completed(futures):
+                    key = futures[fut]
+                    try:
+                        fut.result()
+                    except Exception as exc:  # noqa: BLE001
+                        print(f"  worker for {key} crashed: "
+                              f"{exc.__class__.__name__}: {exc}", file=sys.stderr)
         return
 
     # ----- legacy per-row mode ------------------------------------------------
@@ -3387,12 +3420,37 @@ def run_batch(csv_path: Path, season: int) -> None:
     print(f"  unique batters: {len(unique_b)}, unique pitchers: {len(unique_p)}")
     preload_player_data(unique_b, unique_p, season)
 
-    for (b_arg, p_arg), (bid, pid) in zip(rows, resolved):
+    n_workers = _resolve_workers(workers)
+    print(f"  generating reports across {n_workers} worker thread(s)")
+
+    def _process_row(item) -> None:
+        (b_arg, p_arg), (bid, pid) = item
         print(f"\n--- {b_arg} vs {p_arg} ---")
-        out_stem, md, html_doc = analyze_matchup(bid, pid, season)
+        try:
+            out_stem, md, html_doc = analyze_matchup(bid, pid, season)
+        except SystemExit as exc:
+            print(f"  skipped {b_arg} vs {p_arg}: {exc}")
+            return
         html_path = _report_dir() / f"{out_stem}.html"
         html_path.write_text(html_doc, encoding="utf-8")
         print(f"  wrote {html_path.relative_to(ROOT)}")
+
+    pairs = list(zip(rows, resolved))
+    if n_workers <= 1 or len(pairs) <= 1:
+        for item in pairs:
+            _process_row(item)
+    else:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=n_workers, thread_name_prefix="report",
+        ) as ex:
+            futures = {ex.submit(_process_row, it): it[0] for it in pairs}
+            for fut in concurrent.futures.as_completed(futures):
+                key = futures[fut]
+                try:
+                    fut.result()
+                except Exception as exc:  # noqa: BLE001
+                    print(f"  worker for {key} crashed: "
+                          f"{exc.__class__.__name__}: {exc}", file=sys.stderr)
 
 
 def _git(*args: str) -> subprocess.CompletedProcess:
@@ -3515,10 +3573,13 @@ def main() -> None:
                          "shared cache warm.")
     ap.add_argument("--no-push", action="store_true",
                     help="with --commit-cache, commit locally but do not push")
+    ap.add_argument("--workers", type=int, default=None,
+                    help="parallel workers for report generation in --batch mode "
+                         "(default min(8, cpu_count)). Set 1 to disable threading.")
     args = ap.parse_args()
 
     if args.batch:
-        run_batch(Path(args.batch), args.season)
+        run_batch(Path(args.batch), args.season, workers=args.workers)
         if args.commit_cache:
             commit_prior_season_cache(args.season, push=not args.no_push)
         return

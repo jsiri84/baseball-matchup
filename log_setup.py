@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -43,23 +44,26 @@ class _Tee:
 
     def __init__(self, *streams) -> None:
         self._streams = streams
+        self._lock = threading.Lock()
 
     def write(self, data: str) -> int:
         n = 0
-        for s in self._streams:
-            try:
-                n = s.write(data)
-                s.flush()
-            except Exception:
-                pass
+        with self._lock:
+            for s in self._streams:
+                try:
+                    n = s.write(data)
+                    s.flush()
+                except Exception:
+                    pass
         return n
 
     def flush(self) -> None:
-        for s in self._streams:
-            try:
-                s.flush()
-            except Exception:
-                pass
+        with self._lock:
+            for s in self._streams:
+                try:
+                    s.flush()
+                except Exception:
+                    pass
 
     def isatty(self) -> bool:
         return any(getattr(s, "isatty", lambda: False)() for s in self._streams)
