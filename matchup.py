@@ -27,6 +27,8 @@ import html
 import json
 import math
 import os
+import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -3459,6 +3461,43 @@ def _git(*args: str) -> subprocess.CompletedProcess:
     )
 
 
+def _normalize_data_layout() -> None:
+    """Normalize cached parquet files into data/<start_year>/ folders."""
+    data_dir = ROOT / "data"
+    if not data_dir.exists():
+        print("[normalize-data-layout] data/ directory does not exist; nothing to do")
+        return
+
+    moved = 0
+    pattern = re.compile(r"statcast(?:_pitcher)?_\d+_(\d{4})-\d{2}-\d{2}_\d{4}-\d{2}-\d{2}\.parquet$")
+    for path in sorted(data_dir.rglob("*.parquet")):
+        if not path.is_file():
+            continue
+        match = pattern.search(path.name)
+        if not match:
+            continue
+
+        target_year = match.group(1)
+        target_dir = data_dir / target_year
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_path = target_dir / path.name
+
+        if path.parent == target_dir:
+            continue
+        if target_path.exists():
+            print(f"[normalize-data-layout] skipping {path.relative_to(ROOT)}; target already exists: {target_path.relative_to(ROOT)}")
+            continue
+
+        print(f"[normalize-data-layout] moving {path.relative_to(ROOT)} -> {target_path.relative_to(ROOT)}")
+        shutil.move(str(path), str(target_path))
+        moved += 1
+
+    if moved == 0:
+        print("[normalize-data-layout] no misplaced parquet files found")
+    else:
+        print(f"[normalize-data-layout] moved {moved} file{'s' if moved != 1 else ''}")
+
+
 def commit_prior_season_cache(current_season: int, push: bool = True) -> None:
     """Stage, commit, and (optionally) push any new prior-season parquets.
 
@@ -3557,6 +3596,8 @@ def main() -> None:
                     help=f"current season (default {DEFAULT_SEASON})")
     ap.add_argument("--batch", type=str, default=None,
                     help="path to a CSV file (batter,pitcher OR away@home,hitter,pitcher,position)")
+    ap.add_argument("--fix-data-layout", action="store_true",
+                    help="normalize cached parquet files into data/<year>/ folders")
     ap.add_argument("--lineup", type=str, default=None,
                     help="comma-separated batter names (or MLBAM ids) in lineup order, "
                          "vs the --pitcher flag. e.g. \"Yordan Alvarez,Aaron Judge,...\"")
@@ -3577,6 +3618,10 @@ def main() -> None:
                     help="parallel workers for report generation in --batch mode "
                          "(default min(8, cpu_count)). Set 1 to disable threading.")
     args = ap.parse_args()
+
+    if args.fix_data_layout:
+        _normalize_data_layout()
+        return
 
     if args.batch:
         run_batch(Path(args.batch), args.season, workers=args.workers)
