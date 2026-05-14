@@ -3,4 +3,5 @@ pandas>=2.2
 pybaseball>=2.2
 lxml
 requests
+beautifulsoup4
 tqdm

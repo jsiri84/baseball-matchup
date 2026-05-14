@@ -13,16 +13,21 @@ Usage:
     python matchup.py --batter-id 670541 --pitcher-id 694973 --season 2026
     python matchup.py --batch matchups.csv
 
-CSV format (no header): batter,pitcher  (names or numeric MLBAM ids).
+CSV formats (no header):
+    - Legacy format (2 columns): batter,pitcher  (names or numeric MLBAM ids)
+    - Lineup format (4 columns): away@home,hitter_name,pitcher_name,lineup_position
 """
 
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import csv
 import html
 import math
+import os
 import sys
+import threading
 import warnings
 from datetime import date, timedelta
 from pathlib import Path
@@ -125,6 +130,8 @@ def _season_window(season: int, offset: int) -> tuple[str, str]:
 
 _BATTER_CACHE: dict[int, pd.DataFrame] = {}
 _PITCHER_CACHE: dict[int, pd.DataFrame] = {}
+_BATTER_CACHE_LOCK = threading.Lock()
+_PITCHER_CACHE_LOCK = threading.Lock()
 
 
 def _tag(df: pd.DataFrame, weight: float) -> pd.DataFrame:
@@ -177,19 +184,52 @@ def _load_blended(
 
 def load_blended_batter(player_id: int, season: int = DEFAULT_SEASON) -> pd.DataFrame:
     """Return Statcast for a batter blended across SEASON_WEIGHTS years."""
-    if player_id in _BATTER_CACHE:
-        return _BATTER_CACHE[player_id]
+    with _BATTER_CACHE_LOCK:
+        if player_id in _BATTER_CACHE:
+            return _BATTER_CACHE[player_id]
     blended = _load_blended(player_id, season, _pull_batter_raw, "batter")
-    _BATTER_CACHE[player_id] = blended
+    with _BATTER_CACHE_LOCK:
+        _BATTER_CACHE[player_id] = blended
     return blended
 
 
 def load_blended_pitcher(player_id: int, season: int = DEFAULT_SEASON) -> pd.DataFrame:
-    if player_id in _PITCHER_CACHE:
-        return _PITCHER_CACHE[player_id]
+    with _PITCHER_CACHE_LOCK:
+        if player_id in _PITCHER_CACHE:
+            return _PITCHER_CACHE[player_id]
     blended = _load_blended(player_id, season, _pull_pitcher_raw, "pitcher")
-    _PITCHER_CACHE[player_id] = blended
+    with _PITCHER_CACHE_LOCK:
+        _PITCHER_CACHE[player_id] = blended
     return blended
+
+
+def preload_player_data(
+    batter_ids: set[int], pitcher_ids: set[int], season: int = DEFAULT_SEASON,
+    max_workers: int | None = None,
+) -> None:
+    """Pull all batter and pitcher data into the in-process cache."""
+    if not batter_ids and not pitcher_ids:
+        return
+
+    if max_workers is None:
+        max_workers = min(32, (os.cpu_count() or 1) * 5)
+
+    print(f"Preloading {len(batter_ids)} batters + {len(pitcher_ids)} pitchers into cache...")
+    futures: dict[concurrent.futures.Future[None], str] = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for bid in sorted(batter_ids):
+            futures[executor.submit(load_blended_batter, bid, season)] = f"batter {bid}"
+        for pid in sorted(pitcher_ids):
+            futures[executor.submit(load_blended_pitcher, pid, season)] = f"pitcher {pid}"
+
+        for future in concurrent.futures.as_completed(futures):
+            label = futures[future]
+            try:
+                future.result()
+            except Exception as exc:  # noqa: BLE001
+                print(f"  {label} preload failed: {exc.__class__.__name__}: {exc}", file=sys.stderr)
+
+    print("Preload complete.")
 
 
 # ---------- weighted helpers ----------------------------------------------
@@ -2995,7 +3035,15 @@ def run_batch(csv_path: Path, season: int) -> None:
             row = [c.strip() for c in row if c.strip()]
             if len(row) < 2:
                 continue
-            rows.append((row[0], row[1]))
+            
+            # Handle both legacy (batter,pitcher) and lineup (away@home,hitter,pitcher,pos) formats
+            if len(row) == 2:
+                # Legacy format: batter,pitcher
+                rows.append((row[0], row[1]))
+            elif len(row) >= 3:
+                # Lineup format: away@home,hitter_name,pitcher_name,lineup_position
+                # Extract batter (column 1) and pitcher (column 2)
+                rows.append((row[1], row[2]))
 
     print(f"Batch: {len(rows)} matchups from {csv_path.name}")
     # Pre-resolve all unique players (warms cache).
@@ -3009,6 +3057,7 @@ def run_batch(csv_path: Path, season: int) -> None:
         resolved.append((bid, pid))
 
     print(f"  unique batters: {len(unique_b)}, unique pitchers: {len(unique_p)}")
+    preload_player_data(unique_b, unique_p, season)
 
     for (b_arg, p_arg), (bid, pid) in zip(rows, resolved):
         print(f"\n--- {b_arg} vs {p_arg} ---")
@@ -3036,7 +3085,7 @@ def main() -> None:
     ap.add_argument("--season", type=int, default=DEFAULT_SEASON,
                     help=f"current season (default {DEFAULT_SEASON})")
     ap.add_argument("--batch", type=str, default=None,
-                    help="path to a CSV of matchup rows (batter,pitcher)")
+                    help="path to a CSV file (batter,pitcher OR away@home,hitter,pitcher,position)")
     ap.add_argument("--lineup", type=str, default=None,
                     help="comma-separated batter names (or MLBAM ids) in lineup order, "
                          "vs the --pitcher flag. e.g. \"Yordan Alvarez,Aaron Judge,...\"")
