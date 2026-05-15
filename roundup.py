@@ -254,6 +254,123 @@ def _build_html(title: str, subtitle: str, rows: list[dict],
     return "\n".join(parts)
 
 
+def _props_grid_row(rank: int, row: dict, metric_key: str, metric_label: str) -> str:
+    """Build one table row for the props report (HR or Doubles)."""
+    sr = row["sr"]
+    pct = sr.get(metric_key, 0.0)
+    pct_display = pct * 100
+
+    # American odds conversion
+    if pct >= 0.5:
+        odds_str = f"{round(-100 * pct / (1 - pct))}" if pct < 1.0 else "-∞"
+    else:
+        odds_str = f"+{round(100 * (1 - pct) / pct)}" if pct > 0.0 else "—"
+
+    # Multi-PA chances (3 PA and 4 PA)
+    chance_3pa = 1 - (1 - pct) ** 3
+    chance_4pa = 1 - (1 - pct) ** 4
+
+    proj_cls = edge_class(sr["proj_xwoba"], LG_XWOBA, 0.025, batter_favors_high=True)
+    proj_marker = ' <span class="badge" title="Projected lineup">P</span>' if row["projected"] else ""
+
+    xwoba_str = f"{sr['proj_xwoba']:.3f}"
+    return (
+        "<tr>"
+        f'<td class="spot">{rank}</td>'
+        f'<td class="handpill"><span class="pill">{_h(row["team"] or "?")}</span></td>'
+        f'<td class="name">{_h(sr["name"])}{proj_marker}</td>'
+        f'<td class="handpill"><span class="pill">{_h(sr.get("stand") or "?")}HB</span></td>'
+        f'<td class="name">{_h(row["pitcher_name"] or "?")} '
+        f'<span class="pill">{_h(row["p_throws"])}HP</span></td>'
+        f'<td class="bat-edge-strong"><b>{pct_display:.1f}%</b></td>'
+        f'<td>{odds_str}</td>'
+        f'<td>{chance_3pa*100:.1f}%</td>'
+        f'<td>{chance_4pa*100:.1f}%</td>'
+        f'{_td(xwoba_str, proj_cls)}'
+        f'<td class="pitch-cell">{_h(sr.get("best_pitch") or "—")}</td>'
+        f'<td class="verdict {sr["verdict_css"]}">{_h(sr["verdict_label"])}</td>'
+        "</tr>"
+    )
+
+
+def _build_props_html(date_str: str, hr_rows: list[dict], dbl_rows: list[dict],
+                      total_pool: int) -> str:
+    """Build a single HTML report with two tables: Top HR and Top Doubles."""
+    parts: list[str] = []
+    parts.append("<!doctype html>")
+    parts.append('<html lang="en">')
+    parts.append("<head>")
+    parts.append('<meta charset="utf-8">')
+    parts.append(f"<title>Props outlook — {_h(date_str)}</title>")
+    parts.append(f"<style>{_HTML_CSS}</style>")
+    parts.append("</head>")
+    parts.append("<body>")
+    parts.append('<main class="container">')
+
+    # Header
+    parts.append('<header class="page-head">')
+    parts.append(f"<h1>Props outlook — {_h(date_str)}</h1>")
+    parts.append(
+        f'<div class="meta">Top projected HR and 2B hitters across the slate &middot; '
+        f'{total_pool} hitters from {_h(date_str)}\'s games</div>'
+    )
+    parts.append("</header>")
+
+    # HR table
+    parts.append('<section class="card">')
+    parts.append(f"<h2>Top {len(hr_rows)} — Home Run probability</h2>")
+    parts.append('<table class="lineup-grid"><thead><tr>'
+                 '<th>#</th><th>Team</th>'
+                 '<th style="text-align:left">Batter</th><th>Hand</th>'
+                 '<th style="text-align:left">Pitcher</th>'
+                 '<th>HR%</th><th>Odds</th>'
+                 '<th>≥1 in 3PA</th><th>≥1 in 4PA</th>'
+                 '<th>Proj xwOBA</th>'
+                 '<th style="text-align:left">Best pitch</th>'
+                 '<th>Verdict</th>'
+                 '</tr></thead><tbody>')
+    for rank, row in enumerate(hr_rows, start=1):
+        parts.append(_props_grid_row(rank, row, "hr_pct", "HR"))
+    parts.append("</tbody></table>")
+    parts.append("</section>")
+
+    # Doubles table
+    parts.append('<section class="card">')
+    parts.append(f"<h2>Top {len(dbl_rows)} — Doubles probability</h2>")
+    parts.append('<table class="lineup-grid"><thead><tr>'
+                 '<th>#</th><th>Team</th>'
+                 '<th style="text-align:left">Batter</th><th>Hand</th>'
+                 '<th style="text-align:left">Pitcher</th>'
+                 '<th>2B%</th><th>Odds</th>'
+                 '<th>≥1 in 3PA</th><th>≥1 in 4PA</th>'
+                 '<th>Proj xwOBA</th>'
+                 '<th style="text-align:left">Best pitch</th>'
+                 '<th>Verdict</th>'
+                 '</tr></thead><tbody>')
+    for rank, row in enumerate(dbl_rows, start=1):
+        parts.append(_props_grid_row(rank, row, "dbl_pct", "2B"))
+    parts.append("</tbody></table>")
+    parts.append("</section>")
+
+    # Footer
+    parts.append("<footer>")
+    parts.append("<ul class='note-list'>")
+    parts.append(
+        "<li>Per-PA probabilities come from the matchup projection's per-PA outcome "
+        "distribution (count-conditional pitch mix + log5/additive blend vs league).</li>"
+    )
+    parts.append(
+        "<li>Multi-PA columns assume independent draws: "
+        "P(≥1 in N) = 1 − (1 − p)<sup>N</sup>.</li>"
+    )
+    parts.append("</ul>")
+    parts.append("</footer>")
+
+    parts.append("</main>")
+    parts.append("</body></html>")
+    return "\n".join(parts)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--date", default=date_cls.today().isoformat(),
@@ -317,6 +434,23 @@ def main() -> int:
 
     print(f"[roundup] wrote {top_path.relative_to(ROOT)}")
     print(f"[roundup] wrote {bot_path.relative_to(ROOT)}")
+
+    # Props report: top 30 HR and top 30 doubles
+    hr_sorted = sorted(all_rows, key=lambda r: r["sr"].get("hr_pct", 0), reverse=True)
+    dbl_sorted = sorted(all_rows, key=lambda r: r["sr"].get("dbl_pct", 0), reverse=True)
+    hr_top = hr_sorted[:30]
+    dbl_top = dbl_sorted[:30]
+
+    props_html = _build_props_html(
+        date_str=args.date,
+        hr_rows=hr_top,
+        dbl_rows=dbl_top,
+        total_pool=len(all_rows),
+    )
+    props_path = report_dir / f"props_{args.date}.html"
+    props_path.write_text(props_html, encoding="utf-8")
+    print(f"[roundup] wrote {props_path.relative_to(ROOT)}")
+
     return 0
 
 
