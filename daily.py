@@ -7,8 +7,10 @@
    --commit-cache, which appends to data/<year>/ folders for 2024/2025)
 4. build the day-level top-50 / bottom-50 hitter roundup reports from the
    sidecars matchup.py just dropped under reports/<date>/_data/
+4b. build the navigation site (per-day reports/<date>/index.html plus the
+    root index.html / archive.html that GitHub Pages serves)
 5. commit + push today's reports/<date>/ folder (force-added because
-   reports/ is .gitignored)
+   reports/ is .gitignored) plus the root index.html / archive.html
 
 Usage:
     python daily.py                # full run
@@ -56,13 +58,19 @@ def commit_reports(today: str, push: bool) -> None:
     # reports/ is gitignored, so force-add. Once added, future modifications
     # are tracked normally even though the ignore pattern remains. Force-add
     # only the .html / .md outputs (skip the _data/ sidecar JSONs that the
-    # roundup consumes -- they're regenerable and noisy).
+    # roundup consumes -- they're regenerable and noisy). The per-day
+    # index.html written by build_site.py is included by the *.html glob.
     for pattern in ("*.html", "*.md"):
         git("add", "-f", "--", f"{rel}/{pattern}", check=False)
 
-    status = git("status", "--porcelain", "--", rel)
+    # Root navigation pages (not under reports/, so not gitignored).
+    for root_page in ("index.html", "archive.html"):
+        if (ROOT / root_page).exists():
+            git("add", "--", root_page, check=False)
+
+    status = git("status", "--porcelain", "--", rel, "index.html", "archive.html")
     if not status.stdout.strip():
-        print(f"\n[daily] no new/changed files under {rel}; nothing to commit")
+        print(f"\n[daily] no new/changed files under {rel} or root index pages; nothing to commit")
         return
 
     n = sum(1 for _ in status.stdout.strip().splitlines())
@@ -117,6 +125,9 @@ def main() -> int:
 
     # 4. day-level roundup (top-50 / bottom-50 hitters by projected xwOBA)
     run([PY, "roundup.py", "--date", today], "build top/bottom-50 roundup")
+
+    # 4b. site navigation: today's hub + root index.html + archive.html
+    run([PY, "build_site.py", "--date", today], "build navigation site (hub + root index)")
 
     # 5. commit today's reports
     if args.no_commit:

@@ -22,7 +22,18 @@ python roundup.py
 
 Reports land in `reports/<YYYY-MM-DD>/`, one HTML file per `<away>_at_<home>_vs_<pitcher>_<season>` lineup, plus the two roundup files `top50_<date>.html` and `bottom50_<date>.html`. Lineups that came from the StatsAPI fallback (rather than MLB.com's posted lineup) are flagged in the CSV with a 5th `projected` column, and the resulting report carries a yellow "Projected lineup" banner so you don't mistake it for confirmed. The 6th CSV column is the hitter's own team code, used by the roundup to label each row.
 
-For the fully automated daily run (lineups -> matchups -> roundup -> commit + push), use `python daily.py`.
+For the fully automated daily run (lineups -> matchups -> roundup -> site -> commit + push), use `python daily.py`. After the roundup step, `daily.py` invokes [`build_site.py`](build_site.py) to (re)generate `reports/<date>/index.html` (a per-day hub grouping each game's pitcher reports plus the Top 50 / Bottom 50 CTAs) and the repo-root `index.html` / `archive.html` that GitHub Pages uses to navigate the archive.
+
+### Browsing reports on GitHub Pages
+
+The committed reports are served as a static site straight from `main`. One-time setup on the GitHub repo:
+
+1. **Settings -> Pages**
+2. **Source:** "Deploy from a branch"
+3. **Branch:** `main`, **Folder:** `/ (root)`
+4. Save.
+
+Within ~1 minute the site will be live at `https://<your-user>.github.io/baseball-matchup/`. The root `index.html` is a meta-refresh redirect to the most recent date's hub; `archive.html` lists every date that has reports. To rebuild the navigation pages without running a full daily, use `python build_site.py` (rebuilds every date) or `python build_site.py --date YYYY-MM-DD` (just one).
 
 Every script in this repo tees its console output to `logs/<YYYY-MM-DD_HH-MM-SS>/<script>.log` via [`log_setup.py`](log_setup.py). When `daily.py` runs, it pins the timestamp folder via the `BASEBALL_BOT_LOG_TS` env var so all child scripts (`fetch_lineups`, `matchup`, `roundup`) drop their logs into the same `logs/<ts>/` directory for that run. The `logs/` folder is git-ignored.
 
