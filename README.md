@@ -73,16 +73,18 @@ A reference for `<batter>_vs_<pitcher>_<season>_matchup.{md,html}` and `lineup_v
    5. [Projected pitcher line by BF (lineup mode only)](#5-projected-pitcher-line-by-bf-lineup-mode-only)
    6. [Projection by times through the order](#6-projection-by-times-through-the-order)
    7. [Side-by-side profile](#7-side-by-side-profile-platoon-filtered)
-   8. [Pitch-mix projection](#8-pitch-mix-projection)
-   9. [Count-state pitch mix](#9-count-state-pitch-mix)
-   10. [Shape-aware comps](#10-shape-aware-comps)
-   11. [Zone overlay](#11-zone-overlay)
-   12. [Bat-tracking interaction](#12-bat-tracking-interaction)
-   13. [First-pitch & two-strike sub-profiles](#13-first-pitch--two-strike-sub-profiles)
-   14. [Edge analysis](#14-edge-analysis)
-   15. [Deception & shape signature](#15-deception--shape-signature)
-   16. [Defensive alignment](#16-defensive-alignment)
-   17. [Notes & caveats](#17-notes--caveats)
+   8. [Recent form (rolling)](#8-recent-form-rolling)
+   9. [Pitch-mix projection](#9-pitch-mix-projection)
+   10. [Contact-quality projection](#10-contact-quality-projection)
+   11. [Count-state pitch mix](#11-count-state-pitch-mix)
+   12. [Shape-aware comps](#12-shape-aware-comps)
+   13. [Zone overlay](#13-zone-overlay)
+   14. [Bat-tracking interaction](#14-bat-tracking-interaction)
+   15. [First-pitch & two-strike sub-profiles](#15-first-pitch--two-strike-sub-profiles)
+   16. [Edge analysis](#16-edge-analysis)
+   17. [Deception & shape signature](#17-deception--shape-signature)
+   18. [Defensive alignment](#18-defensive-alignment)
+   19. [Notes & caveats](#19-notes--caveats)
 6. [Cell-coloring legend (HTML)](#cell-coloring-legend-html)
 7. [Glossary of metrics](#glossary-of-metrics)
 8. [Caveats and what is not modeled](#caveats-and-what-is-not-modeled)
@@ -192,6 +194,29 @@ Tune `SEASON_WEIGHTS` at the top of `matchup.py` (index 0 = current, index 1 = p
 - `[1.0, 0.5]` — old 2-season blend
 - `[1.0, 0.5, 0.25]` — default; BPP-style 3-season decay
 - `[1.0, 0.5, 0.25, 0.1]` — extend further back (slower pulls, more sample)
+
+### Recency decay (within the current season)
+
+Inside the current season, an April pitch and a yesterday pitch shouldn't count the same when projecting tonight's matchup. After the season-blend cascade above is applied, every current-season row's weight is multiplied by an exponential recency decay:
+
+```
+multiplier(row) = max(RECENCY_FLOOR, 2 ** (-days_since_game / RECENCY_HALF_LIFE_DAYS))
+```
+
+Defaults (top of `matchup.py`):
+
+| Constant                       | Default | Description |
+|--------------------------------|--------:|-------------|
+| `RECENCY_HALF_LIFE_DAYS`       | `30.0`  | Days for the multiplier to drop from 1.0 to 0.5 |
+| `RECENCY_FLOOR`                | `0.20`  | Floor so an April row in late September stays at 0.20x, not 0 |
+| `RECENCY_REFERENCE_DATE`       | `None`  | Override "today" for tests / replay (None → `date.today()`) |
+| `RECENT_FORM_STREAK_THRESHOLD` | `0.040` | Minimum 14-day xwOBA delta vs season for the verdict to flag a heater / slump |
+| `RECENT_FORM_MIN_PA`           | `25.0`  | Minimum PA in a rolling window before the panel renders that row (otherwise dashes) |
+| `RECENT_FORM_WINDOWS`          | `(14, 30)` | Rolling windows surfaced in the Recent form panel |
+
+Prior-season rows are **never** touched by the recency decay — the season-blend cascade already handles cross-year staleness, and any meaningful half-life would zero out 2024/2025 data. To turn the engine off entirely, set `RECENCY_HALF_LIFE_DAYS` to a very large number (e.g. `1e9`) or just leave the row weights flat by deleting the `_apply_recency_decay` call inside `_prepare`.
+
+The "Recent form (rolling)" panel in the report is computed from the **pre-decay** (flat-weight) current-season rows so it gives an honest readout of the rolling-window rates independent of the engine multiplier. The panel renders two stacked tables: an **Overall** view (no platoon filter, matching BR / Savant year-to-date totals) and a **Platoon** view (restricted to tonight's matchup hand on both sides, apples-to-apples with the rest of the report). All rows in both tables come from the same flat-weight current-season slice, so `n PA` is a true year-to-date count and the rolling rows are apples-to-apples with the season row above them. The verdict's hot/cold tail is anchored on the overall view.
 
 ### Caching
 
@@ -445,7 +470,34 @@ Cell coloring uses the **same direction in both columns** because the metric sem
 
 Plain-English notes are auto-generated when threshold combinations fire (e.g., GB-heavy pitcher meeting an air-ball hitter).
 
-### 8. Pitch-mix projection
+### 8. Recent form (rolling)
+
+Side-by-side rolling-window snapshot of both players' headline rates for the **current season only**, computed on flat (un-decayed) row weights so the panel is independent of the engine recency multiplier described in [Recency decay](#recency-decay-within-the-current-season). Every row — including `season` — is restricted to current-year rows with `weight = 1`, so the panel is internally consistent and `n PA` is a real PA count rather than the engine's blend-weighted effective number.
+
+The section renders **two stacked tables** with identical schemas:
+
+- **Overall (no platoon filter)** — the player's year-to-date totals against all opposing hands, matching what BR / Savant quote. Use this as the natural "how is this player going right now" read; this is also the view the verdict's hot/cold tail is anchored on.
+- **Platoon (vs `<pitcher hand>`HP / vs `<batter hand>`HB)** — restricted to tonight's matchup hand, so it's apples-to-apples with the rest of the report (which is platoon-filtered everywhere). Useful when a hitter's overall line is misleading because of a strong split (e.g. an LHB on a 14d heater driven entirely by ABs vs RHP).
+
+| Column      | Meaning |
+|-------------|---------|
+| Side        | `Batter` or `Pitcher` |
+| Window      | `season` (current-season-to-date), `last 14d`, `last 30d` |
+| n PA        | Raw current-season PA in the window (no season-blend, no recency decay). The Overall table includes all hands; the Platoon table is restricted to the matchup hand. Rolling rows are collapsed to dashes if `n < RECENT_FORM_MIN_PA` (default `25`); the season row is suppressed entirely if the player has no qualifying data. |
+| xwOBA       | Window's xwOBA, colored against `LG_XWOBA = 0.315` so streaks pop visually |
+| xBA         | Window's xBA (Statcast expected batting average — per-AB, K's count as 0), colored against `LG_XBA = 0.245` |
+| xSLG        | Window's xSLG (Statcast expected slugging — same per-AB convention), colored against `LG_XSLG = 0.405` |
+| K %, BB %, Whiff %, Hard Hit % | Window's same-named rate stat |
+
+Compare each rolling row to the side's `season` row to read the streak. For the **batter**, a higher `last 14d` xwOBA than season = heater; lower = slump. For the **pitcher**, **lower** `last 14d` xwOBA-allowed than season = hot stretch (good for the pitcher); higher = rough patch.
+
+If the 14-day delta exceeds `RECENT_FORM_STREAK_THRESHOLD` (default `0.040` wOBA points) and the window has enough PA, the **Verdict** narrative appends a streak tail like:
+
+> Anthony Kay is in a 14-day hot stretch (-144 pts xwOBA-allowed vs season).
+
+Reliever cases (e.g. closers) typically don't accumulate enough PAs to fill the 14d row, and the panel renders dashes there.
+
+### 9. Pitch-mix projection
 
 The Layer 1 projection broken down by pitch type. One row per pitch in the pitcher's arsenal, sorted by marginal usage.
 
@@ -455,18 +507,55 @@ The Layer 1 projection broken down by pitch type. One row per pitch in the pitch
 - **Marginal Usage %** — count-conditional pitch-mix marginal `p_i` (see [Methodology](#count-conditional-pitch-mix-layer-1))
 - **Batter xwOBA** — batter's xwOBA against this pitch type (platoon-filtered)
 - **Pitcher xwOBA allowed** — pitcher's xwOBA allowed on this pitch (platoon-filtered)
-- **Projected xwOBA** — `additive(batter, pitcher, LG_XWOBA)` for this pitch
+- **Pitcher BB-mix** — the pitcher's induced batted-ball-type distribution on this pitch (e.g. `GB 53% / LD 24% / FB 18% / PU 6%`). Drives the bb_type adjustment described below.
+- **Adj batter xwOBA** — the batter's xwOBA on this pitch shifted to use the pitcher's bb_type mix instead of the batter's own career mix (see [bb_type adjustment](#bb_type-adjustment-anti-gb-overcredit) below)
+- **Adj Δ (pts)** — projected xwOBA change from the bb_type adjustment, in wOBA points. Negative = pitcher edge (their grounder-heavy mix discounts the projection); positive = hitter edge (the pitcher gives up more line drives / fly balls than the batter typically hits on this pitch).
+- **Projected xwOBA** — `additive(adj_batter, pitcher, LG_XWOBA)` for this pitch (uses the bb_type-adjusted batter input)
 - **Projected Whiff %** — `log5(batter, pitcher, LG_WHIFF)` for this pitch
 
-All three xwOBA columns are colored against `LG_XWOBA = 0.315`. A row with three green cells means: the batter is good against this pitch, the pitcher gives up a lot on this pitch, and the projected matchup result is well above league.
+All xwOBA columns are colored against `LG_XWOBA = 0.315`. A row with green Batter / Pitcher / Projected cells means: the batter is good against this pitch, the pitcher gives up a lot on this pitch, and the projected matchup result is well above league. A red Adj Δ cell on top of those means the pitcher's bb_type-inducing tendency is pulling the projection back toward earth.
 
-### 9. Count-state pitch mix
+#### bb_type adjustment (anti-GB-overcredit)
+
+Statcast's `estimated_woba_using_speedangle` already weights each batted ball by its launch angle and exit velocity, so a 100 mph 0° grounder produces a much lower xwOBA than a 100 mph 25° line drive. But the batter's per-pitch xwOBA aggregates over **his** career launch-angle distribution against that pitch type — across many different pitchers. Against a sinker-baller who induces 60% grounders, the batter's actual contact will skew much more toward weak grounders than that career mix, and the unadjusted projection over-credits him.
+
+The fix: for each pitch type, re-weight the batter's BBE-only contact xwOBA using the **pitcher's** induced bb_type distribution on that pitch instead of the batter's own. The shift is `(adj_BBE_xwOBA - own_BBE_xwOBA) * bbe_per_pa`, applied to the batter side of `additive(b, p, lg)`. Same logic is applied to xBA and xSLG so projected Hit% drops in tandem with xwOBA.
+
+Per-bb_type batter means use a sample-size fallback chain:
+
+1. Batter's mean on this (pitch, bb_type) cell, if `>= 10` weighted BBE
+2. Else batter's mean on bb_type b across all pitches, if `>= 25` weighted BBE
+3. Else `LG_*_BY_BBTYPE[b]` (league baseline; see [matchup.py](matchup.py))
+
+Pitcher bb_type shares fall back the same way (per-pitch -> overall -> `LG_BBTYPE_SHARES`). League baselines are calibrated once from the cached parquets via `python scripts/_estimate_league_bbtype_baselines.py` (re-run when the league environment shifts).
+
+The headline projected xwOBA in the **Verdict** section is the adjusted value. When `|Δ| >= 5 pts` the narrative also prints the raw -> adjusted shift so the discount (or boost) is auditable. The sidecar JSON consumed by [roundup.py](roundup.py) carries both `proj_xwoba` (adjusted) and `proj_xwoba_raw` plus `bbtype_adj_pts`.
+
+### 10. Contact-quality projection
+
+A picture of *how* the batter is expected to hit the ball against this pitcher: where his contact will land in Statcast's quality-of-contact buckets, and what his exit-velocity and launch-angle distributions look like under the pitcher's specific pitch-mix. Renders as three side-by-side tables (`Bin / Career % / Projected % / Δ (pp)`) plus a subtitle with the mean-EV / mean-LA shift versus career.
+
+#### What's tabulated
+
+- **Quality of contact (Statcast 6-bin)** — `Weak / Topped / Under / Flare-Burner / Solid / Barrel` (Statcast's `launch_speed_angle` buckets). The `Δ (pp)` column is the projected share minus career share in percentage points; positive values on Barrel / Solid (or negative on Weak / Topped) are good news for the hitter.
+- **Exit velocity** — 8 bins from `<70` to `105+` mph. Watch the 95-100 / 100-105 / 105+ tail to see whether the matchup is pushing the batter's hardest-hit contact up or down.
+- **Launch angle** — 8 bins from `<-10°` to `50°+`. Rows in the 8-32° sweet-spot zone (`10-19°` and `19-26°`) are starred and shaded so it's obvious whether projected contact is moving into or out of the optimal launch envelope.
+
+#### How the projection is built
+
+Career baseline is the batter's full platoon-filtered BBE distribution across his natural pitch usage. The projected distribution re-weights each pitch-specific BBE distribution by the pitcher's **marginal pitch usage** (the same `marginal` that drives the headline xwOBA projection). Pitch types with at least 5 weighted BBE in the batter's history use that pitch-specific distribution; sparser pitches fall back to the batter's overall BBE mix. The mean EV and mean LA in the subtitle are the same usage-weighted average of pitch-level means. No modeling beyond the pitcher's pitch mix — this is purely the batter's empirical contact distribution re-weighted, so it captures pitch-mix interaction (e.g., a high-LA hitter facing more fastballs and fewer sinkers) without making any assumption about the pitcher *moving* the batter's bat path.
+
+#### How to read it together with the headline
+
+If the bb_type adjustment in the Pitch-mix table pulled the projection down by 30 pts but the projected EV/LA distributions look essentially career-shaped, the discount is mostly from the pitcher's BBE-mix rather than from a fundamental contact-quality mismatch. Conversely, if the projected histograms shift hard toward weaker EV bins or out of the sweet-spot LA band, the matchup is unfavorable on contact quality independent of the bb_type bookkeeping.
+
+### 11. Count-state pitch mix
 
 Compact pitch × count matrix from `pit_vs_bat`. Rows are the pitcher's top 6 pitches (by overall usage); columns are the most common counts plus 0-0 / 0-2 / 3-2 always. Cell value is the percentage of pitches in that count that were of that type.
 
 This shows the pitcher's *sequencing* — fastball-heavy in 0-0, splitter-heavy in 1-2, etc. The Layer 1 projection already incorporates this; the table is here for context.
 
-### 10. Shape-aware comps
+### 12. Shape-aware comps
 
 Per arsenal pitch, finds comparable pitches in the batter's history and reports the batter's results against that shape — not just against pitches with the same name.
 
@@ -495,7 +584,7 @@ xwOBA and Whiff% cells are colored vs league baselines. Treat `low` confidence r
 
 The pitch-mix table aggregates "all sliders" — but a sweeper at 84 mph with 11 inches of horizontal break plays nothing like a slider at 89 mph with 4 inches of break. Shape comps cut through pitch-name aliasing. If the pitcher's sweeper has a tiny number of close comps (`low` confidence), the batter has rarely seen anything like it — a real edge for the pitcher even if the pitcher's "Sweeper" line in the pitch-mix table looks ordinary.
 
-### 11. Zone overlay
+### 13. Zone overlay
 
 Where the pitcher attacks with each pitch type, crossed with where the batter does damage.
 
@@ -520,7 +609,7 @@ Zones 11-14 outside the strike zone:
 
 The intersection xwOBA is the most important number here. A pitcher who lives in zones the batter handles poorly (low batter xwOBA there) gets a low intersection — the pitch projects worse than its raw pitch-type xwOBA suggests. This catches the "Skenes lives down-and-away with the splitter where Yordan does nothing" effect.
 
-### 12. Bat-tracking interaction
+### 14. Bat-tracking interaction
 
 Compares the batter's average swing path to the pitcher's average pitch plane.
 
@@ -545,7 +634,7 @@ The per-arsenal-pitch table compares the **batter's attack angle on this specifi
 
 The HTML version colors the cell green for "on plane", mild red for `|gap| > 3°`, and strong red for `|gap| > 6°`.
 
-### 13. First-pitch & two-strike sub-profiles
+### 15. First-pitch & two-strike sub-profiles
 
 Two pitch-count slices that decide a lot of PAs.
 
@@ -562,7 +651,7 @@ Two pitch-count slices that decide a lot of PAs.
 
 If the pitcher's putaway% is high and the batter's two-strike K% is high, expect strikeouts. If the batter's two-strike xwOBA holds up well, they're a tough out even when behind.
 
-### 14. Edge analysis
+### 16. Edge analysis
 
 Two compact tables. For each pitch in the arsenal:
 
@@ -577,7 +666,7 @@ Each row shows the usage %, batter xwOBA, and pitcher xwOBA allowed. The HTML hi
 
 This is a quick-glance answer to "which 3 pitches do I want to see, and which 3 should I lay off?".
 
-### 15. Deception & shape signature
+### 17. Deception & shape signature
 
 **Release-point cluster** — the average distance (in inches) of each pitch's release point from the pitcher's center of mass across all pitch types:
 - `< 1.5 in` → **tight (deceptive)** — every pitch comes from nearly the same slot, the hitter can't tell pitch type from release
@@ -590,7 +679,7 @@ Per-arsenal-pitch table columns:
 
 A handedness verdict (LHB vs RHP — opposite-side platoon advantage to the hitter, etc.) follows the table.
 
-### 16. Defensive alignment
+### 18. Defensive alignment
 
 How the batter does on grounders by infield alignment, and how the pitcher's defense typically aligns:
 
@@ -599,7 +688,7 @@ How the batter does on grounders by infield alignment, and how the pitcher's def
 
 The displayed sample sizes (`Sample (eff GB)`) are weighted GB counts. Single-season samples here are tiny — treat this as a directional adjustment, not a precise number.
 
-### 17. Notes & caveats
+### 19. Notes & caveats
 
 A short footer block listing the methodology assumptions and what is *not* modeled. Always worth re-reading on your first matchup.
 
@@ -735,7 +824,7 @@ Used by Layer 2 (shape comps) and the count-state mix.
 - **Weather, wind, temperature.** Not modeled. Cold-weather April matchups will project ~ same as humid August matchups; in reality HR rates differ ~ 20%.
 - **Catcher framing / umpire zone.** Both materially affect K/BB rates and are not in the data we pull. A great framer adds ~ 3-5% to a pitcher's strike rate; a tight ump compresses BB% and inflates K%.
 - **Pitcher fatigue mid-start beyond TTO.** The TTO curve captures the broad pattern, but doesn't model in-game velocity decline (visible in `release_speed` per inning) or pitch-count fatigue.
-- **Recent form / hot-cold streaks.** A rolling 14-day xwOBA could be added but at this sample size adds more noise than signal.
+- **Recent form / hot-cold streaks.** Modeled. The current-season row weights are decayed exponentially with a 30-day half-life so the projection moves with recent play, and the [Recent form (rolling)](#8-recent-form-rolling) panel surfaces 14-day / 30-day rolling rates next to season for both sides. Rolling samples are still noisy (especially for relievers in the 14d window — those rows usually render dashes), so use the panel as context, not as ground truth.
 - **Batter swing decisions are static.** The projection assumes the batter's per-pitch-type approach against this pitch is the same as their season profile — it doesn't model "the batter knows Skenes throws a splitter and adjusts his approach in 2-strike counts."
 - **Per-PA outcomes are independent.** The Multi-PA outlook treats each PA as an independent draw; in reality there's positive correlation (a pitcher who's locating well in PA 1 likely is in PA 2).
 - **No leaderboard-based percentiles.** To add Statcast-style percentile rankings you'd need to pull `pybaseball.statcast_*_expected_stats(year)` and rank in pandas. Adding this is a small additional layer if useful.

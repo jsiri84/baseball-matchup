@@ -415,7 +415,7 @@ def main(argv=None):
     output_path = Path(output_filename)
     
     try:
-        with open(output_path, 'w', newline='') as csvfile:
+        with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(all_rows)
         

@@ -72,6 +72,27 @@ ROOT = Path(__file__).parent
 # or [1.0, 0.5, 0.25, 0.1] to extend further back.
 SEASON_WEIGHTS = [1.0, 0.5, 0.25]
 
+# Within the CURRENT season, multiply each row's weight by an exponential
+# recency decay so hot/cold streaks actually move the headline. Half-life is
+# the number of days for the multiplier to drop to 0.5x; an April pitch in
+# late September never falls below RECENCY_FLOOR. Prior-season rows are not
+# touched - the SEASON_WEIGHTS cascade already handles cross-year staleness,
+# and any meaningful half-life would zero out 2024/2025 rows.
+RECENCY_HALF_LIFE_DAYS = 30.0
+RECENCY_FLOOR = 0.20
+# Override the "today" reference used by the decay (None -> date.today()).
+# Set in tests to make the math deterministic.
+RECENCY_REFERENCE_DATE: date | None = None
+# Hot/cold streak threshold: if the batter's (or pitcher's) 14-day rolling
+# xwOBA differs from their season blend by more than this many wOBA points,
+# the verdict narrative appends a "heater" / "slump" tail.
+RECENT_FORM_STREAK_THRESHOLD = 0.040
+# Min effective PA in a window before we trust the rolling snapshot (panel
+# renders "-" below this gate, narrative skips the hot/cold note).
+RECENT_FORM_MIN_PA = 25.0
+# Rolling windows surfaced in the Recent form panel.
+RECENT_FORM_WINDOWS = (14, 30)
+
 LG_XWOBA = 0.315
 LG_XBA = 0.245
 LG_XSLG = 0.405
@@ -96,6 +117,36 @@ LG_OUTCOMES = {
 HIT_EVENTS = {"single", "double", "triple", "home_run"}
 NON_AB_EVENTS = {"walk", "hit_by_pitch", "sac_fly", "sac_bunt", "catcher_interf"}
 K_EVENTS = {"strikeout", "strikeout_double_play"}
+
+# League BBE-only contact baselines by Statcast bb_type, calibrated from
+# data/2025/ via scripts/_estimate_league_bbtype_baselines.py. Used by the
+# bb_type-aware per-pitch projection (Layer 1) to re-weight a batter's per-pitch
+# xwOBA/xBA/xSLG using the pitcher's induced bb_type distribution rather than
+# the batter's career launch-angle mix. Re-run the calibration script when the
+# league environment shifts (typically once per offseason).
+BB_TYPES = ("ground_ball", "line_drive", "fly_ball", "popup")
+LG_XWOBA_BY_BBTYPE = {
+    "ground_ball": 0.2312,
+    "line_drive":  0.6462,
+    "fly_ball":    0.4435,
+    "popup":       0.0323,
+}
+LG_XBA_BY_BBTYPE = {
+    "ground_ball": 0.2504,
+    "line_drive":  0.6204,
+    "fly_ball":    0.2585,
+    "popup":       0.0340,
+}
+LG_XSLG_BY_BBTYPE = {
+    "ground_ball": 0.2756,
+    "line_drive":  0.8899,
+    "fly_ball":    0.8421,
+    "popup":       0.0387,
+}
+# Sample-size thresholds for the per-(pitch, bb_type) -> per-bb_type -> league
+# fallback chain when computing bb_type-stratified xwOBA/xBA/xSLG.
+BBTYPE_MIN_BBE_PER_PITCH = 10.0
+BBTYPE_MIN_BBE_OVERALL = 25.0
 
 # Statcast zone grid: 1-9 in-zone, 11-14 out-of-zone quadrants.
 IN_ZONE = list(range(1, 10))
@@ -146,13 +197,21 @@ def _tag(df: pd.DataFrame, weight: float) -> pd.DataFrame:
 
 
 def _per_season_counts(df: pd.DataFrame) -> dict[float, int]:
-    """Map weight -> row count for a blended frame. Missing weights -> 0."""
+    """Map season-weight -> row count for a blended frame. Missing weights -> 0.
+
+    Bucketed by `game_date.year` (not by row weight), so the count survives the
+    recency decay that mutates current-season row weights down from 1.0.
+    """
     out: dict[float, int] = {float(w): 0 for w in SEASON_WEIGHTS}
-    if df.empty or "weight" not in df.columns:
+    if df.empty or "game_date" not in df.columns:
         return out
-    grouped = df.groupby("weight").size()
-    for w, n in grouped.items():
-        out[float(w)] = int(n)
+    gd = df["game_date"]
+    if not pd.api.types.is_datetime64_any_dtype(gd):
+        gd = pd.to_datetime(gd, errors="coerce")
+    years = gd.dt.year
+    base_year = DEFAULT_SEASON
+    for offset, w in enumerate(SEASON_WEIGHTS):
+        out[float(w)] = int(years.eq(base_year - offset).sum())
     return out
 
 
@@ -265,13 +324,16 @@ def w_xwoba(group: pd.DataFrame) -> float:
 
     Uses BIP estimates plus walk/HBP fixed weights, matching the convention in
     batter.py compute_stats.
+
+    Returns NaN (not 0.0) when there are no resolved PAs in the subset, so
+    downstream callers can distinguish "no sample" from "everyone made an out".
     """
     pa_rows = group[group["events"].notna()]
     if pa_rows.empty:
-        return 0.0
+        return float("nan")
     n_pa = float(pa_rows["weight"].sum())
     if not n_pa:
-        return 0.0
+        return float("nan")
 
     bb_w = float(pa_rows.loc[pa_rows["events"] == "walk", "weight"].sum())
     hbp_w = float(pa_rows.loc[pa_rows["events"] == "hit_by_pitch", "weight"].sum())
@@ -283,17 +345,20 @@ def w_xwoba(group: pd.DataFrame) -> float:
 
 
 def w_xba_xslg(group: pd.DataFrame) -> tuple[float, float]:
-    """Return (xBA, xSLG) computed Savant-style: per-AB, K's count as 0."""
+    """Return (xBA, xSLG) computed Savant-style: per-AB, K's count as 0.
+
+    Returns (NaN, NaN) when there are no AB-eligible events in the subset.
+    """
     pa_rows = group[group["events"].notna()]
     if pa_rows.empty:
-        return 0.0, 0.0
+        return float("nan"), float("nan")
 
     so_w = float(pa_rows.loc[pa_rows["events"].isin(K_EVENTS), "weight"].sum())
     bbe_x = group[(group["type"] == "X") & group["estimated_ba_using_speedangle"].notna()]
     bbe_w = float(bbe_x["weight"].sum())
     denom = bbe_w + so_w
     if not denom:
-        return 0.0, 0.0
+        return float("nan"), float("nan")
     xba = float((bbe_x["estimated_ba_using_speedangle"] * bbe_x["weight"]).sum()) / denom
     xslg = float((bbe_x["estimated_slg_using_speedangle"] * bbe_x["weight"]).sum()) / denom
     return xba, xslg
@@ -376,18 +441,82 @@ def _resolve_player(arg: str, fallback_id: int | None = None) -> int:
 
 # ---------- Layer 0: prep -------------------------------------------------
 
+def _recency_reference_date() -> date:
+    """Reference 'today' for recency decay. Honors RECENCY_REFERENCE_DATE override."""
+    return RECENCY_REFERENCE_DATE if RECENCY_REFERENCE_DATE is not None else date.today()
+
+
+def _apply_recency_decay(df: pd.DataFrame, ref_date: date | None = None) -> pd.DataFrame:
+    """Multiply current-season row weights by an exponential recency decay.
+
+    Prior-season rows are untouched. `df` is mutated in place and returned.
+    Idempotent guard: writes a `_recency_applied` attribute on the frame so
+    repeat calls (e.g. when `_prepare` is invoked twice in tests) don't
+    compound the decay.
+    """
+    if df.empty or "weight" not in df.columns or "game_date" not in df.columns:
+        return df
+    if getattr(df, "attrs", {}).get("_recency_applied"):
+        return df
+    if ref_date is None:
+        ref_date = _recency_reference_date()
+    gd = df["game_date"]
+    if not pd.api.types.is_datetime64_any_dtype(gd):
+        gd = pd.to_datetime(gd, errors="coerce")
+    cur_year_mask = gd.dt.year.eq(ref_date.year).fillna(False).to_numpy()
+    if not cur_year_mask.any():
+        df.attrs["_recency_applied"] = True
+        return df
+    days_old = (pd.Timestamp(ref_date) - gd).dt.days.to_numpy(dtype=float)
+    decay = np.power(2.0, -np.maximum(days_old, 0.0) / RECENCY_HALF_LIFE_DAYS)
+    decay = np.clip(decay, RECENCY_FLOOR, 1.0)
+    multiplier = np.where(cur_year_mask, decay, 1.0)
+    df["weight"] = df["weight"].astype(float).to_numpy() * multiplier
+    df.attrs["_recency_applied"] = True
+    return df
+
+
 def _prepare(df: pd.DataFrame) -> pd.DataFrame:
-    """Add count_state, in_zone, tto_bucket columns. Idempotent on the cached frame."""
+    """Add count_state, in_zone, tto_bucket columns and apply the current-season
+    recency decay. Idempotent on the cached frame.
+    """
     if df.empty:
         return df
     df = df.copy()
     df["count_state"] = df["balls"].astype("Int64").astype(str) + "-" + df["strikes"].astype("Int64").astype(str)
     df["in_zone"] = df["zone"].between(1, 9)
     df["tto_bucket"] = df["n_thruorder_pitcher"].clip(upper=3).fillna(1).astype(int)
+    _apply_recency_decay(df)
     return df
 
 
 # ---------- per-pitch-type aggregation ------------------------------------
+
+def _bbtype_breakdown(group: pd.DataFrame) -> dict:
+    """For a (pitch_name) group, return per-bb_type weighted BBE counts and
+    BBE-only contact means used by the bb_type-aware projection.
+
+    Output keys per bb_type b in BB_TYPES: bbe_<b>_w, share_<b>, xwoba_<b>,
+    xba_<b>, xslg_<b>. NaN means insufficient sample for that cell.
+    """
+    out: dict = {}
+    bbe_typed = group[(group["type"] == "X") & group["bb_type"].notna()]
+    n_total = float(bbe_typed["weight"].sum())
+    for b in BB_TYPES:
+        sub = bbe_typed[bbe_typed["bb_type"] == b]
+        n_w = float(sub["weight"].sum())
+        out[f"bbe_{b}_w"] = n_w
+        out[f"share_{b}"] = (n_w / n_total) if n_total > 0 else float("nan")
+        if n_w <= 0:
+            out[f"xwoba_{b}"] = float("nan")
+            out[f"xba_{b}"] = float("nan")
+            out[f"xslg_{b}"] = float("nan")
+            continue
+        out[f"xwoba_{b}"] = w_mean(sub["estimated_woba_using_speedangle"], sub["weight"])
+        out[f"xba_{b}"]   = w_mean(sub["estimated_ba_using_speedangle"],   sub["weight"])
+        out[f"xslg_{b}"]  = w_mean(sub["estimated_slg_using_speedangle"],  sub["weight"])
+    return out
+
 
 def per_pitch_type_table(df: pd.DataFrame) -> pd.DataFrame:
     """Weighted per-pitch-name aggregates used by Layers 1, 8, 10."""
@@ -401,6 +530,12 @@ def per_pitch_type_table(df: pd.DataFrame) -> pd.DataFrame:
             continue
         pa = group[group["events"].notna()]
         n_pa_w = float(pa["weight"].sum())
+        # Drop pitch types so thin we have essentially no PA-ending evidence.
+        # The row would otherwise carry xwOBA == NaN through the projection
+        # ladder; we'd rather fall back to the player's overall numbers in
+        # `project()` for that pitch.
+        if n_pa_w < 1.0:
+            continue
 
         swings = group["description"].isin(SWING_DESCRIPTIONS)
         whiffs = group["description"].isin(WHIFF_DESCRIPTIONS)
@@ -438,6 +573,8 @@ def per_pitch_type_table(df: pd.DataFrame) -> pd.DataFrame:
         rel_x_w = w_mean(group["release_pos_x"], group["weight"])
         rel_z_w = w_mean(group["release_pos_z"], group["weight"])
 
+        bb_cells = _bbtype_breakdown(group)
+
         rows.append({
             "pitch_name": pitch_name,
             "pitch_group": _pitch_group(pitch_name) or "Other",
@@ -453,6 +590,7 @@ def per_pitch_type_table(df: pd.DataFrame) -> pd.DataFrame:
             "velo": velo_w, "ivb": ivb_w, "hb_in": hb_in_w,
             "spin": spin_w, "ext": ext_w, "spin_axis": spin_axis_w,
             "rel_x": rel_x_w, "rel_z": rel_z_w,
+            **bb_cells,
         })
 
     return pd.DataFrame(rows).sort_values("pitches_w", ascending=False).reset_index(drop=True)
@@ -495,6 +633,8 @@ def overall_rates(df: pd.DataFrame) -> dict:
     air = (float((air_mask.astype(float) * bbe_typed["weight"]).sum()) / n_bbet_w
            if n_bbet_w else 0.0)
 
+    overall_bb = _bbtype_breakdown(df)
+
     return {
         "n_pa_w": n_pa_w, "n_pitches_w": float(df["weight"].sum()),
         "K_pct": k, "BB_pct": bb, "HBP_pct": hbp,
@@ -502,7 +642,118 @@ def overall_rates(df: pd.DataFrame) -> dict:
         "HardHit_pct": hh, "Barrel_pct": barrel,
         "GB_pct": gb, "Air_pct": air,
         "xwOBA": w_xwoba(df), "xBA": w_xba_xslg(df)[0], "xSLG": w_xba_xslg(df)[1],
+        # Per-bb_type fallbacks (BBE-only contact means across all pitch types):
+        # bbe_<b>_w, share_<b>, xwoba_<b>, xba_<b>, xslg_<b>.
+        **overall_bb,
     }
+
+
+# ---------- bb_type-aware projection helpers ------------------------------
+
+# League BBE bb_type share mix, calibrated alongside LG_*_BY_BBTYPE. Used as
+# the final fallback when both per-pitch and overall samples are too thin to
+# infer a side's bb_type distribution, and as the reference "own" mix when
+# computing the league's contact xwOBA in the bb_type-aware shift.
+LG_BBTYPE_SHARES = {
+    "ground_ball": 0.420,
+    "line_drive":  0.243,
+    "fly_ball":    0.269,
+    "popup":       0.067,
+}
+LG_BBTYPE_DISPLAY = {
+    "ground_ball": "GB",
+    "line_drive":  "LD",
+    "fly_ball":    "FB",
+    "popup":       "PU",
+}
+
+
+def _bbtype_share_dict(row_or_overall: dict) -> tuple[dict, float]:
+    """Extract per-bb_type BBE share dict and the BBE total weight.
+
+    Empty / missing cells yield 0, total may be 0 if the row has no BBE data.
+    """
+    sh: dict[str, float] = {}
+    total = 0.0
+    for b in BB_TYPES:
+        w = float(row_or_overall.get(f"bbe_{b}_w", 0.0) or 0.0)
+        sh[b] = w
+        total += w
+    if total > 0:
+        return {b: sh[b] / total for b in BB_TYPES}, total
+    return {b: float("nan") for b in BB_TYPES}, 0.0
+
+
+def _resolve_bbtype_shares(pitch_row: dict | None, side_overall: dict) -> dict:
+    """Per-pitch -> overall -> league fallback chain for a side's bb_type mix."""
+    if pitch_row is not None:
+        sh, total = _bbtype_share_dict(pitch_row)
+        if total >= BBTYPE_MIN_BBE_PER_PITCH:
+            return sh
+    sh, total = _bbtype_share_dict(side_overall)
+    if total >= BBTYPE_MIN_BBE_OVERALL:
+        return sh
+    return dict(LG_BBTYPE_SHARES)
+
+
+def _resolve_batter_bbtype_means(pitch_row: dict | None, batter_overall: dict,
+                                  prefix: str, lg_by_bb: dict) -> dict:
+    """Per-pitch -> overall -> league fallback chain for batter per-bb_type means.
+
+    `prefix` is one of 'xwoba', 'xba', 'xslg'. Returns one value per bb_type.
+    """
+    out: dict[str, float] = {}
+    for b in BB_TYPES:
+        if pitch_row is not None:
+            n = float(pitch_row.get(f"bbe_{b}_w", 0.0) or 0.0)
+            v = pitch_row.get(f"{prefix}_{b}", float("nan"))
+            v = float("nan") if v is None else float(v)
+            if n >= BBTYPE_MIN_BBE_PER_PITCH and not math.isnan(v):
+                out[b] = v
+                continue
+        n_ov = float(batter_overall.get(f"bbe_{b}_w", 0.0) or 0.0)
+        v_ov = batter_overall.get(f"{prefix}_{b}", float("nan"))
+        v_ov = float("nan") if v_ov is None else float(v_ov)
+        if n_ov >= BBTYPE_MIN_BBE_OVERALL and not math.isnan(v_ov):
+            out[b] = v_ov
+            continue
+        out[b] = lg_by_bb[b]
+    return out
+
+
+def _bbtype_weighted(means: dict, shares: dict) -> float:
+    """sum_b [shares_b * means_b], skipping NaN cells, renormalizing weights."""
+    num = 0.0
+    tot = 0.0
+    for b in BB_TYPES:
+        m = means.get(b, float("nan"))
+        s = shares.get(b, float("nan"))
+        if math.isnan(m) or math.isnan(s):
+            continue
+        num += s * m
+        tot += s
+    return num / tot if tot > 0 else float("nan")
+
+
+def _bbtype_perpa_shift(pitch_row: dict | None,
+                         batter_overall: dict,
+                         pit_shares: dict,
+                         bat_shares: dict,
+                         bbe_per_pa: float,
+                         prefix: str,
+                         lg_by_bb: dict) -> float:
+    """Per-PA shift for one metric (xwoba/xba/xslg) on one pitch.
+
+    Difference between the batter's BBE-only contact mean weighted by the
+    pitcher's induced bb_type mix vs the batter's own mix, scaled by the
+    BBE-per-PA share. Zero when the two mixes match or sample is too thin.
+    """
+    means = _resolve_batter_bbtype_means(pitch_row, batter_overall, prefix, lg_by_bb)
+    own = _bbtype_weighted(means, bat_shares)
+    adj = _bbtype_weighted(means, pit_shares)
+    if math.isnan(own) or math.isnan(adj):
+        return 0.0
+    return (adj - own) * bbe_per_pa
 
 
 # ---------- Layer 1: count-conditional pitch mix + projection ------------
@@ -522,8 +773,16 @@ def count_conditional_marginal(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFram
         flat = pit.groupby("pitch_name")["weight"].sum()
         return flat / flat.sum()
 
-    # P(c) from batter: weighted share of pitches per count-state.
-    bat_count_w = bat.groupby("count_state")["weight"].sum()
+    # P(c) from batter: weighted share of UNIQUE PAs that reached count-state c.
+    # Previously summed `weight` over every pitch in each count, which
+    # over-weighted late counts (e.g. 2-strike fouls multiply pitches in the
+    # same state). Dedupe by (game_pk, at_bat_number, count_state) so each
+    # state visit counts once per PA.
+    if {"game_pk", "at_bat_number"}.issubset(bat.columns):
+        bat_pa = bat.drop_duplicates(["game_pk", "at_bat_number", "count_state"])
+    else:
+        bat_pa = bat  # fallback if those columns aren't present in the cache
+    bat_count_w = bat_pa.groupby("count_state")["weight"].sum()
     bat_count_p = bat_count_w / bat_count_w.sum()
 
     # P(pitch | c) from pitcher.
@@ -548,66 +807,238 @@ def count_conditional_marginal(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFram
     return marginal / s if s else marginal
 
 
+# ---------- Layer 1b: batter count-state blend (B1) -----------------------
+
+# Min effective PA per count_state before we trust the batter's xwOBA there.
+COUNT_XWOBA_MIN_PA_W = 5.0
+# Damping factor for the count-state shift. The per-pitch metrics already
+# implicitly average the batter's performance across the counts they faced
+# each pitch in, so applying the full count-state delta would partly
+# double-count. 0.5 lets the signal show up in the headline without dominating
+# the per-pitch additive ladder.
+COUNT_XWOBA_BLEND_ALPHA = 0.5
+
+
+def batter_xwoba_by_count(bat_vs_pit: pd.DataFrame,
+                          min_pa_w: float = COUNT_XWOBA_MIN_PA_W) -> dict[str, float]:
+    """Per-count_state batter xwOBA, gated by min PA weight.
+
+    Returns {} when there's no `count_state` column or no count meets the gate.
+    """
+    if bat_vs_pit.empty or "count_state" not in bat_vs_pit.columns:
+        return {}
+    out: dict[str, float] = {}
+    for c, grp in bat_vs_pit.dropna(subset=["count_state"]).groupby("count_state"):
+        pa = grp[grp["events"].notna()]
+        n_pa_w = float(pa["weight"].sum())
+        if n_pa_w < min_pa_w:
+            continue
+        x = w_xwoba(grp)
+        if x is None or (isinstance(x, float) and math.isnan(x)):
+            continue
+        out[str(c)] = float(x)
+    return out
+
+
+def pitcher_count_state_distribution(pit_vs_bat: pd.DataFrame) -> dict[str, float]:
+    """P(count_state) from the pitcher frame, PA-anchored to avoid the same
+    over-weighting bug that A4 fixed in `count_conditional_marginal`.
+    """
+    if pit_vs_bat.empty or "count_state" not in pit_vs_bat.columns:
+        return {}
+    g = pit_vs_bat.dropna(subset=["count_state"])
+    if {"game_pk", "at_bat_number"}.issubset(g.columns):
+        g = g.drop_duplicates(["game_pk", "at_bat_number", "count_state"])
+    w = g.groupby("count_state")["weight"].sum()
+    s = float(w.sum())
+    if s <= 0:
+        return {}
+    return {str(k): float(v) / s for k, v in w.items()}
+
+
 def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
             batter_overall: dict, pitcher_overall: dict,
-            marginal: pd.Series) -> dict:
-    """Headline projection: log5 for rates, additive for xwOBA/xBA/xSLG."""
+            marginal: pd.Series,
+            batter_count_xwoba: dict[str, float] | None = None,
+            pitcher_count_dist: dict[str, float] | None = None) -> dict:
+    """Headline projection: log5 for rates, additive for xwOBA/xBA/xSLG.
+
+    The per-pitch xwOBA/xBA/xSLG additive is computed twice: a `_raw` version
+    using the batter's career per-pitch metrics as-is, and an `_adj` version
+    that shifts the batter's BBE-only contact contribution to use the
+    pitcher's induced bb_type mix on that pitch (sample-size fallback chain:
+    per-pitch -> overall-by-bbtype -> league baseline). The adjusted value is
+    what feeds downstream layers; the raw value + delta are surfaced so the
+    GB-mix discount is auditable in the report.
+    """
     # Per-PA rates: log5 on overall numbers, not per-pitch.
     proj_k = log5(batter_overall["K_pct"], pitcher_overall["K_pct"], LG_K_PCT)
     proj_bb = log5(batter_overall["BB_pct"], pitcher_overall["BB_pct"], LG_BB_PCT)
     proj_hbp = log5(batter_overall["HBP_pct"], pitcher_overall["HBP_pct"], LG_HBP_PCT)
 
+    # Guard against an empty / all-zero marginal: previously the per-pitch loop
+    # silently contributed nothing while K/BB/HBP kept firing, leaving the
+    # report with a 0.000 xwOBA next to plausible-looking rate stats. Fall
+    # back to a flat pitcher pitch usage from `pitcher_pt`; if even that is
+    # missing, synthesize a single sentinel-name row so the loop body's
+    # existing "no per-pitch data -> use overall" branch produces an honest
+    # one-pitch additive projection from the overall numbers.
+    marginal_fallback: str | None = None
+    if marginal is None or len(marginal) == 0 or float(np.nansum(marginal.values)) <= 0:
+        if not pitcher_pt.empty and "pitches_w" in pitcher_pt.columns:
+            w = pitcher_pt.set_index("pitch_name")["pitches_w"].astype(float)
+            s = float(w.sum())
+            if s > 0:
+                marginal = (w / s)
+                marginal_fallback = "flat_pitcher_pt"
+        if marginal_fallback is None:
+            # Sentinel name will miss both bat_idx and pit_idx, triggering the
+            # overall-stats fallback inside the per-pitch loop.
+            marginal = pd.Series({"(no per-pitch data)": 1.0}, dtype=float)
+            marginal_fallback = "overall_only"
+
     # Per-pitch-type contributions, weighted by marginal pitcher usage.
     bat_idx = batter_pt.set_index("pitch_name") if not batter_pt.empty else pd.DataFrame()
     pit_idx = pitcher_pt.set_index("pitch_name") if not pitcher_pt.empty else pd.DataFrame()
 
+    def _row_or_overall(row: dict | None, key: str, overall: dict) -> float:
+        """Pull `key` from a per-pitch row, falling back to `overall[key]` when
+        the per-pitch row is missing OR when its value is NaN/None (e.g. a
+        pitch type with too thin a PA sample for that metric).
+        """
+        if row is not None and key in row:
+            v = row[key]
+            if v is not None and not (isinstance(v, float) and math.isnan(v)):
+                return float(v)
+        return float(overall[key])
+
     proj_xwoba = 0.0
     proj_xba = 0.0
     proj_xslg = 0.0
+    proj_xwoba_raw = 0.0
+    proj_xba_raw = 0.0
+    proj_xslg_raw = 0.0
     proj_whiff = 0.0
     proj_hh = 0.0
     rows = []
     for pitch_name, p in marginal.items():
-        b_x = float(bat_idx.loc[pitch_name, "xwOBA"]) if pitch_name in bat_idx.index else batter_overall["xwOBA"]
-        p_x = float(pit_idx.loc[pitch_name, "xwOBA"]) if pitch_name in pit_idx.index else pitcher_overall["xwOBA"]
-        b_a = float(bat_idx.loc[pitch_name, "xBA"]) if pitch_name in bat_idx.index else batter_overall["xBA"]
-        p_a = float(pit_idx.loc[pitch_name, "xBA"]) if pitch_name in pit_idx.index else pitcher_overall["xBA"]
-        b_s = float(bat_idx.loc[pitch_name, "xSLG"]) if pitch_name in bat_idx.index else batter_overall["xSLG"]
-        p_s = float(pit_idx.loc[pitch_name, "xSLG"]) if pitch_name in pit_idx.index else pitcher_overall["xSLG"]
-        b_w = float(bat_idx.loc[pitch_name, "Whiff_pct"]) if pitch_name in bat_idx.index else batter_overall["Whiff_pct"]
-        p_w = float(pit_idx.loc[pitch_name, "Whiff_pct"]) if pitch_name in pit_idx.index else pitcher_overall["Whiff_pct"]
-        b_h = float(bat_idx.loc[pitch_name, "HardHit_pct"]) if pitch_name in bat_idx.index else batter_overall["HardHit_pct"]
-        p_h = float(pit_idx.loc[pitch_name, "HardHit_pct"]) if pitch_name in pit_idx.index else pitcher_overall["HardHit_pct"]
+        bat_row = bat_idx.loc[pitch_name].to_dict() if pitch_name in bat_idx.index else None
+        pit_row = pit_idx.loc[pitch_name].to_dict() if pitch_name in pit_idx.index else None
 
-        m_xwoba = additive(b_x, p_x, LG_XWOBA)
-        m_xba = additive(b_a, p_a, LG_XBA)
-        m_xslg = additive(b_s, p_s, LG_XSLG)
+        b_x = _row_or_overall(bat_row, "xwOBA", batter_overall)
+        p_x = _row_or_overall(pit_row, "xwOBA", pitcher_overall)
+        b_a = _row_or_overall(bat_row, "xBA",   batter_overall)
+        p_a = _row_or_overall(pit_row, "xBA",   pitcher_overall)
+        b_s = _row_or_overall(bat_row, "xSLG",  batter_overall)
+        p_s = _row_or_overall(pit_row, "xSLG",  pitcher_overall)
+        b_w = _row_or_overall(bat_row, "Whiff_pct",   batter_overall)
+        p_w = _row_or_overall(pit_row, "Whiff_pct",   pitcher_overall)
+        b_h = _row_or_overall(bat_row, "HardHit_pct", batter_overall)
+        p_h = _row_or_overall(pit_row, "HardHit_pct", pitcher_overall)
+
+        # bb_type mix adjustment: shift batter's BBE contribution by the
+        # difference between the pitcher's induced bb_type mix and the
+        # batter's own career mix on this pitch.
+        if bat_row:
+            b_bbe_w = float(bat_row.get("bbe_w", 0.0) or 0.0)
+            b_pa_w = float(bat_row.get("pa_w", 0.0) or 0.0)
+        else:
+            b_pa_w = float(batter_overall.get("n_pa_w", 0.0) or 0.0)
+            b_bbe_w = sum(
+                float(batter_overall.get(f"bbe_{b}_w", 0.0) or 0.0) for b in BB_TYPES
+            )
+        bbe_per_pa = (b_bbe_w / b_pa_w) if b_pa_w > 0 else 0.0
+        pit_shares = _resolve_bbtype_shares(pit_row, pitcher_overall)
+        bat_shares = _resolve_bbtype_shares(bat_row, batter_overall)
+
+        sh_x = _bbtype_perpa_shift(bat_row, batter_overall, pit_shares, bat_shares,
+                                    bbe_per_pa, "xwoba", LG_XWOBA_BY_BBTYPE)
+        sh_a = _bbtype_perpa_shift(bat_row, batter_overall, pit_shares, bat_shares,
+                                    bbe_per_pa, "xba",   LG_XBA_BY_BBTYPE)
+        sh_s = _bbtype_perpa_shift(bat_row, batter_overall, pit_shares, bat_shares,
+                                    bbe_per_pa, "xslg",  LG_XSLG_BY_BBTYPE)
+        b_x_adj = b_x + sh_x
+        b_a_adj = b_a + sh_a
+        b_s_adj = b_s + sh_s
+
+        m_xwoba_raw = additive(b_x, p_x, LG_XWOBA)
+        m_xba_raw   = additive(b_a, p_a, LG_XBA)
+        m_xslg_raw  = additive(b_s, p_s, LG_XSLG)
+        m_xwoba = additive(b_x_adj, p_x, LG_XWOBA)
+        m_xba   = additive(b_a_adj, p_a, LG_XBA)
+        m_xslg  = additive(b_s_adj, p_s, LG_XSLG)
         m_whiff = log5(b_w, p_w, LG_WHIFF)
         m_hh = log5(b_h, p_h, LG_HARD_HIT)
 
         proj_xwoba += p * m_xwoba
-        proj_xba += p * m_xba
-        proj_xslg += p * m_xslg
+        proj_xba   += p * m_xba
+        proj_xslg  += p * m_xslg
+        proj_xwoba_raw += p * m_xwoba_raw
+        proj_xba_raw   += p * m_xba_raw
+        proj_xslg_raw  += p * m_xslg_raw
         proj_whiff += p * m_whiff
-        proj_hh += p * m_hh
+        proj_hh    += p * m_hh
+
+        bb_mix_str = " / ".join(
+            f"{LG_BBTYPE_DISPLAY[b]} {pit_shares[b]*100:.0f}%" for b in BB_TYPES
+        )
 
         rows.append({
             "Pitch": pitch_name,
             "Marginal Usage %": p * 100,
             "Batter xwOBA": b_x,
             "Pitcher xwOBA allowed": p_x,
+            "Pitcher BB-mix": bb_mix_str,
+            "Adj batter xwOBA": b_x_adj,
+            "Adj delta (pts)": (m_xwoba - m_xwoba_raw) * 1000,
             "Projected xwOBA": m_xwoba,
             "Projected Whiff %": m_whiff * 100,
         })
 
     pitch_table = pd.DataFrame(rows).sort_values("Marginal Usage %", ascending=False).reset_index(drop=True)
 
+    # B1: count-state batter blend. Compute the weighted shift in batter
+    # xwOBA induced by the pitcher's count distribution (relative to the
+    # batter's overall xwOBA), damped by COUNT_XWOBA_BLEND_ALPHA so we don't
+    # double-count what the per-pitch numbers already capture. The shift is
+    # added on top of the bb_type-adjusted projection.
+    proj_xwoba_bbtype = proj_xwoba
+    count_shift = 0.0
+    count_breakdown: list[dict] = []
+    if batter_count_xwoba and pitcher_count_dist:
+        bat_x_overall = float(batter_overall.get("xwOBA", 0.0) or 0.0)
+        if not (isinstance(bat_x_overall, float) and math.isnan(bat_x_overall)):
+            common = sorted(set(batter_count_xwoba) & set(pitcher_count_dist))
+            p_renorm = sum(pitcher_count_dist[c] for c in common)
+            if common and p_renorm > 0:
+                for c in common:
+                    p_c = pitcher_count_dist[c] / p_renorm
+                    delta_c = batter_count_xwoba[c] - bat_x_overall
+                    count_breakdown.append({
+                        "count_state": c,
+                        "P(count) [pitcher]": p_c,
+                        "Batter xwOBA": batter_count_xwoba[c],
+                        "Delta vs overall": delta_c,
+                    })
+                count_shift = sum(
+                    (pitcher_count_dist[c] / p_renorm)
+                    * (batter_count_xwoba[c] - bat_x_overall)
+                    for c in common
+                ) * COUNT_XWOBA_BLEND_ALPHA
+    proj_xwoba_final = proj_xwoba_bbtype + count_shift
+
     return {
         "K_pct": proj_k, "BB_pct": proj_bb, "HBP_pct": proj_hbp,
-        "xwOBA": proj_xwoba, "xBA": proj_xba, "xSLG": proj_xslg,
+        "xwOBA": proj_xwoba_final, "xBA": proj_xba, "xSLG": proj_xslg,
+        "xwOBA_raw": proj_xwoba_raw, "xBA_raw": proj_xba_raw, "xSLG_raw": proj_xslg_raw,
+        "xwOBA_bbtype": proj_xwoba_bbtype,
+        "xwOBA_adj_pts": (proj_xwoba_bbtype - proj_xwoba_raw) * 1000,
+        "xwOBA_count_pts": count_shift * 1000,
+        "count_blend": count_breakdown,
         "Whiff_pct": proj_whiff, "HardHit_pct": proj_hh,
         "pitch_table": pitch_table,
         "marginal": marginal,
+        "marginal_fallback": marginal_fallback,
     }
 
 
@@ -688,7 +1119,15 @@ def shape_comps(bat_vs_pit: pd.DataFrame, arsenal: pd.DataFrame) -> pd.DataFrame
 
 def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
                  arsenal: pd.DataFrame) -> pd.DataFrame:
-    """Per arsenal pitch: weighted intersection of attack-share x batter xwOBA per zone."""
+    """Per arsenal pitch: weighted intersection of attack-share x batter xwOBA per zone.
+
+    For zones where the batter has no data, impute the league baseline xwOBA
+    instead of dropping the zone (which used to silently renormalize the
+    intersection over only-covered zones, making two batters with very
+    different coverage maps non-comparable). The new "Coverage %" column
+    reports the share of the pitcher's attack on this pitch that landed in
+    zones where we actually have batter data.
+    """
     if pit_vs_bat.empty or arsenal.empty:
         return pd.DataFrame()
 
@@ -711,16 +1150,18 @@ def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
             continue
         attack_share = attack / total
 
-        # Intersection metric: sum_z (attack_z * batter_xwoba_z), skipping NaN cells.
-        intersect_num = 0.0
-        intersect_w = 0.0
+        # Intersection metric: sum_z (attack_z * batter_xwoba_z). Impute league
+        # xwOBA on zones with no batter data so the score remains comparable
+        # across batters with different coverage maps.
+        intersect = 0.0
+        covered_share = 0.0
         for z in ALL_ZONES:
             xw = bat_zone_xwoba[z]
             if math.isnan(xw):
-                continue
-            intersect_num += attack_share[z] * xw
-            intersect_w += attack_share[z]
-        intersect = intersect_num / intersect_w if intersect_w else float("nan")
+                intersect += attack_share[z] * LG_XWOBA
+            else:
+                intersect += attack_share[z] * xw
+                covered_share += attack_share[z]
 
         in_zone_share = float(attack_share.loc[IN_ZONE].sum())
         # Top 3 zones by attack share for this pitch
@@ -732,6 +1173,7 @@ def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
             "In-zone %": in_zone_share * 100,
             "Top zones": top_zone_str,
             "Intersection xwOBA": intersect,
+            "Coverage %": covered_share * 100,
         })
 
     return pd.DataFrame(rows)
@@ -740,13 +1182,14 @@ def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
 # ---------- Layer 4: TTO curve --------------------------------------------
 
 def tto_curve(pit_vs_bat: pd.DataFrame) -> pd.DataFrame:
-    """xwOBA / Whiff% / HardHit% allowed by times through the order."""
+    """xwOBA / K% / Whiff% / HardHit% allowed by times through the order."""
     if pit_vs_bat.empty:
         return pd.DataFrame()
 
     rows = []
     for tto, group in pit_vs_bat.groupby("tto_bucket"):
-        n_pa_w = float(group[group["events"].notna()]["weight"].sum())
+        pa_rows = group[group["events"].notna()]
+        n_pa_w = float(pa_rows["weight"].sum())
         if n_pa_w == 0:
             continue
         swings = group["description"].isin(SWING_DESCRIPTIONS)
@@ -757,10 +1200,13 @@ def tto_curve(pit_vs_bat: pd.DataFrame) -> pd.DataFrame:
         n_bbe = float(bbe["weight"].sum())
         hh = (float(((bbe["launch_speed"] >= 95).astype(float) * bbe["weight"]).sum()) / n_bbe
               if n_bbe else 0.0)
+        n_k_w = float((pa_rows["events"].isin(K_EVENTS).astype(float) * pa_rows["weight"]).sum())
+        k_pct = n_k_w / n_pa_w if n_pa_w else 0.0
         rows.append({
             "TTO": int(tto),
             "PA (eff)": n_pa_w,
             "xwOBA allowed": w_xwoba(group),
+            "K %": k_pct * 100,
             "Whiff %": whiff * 100,
             "Hard Hit %": hh * 100,
         })
@@ -769,19 +1215,41 @@ def tto_curve(pit_vs_bat: pd.DataFrame) -> pd.DataFrame:
 
 
 def tto_projections(base_proj: dict, tto: pd.DataFrame, pitcher_overall: dict) -> pd.DataFrame:
-    """Blend the headline projection with per-TTO pitcher xwOBA delta."""
+    """Blend the headline projection with per-TTO pitcher deltas across all
+    four metrics (xwOBA, K%, Whiff%, HardHit%). Previously only xwOBA actually
+    moved across TTO rows; K%/Whiff%/HardHit% were copied flat from the
+    headline, which made the report imply rate stats degraded across TTO when
+    they were really pinned to PA1.
+    """
     if tto.empty:
         return pd.DataFrame()
-    base_pit = pitcher_overall["xwOBA"]
+    base_pit_x = float(pitcher_overall.get("xwOBA", 0.0) or 0.0)
+    base_pit_k = float(pitcher_overall.get("K_pct", 0.0) or 0.0) * 100.0
+    base_pit_whiff = float(pitcher_overall.get("Whiff_pct", 0.0) or 0.0) * 100.0
+    base_pit_hh = float(pitcher_overall.get("HardHit_pct", 0.0) or 0.0) * 100.0
+
+    def _shift(headline: float, allowed: float, base: float,
+               lo: float, hi: float) -> float:
+        if allowed is None or (isinstance(allowed, float) and math.isnan(allowed)):
+            return float("nan")
+        return float(np.clip(headline + (float(allowed) - base), lo, hi))
+
     rows = []
     for _, r in tto.iterrows():
-        delta = r["xwOBA allowed"] - base_pit
         rows.append({
             "TTO": int(r["TTO"]),
-            "Projected xwOBA": float(np.clip(base_proj["xwOBA"] + delta, 0.0, 1.0)),
-            "Projected Whiff %": base_proj["Whiff_pct"] * 100,
-            "Projected K %": base_proj["K_pct"] * 100,
-            "Projected Hard Hit %": base_proj["HardHit_pct"] * 100,
+            "Projected xwOBA": _shift(base_proj["xwOBA"],
+                                       r.get("xwOBA allowed"),
+                                       base_pit_x, 0.0, 1.0),
+            "Projected K %": _shift(base_proj["K_pct"] * 100,
+                                     r.get("K %"),
+                                     base_pit_k, 0.0, 100.0),
+            "Projected Whiff %": _shift(base_proj["Whiff_pct"] * 100,
+                                         r.get("Whiff %"),
+                                         base_pit_whiff, 0.0, 100.0),
+            "Projected Hard Hit %": _shift(base_proj["HardHit_pct"] * 100,
+                                            r.get("Hard Hit %"),
+                                            base_pit_hh, 0.0, 100.0),
             "Sample (eff PA)": r["PA (eff)"],
         })
     return pd.DataFrame(rows)
@@ -962,23 +1430,33 @@ def count_subprofiles(bat_vs_pit: pd.DataFrame, pit_vs_bat: pd.DataFrame) -> dic
     ts_bat = bat_vs_pit[bat_vs_pit["strikes"] == 2]
     ts_pit = pit_vs_bat[pit_vs_bat["strikes"] == 2]
     if not ts_bat.empty and not ts_pit.empty:
-        ts_pa = ts_bat[ts_bat["events"].notna()]
-        n_pa_w = float(ts_pa["weight"].sum())
-        k_w = float((ts_pa["events"].isin(K_EVENTS).astype(float) * ts_pa["weight"]).sum())
+        ts_bat_pa = ts_bat[ts_bat["events"].notna()]
+        n_bat_pa_w = float(ts_bat_pa["weight"].sum())
+        bat_k_w = float(
+            (ts_bat_pa["events"].isin(K_EVENTS).astype(float) * ts_bat_pa["weight"]).sum()
+        )
+        # Pitcher putaway% must be computed entirely inside the pitcher frame:
+        # (pitcher's two-strike strikeouts) / (pitcher's two-strike PA-ending events).
+        # Previously this divided the BATTER's K count by the pitcher's PA weight,
+        # which produced unbounded values like 429%.
+        ts_pit_pa = ts_pit[ts_pit["events"].notna()]
+        n_pit_pa_w = float(ts_pit_pa["weight"].sum())
+        pit_k_w = float(
+            (ts_pit_pa["events"].isin(K_EVENTS).astype(float) * ts_pit_pa["weight"]).sum()
+        )
         # Pitcher's two-strike pitch mix
         ts_mix = (ts_pit.dropna(subset=["pitch_name"])
                         .groupby("pitch_name")["weight"].sum())
         ts_mix = (ts_mix / ts_mix.sum() * 100).round(1).sort_values(ascending=False).head(5)
         out["two_strike"] = {
-            "batter_K_pct_2s": k_w / n_pa_w if n_pa_w else 0.0,
+            "batter_K_pct_2s": bat_k_w / n_bat_pa_w if n_bat_pa_w else 0.0,
             "batter_xwoba_2s": w_xwoba(ts_bat),
             "batter_chase_2s": w_rate(ts_bat["description"].isin(SWING_DESCRIPTIONS) & ts_bat["zone"].isin(OOZ_ZONE),
                                        ts_bat["weight"]) /
                                 max(w_rate(ts_bat["zone"].isin(OOZ_ZONE), ts_bat["weight"]), 1e-9)
                                 if w_rate(ts_bat["zone"].isin(OOZ_ZONE), ts_bat["weight"]) else 0.0,
             "pitcher_xwoba_2s": w_xwoba(ts_pit),
-            "pitcher_putaway_pct": k_w / float(ts_pit[ts_pit["events"].notna()]["weight"].sum())
-                                   if float(ts_pit[ts_pit["events"].notna()]["weight"].sum()) else 0.0,
+            "pitcher_putaway_pct": pit_k_w / n_pit_pa_w if n_pit_pa_w else 0.0,
             "two_strike_mix": ts_mix.to_dict(),
         }
     return out
@@ -1008,10 +1486,161 @@ def discipline_notes(b: dict, p: dict) -> list[str]:
     if p["Whiff_pct"] > 0.27 and b["Whiff_pct"] > 0.27:
         notes.append("High-whiff pitcher meets a swing-and-miss prone hitter — strikeout odds elevated.")
     if p["Whiff_pct"] < 0.20 and b["Chase_pct"] < 0.25:
-        notes.append("Contact-pitch-to-contact hitter — likely BIP-heavy AB.")
+        notes.append(
+            "Low-whiff pitcher meets a disciplined hitter — neither side wins the "
+            "swing-and-miss battle, expect strikes in the zone and BIP-heavy ABs."
+        )
     if b["HardHit_pct"] > 0.50 and p["HardHit_pct"] < 0.32:
-        notes.append("Elite hard-hit batter vs contact-suppressing pitcher — wash on quality of contact.")
+        notes.append(
+            "Elite hard-hit batter vs contact-suppressing pitcher — tension on quality "
+            "of contact: leans pitcher in expectation but watch for barrels when the "
+            "batter does square one up."
+        )
     return notes
+
+
+# ---------- Layer 7b: recent form (rolling-window override) ---------------
+
+def recent_form_snapshot(df_pristine: pd.DataFrame, window_days: int | None,
+                         min_pa_w: float = RECENT_FORM_MIN_PA,
+                         ref_date: date | None = None) -> dict | None:
+    """Slice the pristine (pre-recency-decay) blended frame to current-season
+    rows in the last `window_days` and compute headline rates on a flat
+    (weight=1) basis. Pass `window_days=None` for the year-to-date slice.
+
+    Returns None if effective PA falls below `min_pa_w` so the panel can
+    render a clean dash for thin samples (typical for relievers in 14d).
+    """
+    if df_pristine is None or df_pristine.empty or "game_date" not in df_pristine.columns:
+        return None
+    if ref_date is None:
+        ref_date = _recency_reference_date()
+    gd = df_pristine["game_date"]
+    if not pd.api.types.is_datetime64_any_dtype(gd):
+        gd = pd.to_datetime(gd, errors="coerce")
+    year_mask = gd.dt.year.eq(ref_date.year)
+    if window_days is None:
+        mask = year_mask
+    else:
+        cutoff = pd.Timestamp(ref_date) - pd.Timedelta(days=int(window_days))
+        mask = gd.ge(cutoff) & year_mask
+    sub = df_pristine.loc[mask].copy()
+    if sub.empty:
+        return None
+    # Use a flat weight so the snapshot is independent of season cascade and
+    # recency decay; the panel's job is to show raw recent-window rates.
+    sub["weight"] = 1.0
+    pa = sub[sub["events"].notna()]
+    n_pa_w = float(pa["weight"].sum())
+    if n_pa_w < min_pa_w:
+        return None
+    n_k = float((pa["events"].isin(K_EVENTS).astype(float) * pa["weight"]).sum())
+    n_bb = float((pa["events"].eq("walk").astype(float) * pa["weight"]).sum())
+    swings = sub["description"].isin(SWING_DESCRIPTIONS)
+    whiffs = sub["description"].isin(WHIFF_DESCRIPTIONS)
+    n_sw = float((swings.astype(float) * sub["weight"]).sum())
+    whiff = float((whiffs.astype(float) * sub["weight"]).sum()) / n_sw if n_sw else 0.0
+    bbe = sub[(sub["type"] == "X") & sub["launch_speed"].notna()]
+    n_bbe_w = float(bbe["weight"].sum())
+    hh = (float(((bbe["launch_speed"] >= 95).astype(float) * bbe["weight"]).sum()) / n_bbe_w
+          if n_bbe_w else 0.0)
+    xba, xslg = w_xba_xslg(sub)
+    return {
+        "window_days": (int(window_days) if window_days is not None else None),
+        "n_pa": n_pa_w,
+        "xwOBA": w_xwoba(sub),
+        "xBA": xba,
+        "xSLG": xslg,
+        "K_pct": (n_k / n_pa_w) if n_pa_w else 0.0,
+        "BB_pct": (n_bb / n_pa_w) if n_pa_w else 0.0,
+        "Whiff_pct": whiff,
+        "HardHit_pct": hh,
+    }
+
+
+def _build_recent_form_view(bat_pristine: pd.DataFrame, pit_pristine: pd.DataFrame,
+                            windows: tuple[int, ...],
+                            ref_date: date | None) -> dict:
+    """Compute one side of the recent-form panel (either overall or platoon)."""
+    out = {
+        "batter": {"season": recent_form_snapshot(bat_pristine, window_days=None,
+                                                    min_pa_w=1.0, ref_date=ref_date)},
+        "pitcher": {"season": recent_form_snapshot(pit_pristine, window_days=None,
+                                                     min_pa_w=1.0, ref_date=ref_date)},
+    }
+    for w in windows:
+        out["batter"][f"d{int(w)}"] = recent_form_snapshot(bat_pristine, w, ref_date=ref_date)
+        out["pitcher"][f"d{int(w)}"] = recent_form_snapshot(pit_pristine, w, ref_date=ref_date)
+    return out
+
+
+def recent_form_panel(bat_pristine: pd.DataFrame, pit_pristine: pd.DataFrame,
+                      batter_meta: dict | None = None,
+                      pitcher_meta: dict | None = None,
+                      windows: tuple[int, ...] = RECENT_FORM_WINDOWS,
+                      ref_date: date | None = None) -> dict:
+    """Build the side-by-side recent-form readout for the report.
+
+    Returns two parallel views over current-season, flat-weight, pre-decay rows:
+
+    * `overall`  — no platoon filter; matches BR / Savant year-to-date totals
+                   and is the natural read on "how is this player going right now".
+    * `platoon`  — restricted to the matchup hand (batter vs `pitcher_meta.p_throws`,
+                   pitcher vs `batter_meta.stand`), so it's apples-to-apples with
+                   the rest of the report.
+
+    Both views share the same row schema (season + each rolling window).
+    """
+    overall = _build_recent_form_view(bat_pristine, pit_pristine, windows, ref_date)
+
+    p_throws = (pitcher_meta or {}).get("p_throws")
+    stand = (batter_meta or {}).get("stand")
+    bat_pl = (bat_pristine[bat_pristine["p_throws"] == p_throws].copy()
+              if p_throws and "p_throws" in bat_pristine.columns else bat_pristine.iloc[0:0].copy())
+    pit_pl = (pit_pristine[pit_pristine["stand"] == stand].copy()
+              if stand and "stand" in pit_pristine.columns else pit_pristine.iloc[0:0].copy())
+    platoon = _build_recent_form_view(bat_pl, pit_pl, windows, ref_date)
+
+    return {
+        "windows": tuple(int(w) for w in windows),
+        "overall": overall,
+        "platoon": platoon,
+        "platoon_labels": {
+            "batter": (f"vs {p_throws}HP" if p_throws else None),
+            "pitcher": (f"vs {stand}HB" if stand else None),
+        },
+    }
+
+
+def recent_form_summary(form: dict | None) -> dict | None:
+    """Distill the panel's overall (un-platoon-filtered) view down to the
+    deltas the narrative needs. Anchored on the overall view because it's the
+    natural "how is this player going right now" read.
+    """
+    if not form:
+        return None
+    overall = form.get("overall") or form  # tolerate legacy shape
+    def _delta(side_key: str) -> float | None:
+        side = overall.get(side_key) or {}
+        season = (side.get("season") or {}).get("xwOBA")
+        snap = side.get("d14")
+        if not snap or season is None or math.isnan(season) or math.isnan(snap.get("xwOBA", float("nan"))):
+            return None
+        return float(snap["xwOBA"]) - float(season)
+    bat = _delta("batter")
+    pit = _delta("pitcher")
+    return {
+        "batter_d14_xwoba": (overall.get("batter") or {}).get("d14", {}).get("xwOBA")
+            if (overall.get("batter") or {}).get("d14") else None,
+        "pitcher_d14_xwoba": (overall.get("pitcher") or {}).get("d14", {}).get("xwOBA")
+            if (overall.get("pitcher") or {}).get("d14") else None,
+        "batter_d14_xwoba_delta": bat,
+        "pitcher_d14_xwoba_delta": pit,
+        "batter_d14_n_pa": (overall.get("batter") or {}).get("d14", {}).get("n_pa")
+            if (overall.get("batter") or {}).get("d14") else None,
+        "pitcher_d14_n_pa": (overall.get("pitcher") or {}).get("d14", {}).get("n_pa")
+            if (overall.get("pitcher") or {}).get("d14") else None,
+    }
 
 
 # ---------- Layer 8: edge analysis ----------------------------------------
@@ -1028,14 +1657,21 @@ def edge_analysis(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
     for pitch_name, p in marginal.items():
         b_x = float(bat_idx.loc[pitch_name, "xwOBA"]) if pitch_name in bat_idx.index else float("nan")
         pi_x = float(pit_idx.loc[pitch_name, "xwOBA"]) if pitch_name in pit_idx.index else float("nan")
-        if math.isnan(b_x):
+        if math.isnan(b_x) or math.isnan(pi_x):
             continue
-        edge = (b_x - LG_XWOBA)        # positive = batter does well vs this pitch
+        # Use the additive(b, p, lg) projection's distance from league as the edge
+        # metric. Positive = the per-pitch matchup pulls projection above league
+        # (batter edge); negative = pulls it below (pitcher edge). Weight by usage
+        # so a low-usage pitch with a huge edge doesn't outrank a primary pitch.
+        proj_x = additive(b_x, pi_x, LG_XWOBA)
+        edge = proj_x - LG_XWOBA
         rows.append({
             "Pitch": pitch_name,
             "Usage %": p * 100,
             "Batter xwOBA": b_x,
             "Pitcher xwOBA allowed": pi_x,
+            "Projected xwOBA": proj_x,
+            "Edge (pts)": edge * 1000,
             "edge_score": p * edge,
         })
 
@@ -1043,8 +1679,14 @@ def edge_analysis(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
     if df.empty:
         return df, df
 
-    bat_fav = df.sort_values("edge_score", ascending=False).head(3).reset_index(drop=True)
-    pit_fav = df.sort_values("edge_score", ascending=True).head(3).reset_index(drop=True)
+    # Sign-filter each table so we don't manufacture an "edge" out of pitches
+    # that are actually neutral or favor the other side.
+    bat_fav = (df[df["edge_score"] > 0]
+               .sort_values("edge_score", ascending=False)
+               .head(3).reset_index(drop=True))
+    pit_fav = (df[df["edge_score"] < 0]
+               .sort_values("edge_score", ascending=True)
+               .head(3).reset_index(drop=True))
     return bat_fav, pit_fav
 
 
@@ -1085,6 +1727,183 @@ def handedness_verdict(stand: str, p_throws: str) -> str:
 
 
 # ---------- Layer 10: per-PA outcome distribution -------------------------
+
+# ---------- Layer 11: contact-quality projection -------------------------
+
+# Statcast quality-of-contact buckets (`launch_speed_angle`, 1-6).
+QOC_LABELS = {
+    1: "Weak",
+    2: "Topped",
+    3: "Under",
+    4: "Flare/Burner",
+    5: "Solid",
+    6: "Barrel",
+}
+
+# Exit-velocity histogram bin edges (mph).
+EV_BINS = [-float("inf"), 70.0, 80.0, 87.5, 92.5, 95.0, 100.0, 105.0, float("inf")]
+EV_LABELS = ["<70", "70-80", "80-87", "87-92", "92-95", "95-100", "100-105", "105+"]
+
+# Launch-angle histogram bin edges (degrees).
+LA_BINS = [-float("inf"), -10.0, 0.0, 10.0, 19.0, 26.0, 35.0, 50.0, float("inf")]
+LA_LABELS = ["<-10\u00b0", "-10-0\u00b0", "0-10\u00b0", "10-19\u00b0",
+             "19-26\u00b0", "26-35\u00b0", "35-50\u00b0", "50\u00b0+"]
+# Indices in LA_BINS marked as the launch-angle "barrel zone" in the report.
+# We highlight the 10-19 and 19-26 bins (indices 3 and 4); these are the
+# narrowest standard cut that lines up cleanly with our bin edges. Statcast's
+# broader 8-32 deg "sweet spot" leaks into bins 2 and 5, but partially marking
+# them would visually exaggerate coverage, so the copy below names the
+# 10-26 deg highlighted range explicitly.
+LA_SWEET_SPOT_BINS = (3, 4)
+
+
+def _weighted_hist(values: pd.Series, weights: pd.Series,
+                   bins: list[float]) -> list[float]:
+    """Normalized weighted histogram of `values` over `bins`. Skips NaNs.
+    Returns a list of bin probabilities summing to 1 (or all-zeros if empty).
+    """
+    if values is None or len(values) == 0:
+        return [0.0] * (len(bins) - 1)
+    s = pd.to_numeric(values, errors="coerce")
+    mask = s.notna()
+    if not mask.any():
+        return [0.0] * (len(bins) - 1)
+    v = s[mask].to_numpy()
+    w = pd.to_numeric(weights, errors="coerce").reindex(s.index)[mask].fillna(0.0).to_numpy()
+    counts, _ = np.histogram(v, bins=bins, weights=w)
+    total = float(counts.sum())
+    if total <= 0:
+        return [0.0] * (len(bins) - 1)
+    return [float(c) / total for c in counts]
+
+
+def _qoc_dist(bbe: pd.DataFrame) -> dict[int, float]:
+    """P(launch_speed_angle bucket) over weighted BBEs (renormalized over
+    rows that have a non-null bucket value)."""
+    out = {q: 0.0 for q in QOC_LABELS}
+    if bbe.empty or "launch_speed_angle" not in bbe.columns:
+        return out
+    sub = bbe[bbe["launch_speed_angle"].notna()]
+    total = float(sub["weight"].sum()) if "weight" in sub.columns else float(len(sub))
+    if total <= 0:
+        return out
+    weights = sub["weight"] if "weight" in sub.columns else pd.Series(1.0, index=sub.index)
+    for q in QOC_LABELS:
+        m = (sub["launch_speed_angle"] == q).astype(float)
+        out[q] = float((m * weights).sum()) / total
+    return out
+
+
+def contact_quality_projection(batter_blended: pd.DataFrame,
+                                marginal: pd.Series) -> dict:
+    """Project the batter's BBE distribution under the pitcher's pitch mix.
+
+    Returns a dict with the projected and career baseline distributions for
+    the Statcast quality-of-contact 6-bin classification, the EV histogram,
+    and the LA histogram, plus weighted-mean EV/LA for the section subtitle.
+
+    The career baseline is the batter's full platoon-filtered BBE
+    distribution. The projected distribution re-weights each pitch-specific
+    sub-distribution by the pitcher's marginal pitch usage (same `marginal`
+    that drives the headline xwOBA projection); pitch types where the batter
+    has fewer than 5 weighted BBE fall back to the batter's overall BBE
+    distribution and the projection is renormalized over the used weight.
+    """
+    empty = {
+        "available": False,
+        "n_career_bbe": 0.0,
+        "qoc_proj": {q: 0.0 for q in QOC_LABELS},
+        "qoc_career": {q: 0.0 for q in QOC_LABELS},
+        "ev_proj": [0.0] * (len(EV_BINS) - 1),
+        "ev_career": [0.0] * (len(EV_BINS) - 1),
+        "la_proj": [0.0] * (len(LA_BINS) - 1),
+        "la_career": [0.0] * (len(LA_BINS) - 1),
+        "mean_ev_career": float("nan"), "mean_ev_proj": float("nan"),
+        "mean_la_career": float("nan"), "mean_la_proj": float("nan"),
+    }
+    if batter_blended is None or batter_blended.empty:
+        return empty
+    if "type" not in batter_blended.columns or "launch_speed" not in batter_blended.columns:
+        return empty
+
+    bbe = batter_blended[(batter_blended["type"] == "X")
+                         & batter_blended["launch_speed"].notna()].copy()
+    if bbe.empty:
+        return empty
+    if "weight" not in bbe.columns:
+        bbe["weight"] = 1.0
+
+    # Career baseline (across the batter's natural pitch usage).
+    qoc_career = _qoc_dist(bbe)
+    ev_career = _weighted_hist(bbe["launch_speed"], bbe["weight"], EV_BINS)
+    la_career = _weighted_hist(bbe["launch_angle"], bbe["weight"], LA_BINS)
+
+    n_career_bbe = float(bbe["weight"].sum())
+    mean_ev_career = w_mean(bbe["launch_speed"], bbe["weight"])
+    mean_la_career = w_mean(bbe["launch_angle"], bbe["weight"])
+
+    # Projected distribution under the pitcher's marginal pitch usage.
+    qoc_proj = {q: 0.0 for q in QOC_LABELS}
+    ev_proj = [0.0] * (len(EV_BINS) - 1)
+    la_proj = [0.0] * (len(LA_BINS) - 1)
+    mean_ev_proj_acc = 0.0
+    mean_la_proj_acc = 0.0
+    used_weight = 0.0
+
+    if marginal is None or len(marginal) == 0:
+        # No pitcher marginal to reweight by; projected == career.
+        return {
+            "available": True,
+            "n_career_bbe": n_career_bbe,
+            "qoc_proj": dict(qoc_career), "qoc_career": qoc_career,
+            "ev_proj": list(ev_career), "ev_career": ev_career,
+            "la_proj": list(la_career), "la_career": la_career,
+            "mean_ev_career": mean_ev_career, "mean_ev_proj": mean_ev_career,
+            "mean_la_career": mean_la_career, "mean_la_proj": mean_la_career,
+        }
+
+    bbe_by_pitch = dict(tuple(bbe.groupby("pitch_name"))) if "pitch_name" in bbe.columns else {}
+    for pitch_name, p in marginal.items():
+        sub = bbe_by_pitch.get(pitch_name)
+        if sub is None or float(sub["weight"].sum()) < 5.0:
+            sub_use = bbe  # Fall back to overall BBE distribution.
+        else:
+            sub_use = sub
+
+        q_p = _qoc_dist(sub_use)
+        e_p = _weighted_hist(sub_use["launch_speed"], sub_use["weight"], EV_BINS)
+        l_p = _weighted_hist(sub_use["launch_angle"], sub_use["weight"], LA_BINS)
+        for q in QOC_LABELS:
+            qoc_proj[q] += float(p) * q_p[q]
+        for i in range(len(ev_proj)):
+            ev_proj[i] += float(p) * e_p[i]
+        for i in range(len(la_proj)):
+            la_proj[i] += float(p) * l_p[i]
+        mean_ev_proj_acc += float(p) * w_mean(sub_use["launch_speed"], sub_use["weight"])
+        mean_la_proj_acc += float(p) * w_mean(sub_use["launch_angle"], sub_use["weight"])
+        used_weight += float(p)
+
+    if used_weight > 0:
+        for q in QOC_LABELS:
+            qoc_proj[q] /= used_weight
+        ev_proj = [v / used_weight for v in ev_proj]
+        la_proj = [v / used_weight for v in la_proj]
+        mean_ev_proj = mean_ev_proj_acc / used_weight
+        mean_la_proj = mean_la_proj_acc / used_weight
+    else:
+        mean_ev_proj = mean_ev_career
+        mean_la_proj = mean_la_career
+
+    return {
+        "available": True,
+        "n_career_bbe": n_career_bbe,
+        "qoc_proj": qoc_proj, "qoc_career": qoc_career,
+        "ev_proj": ev_proj, "ev_career": ev_career,
+        "la_proj": la_proj, "la_career": la_career,
+        "mean_ev_career": mean_ev_career, "mean_ev_proj": mean_ev_proj,
+        "mean_la_career": mean_la_career, "mean_la_proj": mean_la_proj,
+    }
+
 
 def outcome_distribution(proj: dict, batter_pt: pd.DataFrame,
                           marginal: pd.Series) -> pd.DataFrame:
@@ -1152,12 +1971,23 @@ def outcome_distribution(proj: dict, batter_pt: pd.DataFrame,
 
     target = proj["xwOBA"]
     woba0 = _reconstructed_woba(H1, H2, H3, HR)
-    if abs(woba0 - target) > 0.005 and (H1 + H2 + H3 + HR) > 0:
+    # Skip reconciliation when the headline projection itself is unusable
+    # (NaN can now arrive here via w_xwoba on tiny samples).
+    target_ok = target is not None and not (isinstance(target, float) and math.isnan(target))
+    if target_ok and abs(woba0 - target) > 0.005 and (H1 + H2 + H3 + HR) > 0:
         contact_woba = WOBA_1B * H1 + WOBA_2B * H2 + WOBA_3B * H3 + WOBA_HR * HR
         residual = target - (WOBA_BB * BB + WOBA_HBP * HBP)
-        if contact_woba > 0 and residual > 0:
-            scale = residual / contact_woba
-            scale = float(np.clip(scale, 0.5, 2.0))
+        if contact_woba > 0:
+            if residual > 0:
+                # Scale hits up or down toward the residual; clamp the
+                # multiplier so a near-zero contact_woba can't blow up.
+                scale = residual / contact_woba
+                scale = float(np.clip(scale, 0.5, 2.0))
+            else:
+                # BB + HBP already account for (or overshoot) the entire
+                # projection. Squeeze hits toward zero rather than leaving the
+                # original (drifted) values in place.
+                scale = 0.5
             H1 *= scale
             H2 *= scale
             H3 *= scale
@@ -1277,7 +2107,8 @@ def verdict(proj_xwoba: float, lg: float, pit_baseline: float,
 
 def narrative(batter_meta: dict, pitcher_meta: dict, proj: dict,
               v: dict, bat_fav: pd.DataFrame, pit_fav: pd.DataFrame,
-              handed: str) -> str:
+              handed: str,
+              recent_summary: dict | None = None) -> str:
     """Generate a 1-2 sentence summary."""
     proj_x = proj["xwOBA"]
 
@@ -1298,6 +2129,57 @@ def narrative(batter_meta: dict, pitcher_meta: dict, proj: dict,
 
     summary += (f"Projection: {proj_x:.3f} xwOBA "
                 f"({lg_diff:+.0f} pts vs league, {edge.split(': ')[-1] if ':' in edge else edge}).")
+
+    adj_pts = float(proj.get("xwOBA_adj_pts", 0.0) or 0.0)
+    raw_x = float(proj.get("xwOBA_raw", proj_x) or proj_x)
+    bbtype_x = float(proj.get("xwOBA_bbtype", proj_x) or proj_x)
+    if abs(adj_pts) >= 5:
+        direction = (
+            "skews toward weaker contact" if adj_pts < 0
+            else "skews toward stronger contact"
+        )
+        summary += (
+            f" GB-mix adjustment: {adj_pts:+.0f} pts "
+            f"(raw {raw_x:.3f} -> adj {bbtype_x:.3f}); pitcher's induced bb_type mix "
+            f"{direction} than the batter's career mix would suggest."
+        )
+
+    count_pts = float(proj.get("xwOBA_count_pts", 0.0) or 0.0)
+    if abs(count_pts) >= 5:
+        cdir = (
+            "pushes the batter into worse counts" if count_pts < 0
+            else "pushes the batter into more favorable counts"
+        )
+        summary += (
+            f" Count-state blend: {count_pts:+.0f} pts (bb_type-adj {bbtype_x:.3f} -> "
+            f"final {proj_x:.3f}); pitcher's count distribution {cdir} relative to "
+            f"how the batter performs across counts."
+        )
+
+    fb = proj.get("marginal_fallback")
+    if fb == "flat_pitcher_pt":
+        summary += (" NOTE: count-conditional pitch mix unavailable, used pitcher's "
+                    "flat per-pitch usage instead — treat headline as low confidence.")
+    elif fb == "overall_only":
+        summary += (" NOTE: no per-pitch arsenal data, projection reduced to a single "
+                    "overall additive — treat as low confidence.")
+
+    if recent_summary:
+        bat_d = recent_summary.get("batter_d14_xwoba_delta")
+        if bat_d is not None and abs(bat_d) >= RECENT_FORM_STREAK_THRESHOLD:
+            tag = "heater" if bat_d > 0 else "slump"
+            summary += (
+                f" {batter_meta['name']} is on a 14-day {tag} "
+                f"({bat_d*1000:+.0f} pts vs season)."
+            )
+        pit_d = recent_summary.get("pitcher_d14_xwoba_delta")
+        if pit_d is not None and abs(pit_d) >= RECENT_FORM_STREAK_THRESHOLD:
+            # For pitchers, lower xwOBA-allowed = better; flip the wording.
+            tag = "rough patch" if pit_d > 0 else "hot stretch"
+            summary += (
+                f" {pitcher_meta['name']} is in a 14-day {tag} "
+                f"({pit_d*1000:+.0f} pts xwOBA-allowed vs season)."
+            )
 
     if handed:
         summary += f" {handed}"
@@ -1343,6 +2225,8 @@ def to_markdown(
     bat_fav: pd.DataFrame, pit_fav: pd.DataFrame,
     decep: dict, handed_note: str,
     align: dict,
+    contact_quality: dict | None = None,
+    recent_form: dict | None = None,
     body_only: bool = False,
 ) -> str:
     lines: list[str] = []
@@ -1458,21 +2342,160 @@ def to_markdown(
             lines.append(f"- {n}")
     lines.append("")
 
+    # ----- Recent form -----
+    if recent_form:
+        windows = recent_form.get("windows", RECENT_FORM_WINDOWS)
+        platoon_labels = recent_form.get("platoon_labels", {})
+        lines.append("## Recent form (rolling)")
+        lines.append("")
+
+        def _row_md(side_label: str, snap: dict | None, is_season: bool = False) -> str:
+            window_label = "season" if is_season else (
+                f"last {snap['window_days']}d" if snap else f"last \u2014d"
+            )
+            if snap is None:
+                return (
+                    f"| {side_label} | {window_label} | \u2014 | \u2014 | \u2014 | \u2014 "
+                    "| \u2014 | \u2014 | \u2014 | \u2014 |"
+                )
+            n_pa = snap.get("n_pa", 0)
+            return (
+                f"| {side_label} | {window_label} | {n_pa:.0f} | "
+                f"{fmt3(snap['xwOBA'])} | {fmt3(snap.get('xBA'))} | "
+                f"{fmt3(snap.get('xSLG'))} | "
+                f"{snap['K_pct']*100:.1f} | {snap['BB_pct']*100:.1f} | "
+                f"{snap['Whiff_pct']*100:.1f} | {snap['HardHit_pct']*100:.1f} |"
+            )
+
+        def _emit_table(view: dict, sub_heading: str) -> None:
+            lines.append(f"#### {sub_heading}")
+            lines.append("")
+            lines.append("| Side | Window | n PA | xwOBA | xBA | xSLG | K% | BB% | Whiff% | Hard Hit% |")
+            lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|")
+            for side_key, side_label in (("batter", "Batter"), ("pitcher", "Pitcher")):
+                side = view.get(side_key, {}) or {}
+                lines.append(_row_md(side_label, side.get("season"), is_season=True))
+                for w in windows:
+                    lines.append(_row_md(side_label, side.get(f"d{int(w)}")))
+            lines.append("")
+
+        overall_view = recent_form.get("overall") or {
+            "batter": {k: recent_form.get("batter", {}).get(k) for k in ("season",) + tuple(f"d{int(w)}" for w in windows)},
+            "pitcher": {k: recent_form.get("pitcher", {}).get(k) for k in ("season",) + tuple(f"d{int(w)}" for w in windows)},
+        }
+        _emit_table(overall_view, "Overall (no platoon filter)")
+
+        platoon_view = recent_form.get("platoon")
+        if platoon_view:
+            bat_pl = platoon_labels.get("batter") or "vs same hand"
+            pit_pl = platoon_labels.get("pitcher") or "vs same hand"
+            _emit_table(platoon_view, f"Platoon — Batter {bat_pl}, Pitcher {pit_pl}")
+
+        lines.append(
+            "_Both tables use raw current-season PA (no season-blend, no recency "
+            "decay). **Overall** is un-platoon-filtered and matches the player's "
+            "year-to-date totals on BR / Savant — the natural \"how is this player "
+            "going right now\" read. **Platoon** restricts to tonight's matchup hand, "
+            "so it's apples-to-apples with the rest of the report (which is also "
+            f"platoon-filtered). Rolling rows are shown only when n PA >= {RECENT_FORM_MIN_PA:.0f}; "
+            "the season row is suppressed if there's no qualifying data._"
+        )
+        lines.append("")
+
     # ----- Pitch-mix projection -----
     lines.append("## Pitch-mix projection")
     lines.append("")
     if pitch_table.empty:
         lines.append("_no arsenal data_")
     else:
-        lines.append("| Pitch | Marginal Usage % | Batter xwOBA | Pitcher xwOBA allowed | Projected xwOBA | Projected Whiff % |")
-        lines.append("|---|---:|---:|---:|---:|---:|")
+        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | Pitcher BB-mix | Adj batter xwOBA | Adj Δ (pts) | Projected xwOBA | Projected Whiff % |")
+        lines.append("|---|---:|---:|---:|:---|---:|---:|---:|---:|")
         for _, r in pitch_table.iterrows():
+            adj_pts = float(r.get("Adj delta (pts)", 0.0))
             lines.append(
                 f"| {r['Pitch']} | {r['Marginal Usage %']:.1f} | "
                 f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} | "
+                f"{r.get('Pitcher BB-mix', '')} | "
+                f"{fmt3(r.get('Adj batter xwOBA', r['Batter xwOBA']))} | "
+                f"{adj_pts:+.0f} | "
                 f"{fmt3(r['Projected xwOBA'])} | {r['Projected Whiff %']:.1f} |"
             )
+        lines.append("")
+        lines.append(
+            "_Adj Δ (pts) is the bb_type mix discount applied to the batter's per-pitch "
+            "xwOBA: when the pitcher's induced bb_type mix on a pitch is more grounder-heavy "
+            "than the batter's career mix on that pitch, the per-PA xwOBA contribution from "
+            "that pitch is shifted down by the equivalent amount. Negative values favor the "
+            "pitcher; positive values mean the pitcher's air-ball-heavy mix actually plays into "
+            "the hitter's strengths._"
+        )
     lines.append("")
+
+    # ----- Contact-quality projection -----
+    if contact_quality and contact_quality.get("available"):
+        cq = contact_quality
+        lines.append("## Contact-quality projection")
+        lines.append("")
+        n_bbe = cq.get("n_career_bbe", 0.0)
+        mev_c = cq.get("mean_ev_career", float("nan"))
+        mev_p = cq.get("mean_ev_proj", float("nan"))
+        mla_c = cq.get("mean_la_career", float("nan"))
+        mla_p = cq.get("mean_la_proj", float("nan"))
+        sub_bits = [f"weighted from **{n_bbe:.0f}** career BBE"]
+        if not math.isnan(mev_c):
+            d_ev = mev_p - mev_c
+            sub_bits.append(
+                f"mean EV career **{mev_c:.1f}** \u2192 proj **{mev_p:.1f}** "
+                f"({d_ev:+.1f} mph)"
+            )
+        if not math.isnan(mla_c):
+            d_la = mla_p - mla_c
+            sub_bits.append(
+                f"mean LA career **{mla_c:.1f}\u00b0** \u2192 proj **{mla_p:.1f}\u00b0** "
+                f"({d_la:+.1f}\u00b0)"
+            )
+        lines.append("_" + " · ".join(sub_bits) + "_")
+        lines.append("")
+
+        lines.append("**Quality of contact (Statcast 6-bin)**")
+        lines.append("")
+        lines.append("| Bucket | Career % | Projected % | \u0394 (pp) |")
+        lines.append("|---|---:|---:|---:|")
+        for q in sorted(QOC_LABELS):
+            c = cq["qoc_career"].get(q, 0.0) * 100
+            p = cq["qoc_proj"].get(q, 0.0) * 100
+            lines.append(
+                f"| {QOC_LABELS[q]} | {c:.1f} | {p:.1f} | {p-c:+.1f} |"
+            )
+        lines.append("")
+
+        lines.append("**Exit velocity (mph)**")
+        lines.append("")
+        lines.append("| Bin | Career % | Projected % | \u0394 (pp) |")
+        lines.append("|---|---:|---:|---:|")
+        for lab, c, p in zip(EV_LABELS, cq["ev_career"], cq["ev_proj"]):
+            c100, p100 = c * 100, p * 100
+            lines.append(f"| {lab} | {c100:.1f} | {p100:.1f} | {p100-c100:+.1f} |")
+        lines.append("")
+
+        lines.append("**Launch angle (deg)**")
+        lines.append("")
+        lines.append("| Bin | Career % | Projected % | \u0394 (pp) |")
+        lines.append("|---|---:|---:|---:|")
+        for i, (lab, c, p) in enumerate(zip(LA_LABELS, cq["la_career"], cq["la_proj"])):
+            c100, p100 = c * 100, p * 100
+            star = " \u2605" if i in LA_SWEET_SPOT_BINS else ""
+            lines.append(f"| {lab}{star} | {c100:.1f} | {p100:.1f} | {p100-c100:+.1f} |")
+        lines.append("")
+        lines.append(
+            "_Career = batter's full platoon-filtered BBE distribution. Projected re-weights "
+            "each pitch-specific contact distribution by the pitcher's marginal pitch usage; "
+            "pitches with <5 weighted BBE fall back to the batter's overall mix. \u0394 (pp) "
+            "is the projected share minus career share, in percentage points. \u2605 rows "
+            "mark the highlighted 10\u201326\u00b0 barrel zone (overlaps Statcast's "
+            "broader 8\u201332\u00b0 sweet-spot range)._"
+        )
+        lines.append("")
 
     # ----- Count-state mix summary -----
     lines.append("## Count-state pitch mix (pitcher, vs same hand)")
@@ -1505,13 +2528,17 @@ def to_markdown(
     if zone_overlay_df.empty:
         lines.append("_no zone data_")
     else:
-        lines.append("| Pitch | In-zone % | Top zones (attack share) | Intersection xwOBA |")
-        lines.append("|---|---:|---|---:|")
+        lines.append("| Pitch | In-zone % | Top zones (attack share) | Intersection xwOBA | Coverage % |")
+        lines.append("|---|---:|---|---:|---:|")
         for _, r in zone_overlay_df.iterrows():
+            cov = r.get("Coverage %")
+            cov_str = f"{cov:.0f}" if cov is not None and not (isinstance(cov, float) and math.isnan(cov)) else "—"
             lines.append(
                 f"| {r['Pitch']} | {r['In-zone %']:.1f} | "
-                f"{r['Top zones']} | {fmt3(r['Intersection xwOBA'])} |"
+                f"{r['Top zones']} | {fmt3(r['Intersection xwOBA'])} | {cov_str} |"
             )
+        lines.append("")
+        lines.append("_Coverage % = share of the pitcher's attack on this pitch landing in zones with batter data; remainder imputed at league xwOBA._")
     lines.append("")
 
     # ----- Bat tracking -----
@@ -1584,30 +2611,39 @@ def to_markdown(
     # ----- Edge analysis -----
     lines.append("## Edge analysis")
     lines.append("")
+    lines.append(
+        "_Per-pitch matchup result vs league (additive batter + pitcher projection "
+        "minus 0.315). **Edge (pts)** is the projection delta in wOBA points; "
+        "positive favors the hitter, negative favors the pitcher. Tables only list "
+        "pitches whose net projection actually leans in that direction._"
+    )
+    lines.append("")
     lines.append("**Pitches favoring the hitter**")
     lines.append("")
     if bat_fav.empty:
-        lines.append("_no data_")
+        lines.append("_no pitch in the arsenal projects above league for this hitter_")
     else:
-        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed |")
-        lines.append("|---|---:|---:|---:|")
+        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | Projected xwOBA | Edge (pts) |")
+        lines.append("|---|---:|---:|---:|---:|---:|")
         for _, r in bat_fav.iterrows():
             lines.append(
                 f"| {r['Pitch']} | {r['Usage %']:.1f} | "
-                f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} |"
+                f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} | "
+                f"{fmt3(r['Projected xwOBA'])} | {r['Edge (pts)']:+.0f} |"
             )
     lines.append("")
     lines.append("**Pitches favoring the pitcher**")
     lines.append("")
     if pit_fav.empty:
-        lines.append("_no data_")
+        lines.append("_no pitch in the arsenal projects below league for this hitter_")
     else:
-        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed |")
-        lines.append("|---|---:|---:|---:|")
+        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | Projected xwOBA | Edge (pts) |")
+        lines.append("|---|---:|---:|---:|---:|---:|")
         for _, r in pit_fav.iterrows():
             lines.append(
                 f"| {r['Pitch']} | {r['Usage %']:.1f} | "
-                f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} |"
+                f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} | "
+                f"{fmt3(r['Projected xwOBA'])} | {r['Edge (pts)']:+.0f} |"
             )
     lines.append("")
 
@@ -1677,8 +2713,9 @@ def to_markdown(
             "they're cross-checked against projected xwOBA and reconciled if drift exceeds 5 pts."
         )
         lines.append(
-            "- Not modeled: park / weather, catcher framing, umpire zone, fatigue beyond TTO, "
-            "and rolling 14-day form. Treat single-season cells as noisy."
+            "- Not modeled: park / weather, catcher framing, umpire zone, fatigue beyond TTO. "
+            "Recent form is modeled (current-season row weights decay with a 30-day half-life, and the "
+            "Recent form panel above shows 14-day / 30-day rolling rates). Treat single-season cells as noisy."
         )
     return "\n".join(lines)
 
@@ -1802,6 +2839,17 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
                                           box-shadow: none; border-bottom: 1px dashed var(--line); }
 .batter-block .batter-body section.card:last-child { border-bottom: none; }
 .batter-block .batter-body .page-head { display: none; }
+
+/* ----- Contact-quality projection ----- */
+.cq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+           gap: 14px; margin-top: 4px; }
+.cq-panel h3 { margin: 0 0 6px 0; font-size: 12px; font-weight: 700; color: var(--muted);
+               text-transform: uppercase; letter-spacing: 0.4px; }
+.cq-panel table { font-size: 12px; }
+.cq-panel table thead th { padding: 5px 8px; font-size: 11px; }
+.cq-panel table tbody td { padding: 5px 8px; }
+.cq-panel .sweet td:first-child { background: #f1f5f9; font-weight: 600; }
+.cq-panel .sweet td:first-child::before { content: '\\2605  '; color: #2563eb; }
 """
 
 
@@ -1883,6 +2931,8 @@ def to_html(
     bat_fav: pd.DataFrame, pit_fav: pd.DataFrame,
     decep: dict, handed_note: str,
     align: dict,
+    contact_quality: dict | None = None,
+    recent_form: dict | None = None,
     body_only: bool = False,
 ) -> str:
     parts: list[str] = []
@@ -2069,8 +3119,8 @@ def to_html(
             parts.append(
                 "<tr>"
                 f"<td>{_h(metric)}</td>"
-                f"{_td(f'{b_val:.3f}', cls_b)}"
-                f"{_td(f'{p_val:.3f}', cls_p)}"
+                f"{_td(fmt3(b_val), cls_b)}"
+                f"{_td(fmt3(p_val), cls_p)}"
                 "</tr>"
             )
             continue
@@ -2102,6 +3152,88 @@ def to_html(
         parts.append("</ul>")
     parts.append("</section>")
 
+    # ----- Recent form -----
+    if recent_form:
+        windows = recent_form.get("windows", RECENT_FORM_WINDOWS)
+        platoon_labels = recent_form.get("platoon_labels", {})
+        parts.append('<section class="card">')
+        parts.append("<h2>Recent form (rolling)</h2>")
+
+        def _emit_row(side_label: str, window_label: str, snap: dict | None) -> None:
+            if snap is None:
+                parts.append(
+                    "<tr>"
+                    f"<td>{_h(side_label)}</td>"
+                    f"<td>{_h(window_label)}</td>"
+                    "<td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>"
+                    "<td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>"
+                    "</tr>"
+                )
+                return
+            xwoba = snap.get("xwOBA")
+            xba = snap.get("xBA")
+            xslg = snap.get("xSLG")
+            cls_x = edge_class(xwoba, LG_XWOBA, 0.030, True)
+            cls_ba = edge_class(xba, LG_XBA, 0.025, True)
+            cls_slg = edge_class(xslg, LG_XSLG, 0.040, True)
+            n_pa = snap.get("n_pa", 0)
+            parts.append(
+                "<tr>"
+                f"<td>{_h(side_label)}</td>"
+                f"<td>{_h(window_label)}</td>"
+                f"<td>{n_pa:.0f}</td>"
+                f"{_td(fmt3(xwoba), cls_x)}"
+                f"{_td(fmt3(xba), cls_ba)}"
+                f"{_td(fmt3(xslg), cls_slg)}"
+                f"<td>{snap['K_pct']*100:.1f}</td>"
+                f"<td>{snap['BB_pct']*100:.1f}</td>"
+                f"<td>{snap['Whiff_pct']*100:.1f}</td>"
+                f"<td>{snap['HardHit_pct']*100:.1f}</td>"
+                "</tr>"
+            )
+
+        def _emit_view(view: dict, sub_heading: str) -> None:
+            parts.append(f"<h3>{_h(sub_heading)}</h3>")
+            parts.append("<table><thead><tr>"
+                         "<th>Side</th><th>Window</th><th>n PA</th>"
+                         "<th>xwOBA</th><th>xBA</th><th>xSLG</th>"
+                         "<th>K %</th><th>BB %</th>"
+                         "<th>Whiff %</th><th>Hard Hit %</th>"
+                         "</tr></thead><tbody>")
+            for side_key, side_label in (("batter", "Batter"), ("pitcher", "Pitcher")):
+                side = view.get(side_key, {}) or {}
+                _emit_row(side_label, "season", side.get("season"))
+                for w in windows:
+                    snap = side.get(f"d{int(w)}")
+                    _emit_row(side_label, f"last {int(w)}d", snap)
+            parts.append("</tbody></table>")
+
+        overall_view = recent_form.get("overall") or {
+            "batter": {k: recent_form.get("batter", {}).get(k) for k in ("season",) + tuple(f"d{int(w)}" for w in windows)},
+            "pitcher": {k: recent_form.get("pitcher", {}).get(k) for k in ("season",) + tuple(f"d{int(w)}" for w in windows)},
+        }
+        _emit_view(overall_view, "Overall (no platoon filter)")
+
+        platoon_view = recent_form.get("platoon")
+        if platoon_view:
+            bat_pl = platoon_labels.get("batter") or "vs same hand"
+            pit_pl = platoon_labels.get("pitcher") or "vs same hand"
+            _emit_view(platoon_view,
+                       f"Platoon \u2014 Batter {bat_pl}, Pitcher {pit_pl}")
+
+        parts.append(
+            "<p class='note'>Both tables use raw current-season PA (no season-blend, "
+            "no recency decay). <strong>Overall</strong> is un-platoon-filtered and "
+            "matches the player's year-to-date totals on BR / Savant &mdash; the "
+            "natural \"how is this player going right now\" read. <strong>Platoon"
+            "</strong> restricts to tonight's matchup hand, so it's apples-to-apples "
+            "with the rest of the report (which is also platoon-filtered). Rolling "
+            f"rows are shown only when n PA &ge; {RECENT_FORM_MIN_PA:.0f}; the season "
+            "row is suppressed if there's no qualifying data. The verdict's hot/cold "
+            "tail is anchored on the overall view.</p>"
+        )
+        parts.append("</section>")
+
     # ----- Pitch-mix projection -----
     parts.append('<section class="card">')
     parts.append("<h2>Pitch-mix projection</h2>")
@@ -2111,27 +3243,137 @@ def to_html(
         parts.append("<table><thead><tr>"
                      "<th>Pitch</th><th>Marginal Usage %</th>"
                      "<th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th>"
+                     "<th style='text-align:left'>Pitcher BB-mix</th>"
+                     "<th>Adj batter xwOBA</th>"
+                     "<th>Adj &Delta; (pts)</th>"
                      "<th>Projected xwOBA</th><th>Projected Whiff %</th>"
                      "</tr></thead><tbody>")
         for _, r in pitch_table.iterrows():
             b_x = float(r["Batter xwOBA"])
             p_x = float(r["Pitcher xwOBA allowed"])
             proj_x = float(r["Projected xwOBA"])
+            b_x_adj = float(r.get("Adj batter xwOBA", b_x))
+            adj_pts = float(r.get("Adj delta (pts)", 0.0))
             cls_b = edge_class(b_x, LG_XWOBA, 0.030, True)
             cls_p = edge_class(p_x, LG_XWOBA, 0.030, True)
             cls_proj = edge_class(proj_x, LG_XWOBA, 0.030, True)
+            cls_b_adj = edge_class(b_x_adj, LG_XWOBA, 0.030, True)
+            # Treat the adj delta the same as a per-pitch xwOBA delta:
+            # negative = pitcher edge (GB-mix discount on the batter), positive = hitter edge.
+            cls_adj = (
+                "pit-edge-strong" if adj_pts <= -25
+                else "pit-edge-mild" if adj_pts <= -10
+                else "bat-edge-strong" if adj_pts >= 25
+                else "bat-edge-mild" if adj_pts >= 10
+                else ""
+            )
+            mix_str = str(r.get("Pitcher BB-mix", ""))
             parts.append(
                 "<tr>"
                 f"<td>{_h(r['Pitch'])}</td>"
                 f"<td>{r['Marginal Usage %']:.1f}</td>"
                 f"{_td(f'{b_x:.3f}', cls_b)}"
                 f"{_td(f'{p_x:.3f}', cls_p)}"
+                f"<td style='text-align:left;font-size:12px;color:var(--muted)'>{_h(mix_str)}</td>"
+                f"{_td(f'{b_x_adj:.3f}', cls_b_adj)}"
+                f"{_td(f'{adj_pts:+.0f}', cls_adj)}"
                 f"{_td(f'{proj_x:.3f}', cls_proj)}"
                 f"<td>{r['Projected Whiff %']:.1f}</td>"
                 "</tr>"
             )
         parts.append("</tbody></table>")
+        parts.append('<p class="note">'
+                     'Adj &Delta; (pts) is the bb_type mix discount applied to the batter\'s '
+                     'per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA '
+                     'than a 100 mph 25&deg; line drive, so when the pitcher\'s induced '
+                     'bb_type mix is more grounder-heavy than the batter\'s career mix on '
+                     'this pitch, the projection is shifted down by the equivalent per-PA '
+                     'amount (and vice versa for air-ball-heavy pitchers).'
+                     '</p>')
     parts.append("</section>")
+
+    # ----- Contact-quality projection -----
+    if contact_quality and contact_quality.get("available"):
+        cq = contact_quality
+        parts.append('<section class="card">')
+        parts.append("<h2>Contact-quality projection</h2>")
+        n_bbe = cq.get("n_career_bbe", 0.0)
+        mev_c = cq.get("mean_ev_career", float("nan"))
+        mev_p = cq.get("mean_ev_proj", float("nan"))
+        mla_c = cq.get("mean_la_career", float("nan"))
+        mla_p = cq.get("mean_la_proj", float("nan"))
+        d_ev = (mev_p - mev_c) if (not math.isnan(mev_p) and not math.isnan(mev_c)) else float("nan")
+        d_la = (mla_p - mla_c) if (not math.isnan(mla_p) and not math.isnan(mla_c)) else float("nan")
+
+        sub_bits = [f"weighted from <b>{n_bbe:.0f}</b> career BBE"]
+        if not math.isnan(mev_c):
+            sub_bits.append(
+                f"mean EV career <b>{mev_c:.1f}</b> &rarr; proj <b>{mev_p:.1f}</b> "
+                f"({d_ev:+.1f} mph)"
+            )
+        if not math.isnan(mla_c):
+            sub_bits.append(
+                f"mean LA career <b>{mla_c:.1f}&deg;</b> &rarr; proj <b>{mla_p:.1f}&deg;</b> "
+                f"({d_la:+.1f}&deg;)"
+            )
+        parts.append(f'<p class="subtitle">{" &middot; ".join(sub_bits)}</p>')
+
+        def _cq_table(rows: list[tuple[str, float, float, bool]]) -> str:
+            """Render a Career % / Projected % / Δ (pp) table.
+
+            Each row is (label, career_share_0to1, proj_share_0to1, is_sweet)."""
+            buf = ['<table><thead><tr>'
+                   '<th>Bin</th><th>Career %</th><th>Projected %</th>'
+                   '<th>&Delta; (pp)</th></tr></thead><tbody>']
+            for lab, c, p, sweet in rows:
+                c100 = c * 100
+                p100 = p * 100
+                d = p100 - c100
+                tr_cls = ' class="sweet"' if sweet else ''
+                buf.append(
+                    f'<tr{tr_cls}><td>{_h(lab)}</td>'
+                    f'<td>{c100:.1f}</td><td>{p100:.1f}</td>'
+                    f'<td>{d:+.1f}</td></tr>'
+                )
+            buf.append('</tbody></table>')
+            return ''.join(buf)
+
+        qoc_rows = [
+            (QOC_LABELS[q], cq["qoc_career"].get(q, 0.0),
+             cq["qoc_proj"].get(q, 0.0), False)
+            for q in sorted(QOC_LABELS)
+        ]
+        ev_rows = [
+            (lab, c, p, False)
+            for lab, c, p in zip(EV_LABELS, cq["ev_career"], cq["ev_proj"])
+        ]
+        la_rows = [
+            (lab, c, p, i in LA_SWEET_SPOT_BINS)
+            for i, (lab, c, p) in enumerate(zip(LA_LABELS, cq["la_career"], cq["la_proj"]))
+        ]
+
+        parts.append('<div class="cq-grid">')
+        for heading, table_html in (
+            ("Quality of contact (Statcast 6-bin)", _cq_table(qoc_rows)),
+            ("Exit velocity (mph)", _cq_table(ev_rows)),
+            ("Launch angle (deg)", _cq_table(la_rows)),
+        ):
+            parts.append('<div class="cq-panel">')
+            parts.append(f'<h3>{_h(heading)}</h3>')
+            parts.append(table_html)
+            parts.append('</div>')
+        parts.append('</div>')
+
+        parts.append('<p class="note">'
+                     'Career = batter\'s full platoon-filtered BBE distribution. '
+                     'Projected re-weights each pitch-specific BBE distribution by the '
+                     'pitcher\'s marginal pitch usage; pitches with &lt;5 weighted BBE '
+                     'fall back to the batter\'s overall mix. &Delta; (pp) is the '
+                     'projected share minus career share, in percentage points. '
+                     '&#9733; rows mark the highlighted 10&ndash;26&deg; barrel zone '
+                     '(overlaps Statcast\'s broader 8&ndash;32&deg; sweet-spot range).'
+                     '</p>')
+        parts.append("</section>")
 
     # ----- Count-state mix -----
     parts.append('<section class="card">')
@@ -2197,20 +3439,27 @@ def to_html(
         parts.append("<table><thead><tr>"
                      "<th>Pitch</th><th>In-zone %</th>"
                      "<th>Top zones (attack share)</th><th>Intersection xwOBA</th>"
+                     "<th>Coverage %</th>"
                      "</tr></thead><tbody>")
         for _, r in zone_overlay_df.iterrows():
             ix = r["Intersection xwOBA"]
             cls_ix = edge_class(ix if not pd.isna(ix) else float("nan"),
                                 LG_XWOBA, 0.030, True)
+            cov = r.get("Coverage %")
+            cov_str = (f"{cov:.0f}"
+                       if cov is not None and not (isinstance(cov, float) and math.isnan(cov))
+                       else "—")
             parts.append(
                 "<tr>"
                 f"<td>{_h(r['Pitch'])}</td>"
                 f"<td>{r['In-zone %']:.1f}</td>"
                 f"<td>{_h(r['Top zones'])}</td>"
                 f"{_td(fmt3(ix), cls_ix)}"
+                f"<td>{cov_str}</td>"
                 "</tr>"
             )
         parts.append("</tbody></table>")
+        parts.append("<p class='note'>Coverage % = share of the pitcher's attack on this pitch landing in zones with batter data; remainder imputed at league xwOBA (so two batters with different coverage maps stay comparable).</p>")
     parts.append("</section>")
 
     # ----- Bat tracking -----
@@ -2284,13 +3533,13 @@ def to_html(
         parts.append('<div class="kv">')
         parts.append(f'<div>pitcher first-pitch strike% <b>{fp["pitcher_strike_pct"]*100:.1f}%</b></div>')
         parts.append(f'<div>batter first-pitch swing% <b>{fp["batter_swing_pct"]*100:.1f}%</b></div>')
-        parts.append(f'<div>batter xwOBA on first-pitch swings <b>{fp["batter_xwoba_on_swing"]:.3f}</b></div>')
+        parts.append(f'<div>batter xwOBA on first-pitch swings <b>{fmt3(fp["batter_xwoba_on_swing"])}</b></div>')
         parts.append('</div>')
     if ts:
         parts.append('<div class="kv">')
         parts.append(f'<div>pitcher putaway% <b>{ts["pitcher_putaway_pct"]*100:.1f}%</b></div>')
         parts.append(f'<div>batter K% in 2-strike counts <b>{ts["batter_K_pct_2s"]*100:.1f}%</b></div>')
-        parts.append(f'<div>batter xwOBA in 2-strike counts <b>{ts["batter_xwoba_2s"]:.3f}</b></div>')
+        parts.append(f'<div>batter xwOBA in 2-strike counts <b>{fmt3(ts["batter_xwoba_2s"])}</b></div>')
         parts.append('</div>')
         if ts.get("two_strike_mix"):
             mix_pills = " ".join(f'<span class="pill">{_h(k)} {v:.1f}%</span>'
@@ -2299,43 +3548,62 @@ def to_html(
     parts.append("</section>")
 
     # ----- Edge analysis -----
+    def _edge_row(r) -> str:
+        b_x = float(r["Batter xwOBA"])
+        p_x = float(r["Pitcher xwOBA allowed"])
+        proj_x = float(r["Projected xwOBA"])
+        edge_pts = float(r["Edge (pts)"])
+        cls_b = edge_class(b_x, LG_XWOBA, 0.030, True)
+        cls_p = edge_class(p_x, LG_XWOBA, 0.030, True)
+        cls_proj = edge_class(proj_x, LG_XWOBA, 0.030, True)
+        cls_edge = (
+            "pit-edge-strong" if edge_pts <= -25
+            else "pit-edge-mild" if edge_pts <= -10
+            else "bat-edge-strong" if edge_pts >= 25
+            else "bat-edge-mild" if edge_pts >= 10
+            else ""
+        )
+        return (
+            "<tr>"
+            f"<td>{_h(r['Pitch'])}</td>"
+            f"<td>{r['Usage %']:.1f}</td>"
+            f"{_td(f'{b_x:.3f}', cls_b)}"
+            f"{_td(f'{p_x:.3f}', cls_p)}"
+            f"{_td(f'{proj_x:.3f}', cls_proj)}"
+            f"{_td(f'{edge_pts:+.0f}', cls_edge)}"
+            "</tr>"
+        )
+
     parts.append('<section class="card">')
     parts.append("<h2>Edge analysis</h2>")
-    parts.append('<p class="subtitle"><b>Pitches favoring the hitter</b></p>')
+    parts.append('<p class="subtitle">Per-pitch matchup result vs league (additive '
+                 'batter + pitcher projection minus 0.315). <b>Edge (pts)</b> is the '
+                 'projection delta in wOBA points; positive favors the hitter, '
+                 'negative favors the pitcher. Tables only list pitches whose net '
+                 'projection actually leans in that direction.</p>')
+    parts.append('<p class="subtitle" style="margin-top:10px"><b>Pitches favoring the hitter</b></p>')
     if bat_fav.empty:
-        parts.append('<p class="note">no data</p>')
+        parts.append('<p class="note">no pitch in the arsenal projects above league for this hitter</p>')
     else:
         parts.append("<table><thead><tr>"
                      "<th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th>"
-                     "<th>Pitcher xwOBA allowed</th>"
+                     "<th>Pitcher xwOBA allowed</th><th>Projected xwOBA</th>"
+                     "<th>Edge (pts)</th>"
                      "</tr></thead><tbody>")
         for _, r in bat_fav.iterrows():
-            parts.append(
-                "<tr>"
-                f"<td>{_h(r['Pitch'])}</td>"
-                f"<td>{r['Usage %']:.1f}</td>"
-                f"{_td(f'{r['Batter xwOBA']:.3f}', 'bat-edge-strong')}"
-                f"<td>{r['Pitcher xwOBA allowed']:.3f}</td>"
-                "</tr>"
-            )
+            parts.append(_edge_row(r))
         parts.append("</tbody></table>")
     parts.append('<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>')
     if pit_fav.empty:
-        parts.append('<p class="note">no data</p>')
+        parts.append('<p class="note">no pitch in the arsenal projects below league for this hitter</p>')
     else:
         parts.append("<table><thead><tr>"
                      "<th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th>"
-                     "<th>Pitcher xwOBA allowed</th>"
+                     "<th>Pitcher xwOBA allowed</th><th>Projected xwOBA</th>"
+                     "<th>Edge (pts)</th>"
                      "</tr></thead><tbody>")
         for _, r in pit_fav.iterrows():
-            parts.append(
-                "<tr>"
-                f"<td>{_h(r['Pitch'])}</td>"
-                f"<td>{r['Usage %']:.1f}</td>"
-                f"<td>{r['Batter xwOBA']:.3f}</td>"
-                f"{_td(f'{r['Pitcher xwOBA allowed']:.3f}', 'pit-edge-strong')}"
-                "</tr>"
-            )
+            parts.append(_edge_row(r))
         parts.append("</tbody></table>")
     parts.append("</section>")
 
@@ -2435,8 +3703,10 @@ def _html_footer_notes(batter_meta: dict, pitcher_meta: dict, season: int) -> st
         "strong pitcher edge</span> &mdash; relative to league baseline.</li>"
     )
     parts.append(
-        "<li>Not modeled: park / weather, catcher framing, umpire zone, fatigue beyond TTO, rolling form. "
-        "Treat single-season cells as noisy.</li>"
+        "<li>Not modeled: park / weather, catcher framing, umpire zone, fatigue beyond TTO. "
+        "Recent form is modeled (current-season row weights decay with a 30d half-life, "
+        "and the Recent form panel above shows 14d / 30d rolling rates) but rolling samples "
+        "remain noisy. Treat single-season cells as noisy.</li>"
     )
     parts.append("</ul>")
     parts.append("</footer>")
@@ -2517,6 +3787,13 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
     batter_meta = _player_meta(bat_blended, "batter")
     pitcher_meta = _player_meta(pit_blended, "pitcher")
 
+    # Capture pristine (pre-recency-decay) frames so the Recent form panel can
+    # snapshot raw rolling-window rates without being skewed by the engine's
+    # row-weight multiplier. _prepare() decays in place; we hand it a copy so
+    # the originals stay flat-weighted.
+    bat_pristine = bat_blended.copy()
+    pit_pristine = pit_blended.copy()
+
     bat_blended = _prepare(bat_blended)
     pit_blended = _prepare(pit_blended)
 
@@ -2541,7 +3818,12 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
     pitcher_overall = overall_rates(pit_vs_bat)
 
     marginal = count_conditional_marginal(pit_vs_bat, bat_vs_pit)
-    proj = project(batter_pt, pitcher_pt, batter_overall, pitcher_overall, marginal)
+    bat_count_xwoba = batter_xwoba_by_count(bat_vs_pit)
+    pit_count_dist = pitcher_count_state_distribution(pit_vs_bat)
+    proj = project(batter_pt, pitcher_pt, batter_overall, pitcher_overall,
+                    marginal,
+                    batter_count_xwoba=bat_count_xwoba,
+                    pitcher_count_dist=pit_count_dist)
     comps = shape_comps(bat_vs_pit, pitcher_pt)
     zone_df = zone_overlay(pit_vs_bat, bat_vs_pit, pitcher_pt)
     tto = tto_curve(pit_vs_bat)
@@ -2550,6 +3832,10 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
     sub = count_subprofiles(bat_vs_pit, pit_vs_bat)
     panel = discipline_panel(batter_overall, pitcher_overall)
     panel_notes = discipline_notes(batter_overall, pitcher_overall)
+    recent_form = recent_form_panel(bat_pristine, pit_pristine,
+                                     batter_meta=batter_meta,
+                                     pitcher_meta=pitcher_meta)
+    recent_summary = recent_form_summary(recent_form)
     bat_fav, pit_fav = edge_analysis(batter_pt, pitcher_pt, marginal)
     decep = deception(pitcher_pt)
     handed_note = handedness_verdict(batter_meta["stand"], pitcher_meta["p_throws"])
@@ -2558,9 +3844,11 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
 
     v = verdict(proj["xwOBA"], LG_XWOBA, pitcher_overall["xwOBA"], batter_overall["xwOBA"])
     narrative_text = narrative(batter_meta, pitcher_meta,
-                                proj, v, bat_fav, pit_fav, handed_note)
+                                proj, v, bat_fav, pit_fav, handed_note,
+                                recent_summary=recent_summary)
     align = alignment_split(bat_vs_pit, pit_vs_bat)
     cm = count_mix_summary(pit_vs_bat)
+    contact_quality = contact_quality_projection(bat_vs_pit, marginal)
 
     return {
         "batter_meta": batter_meta, "pitcher_meta": pitcher_meta,
@@ -2577,6 +3865,8 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
         "bat_fav": bat_fav, "pit_fav": pit_fav,
         "decep": decep, "handed_note": handed_note,
         "align": align,
+        "contact_quality": contact_quality,
+        "recent_form": recent_form,
         "batter_overall": batter_overall, "pitcher_overall": pitcher_overall,
     }
 
@@ -2593,6 +3883,8 @@ def _render_md_from_pieces(p: dict, body_only: bool = False) -> str:
         p["bat_track_overall"], p["bat_track_pitch"],
         p["sub"], p["bat_fav"], p["pit_fav"],
         p["decep"], p["handed_note"], p["align"],
+        contact_quality=p.get("contact_quality"),
+        recent_form=p.get("recent_form"),
         body_only=body_only,
     )
 
@@ -2609,6 +3901,8 @@ def _render_html_from_pieces(p: dict, body_only: bool = False) -> str:
         p["bat_track_overall"], p["bat_track_pitch"],
         p["sub"], p["bat_fav"], p["pit_fav"],
         p["decep"], p["handed_note"], p["align"],
+        contact_quality=p.get("contact_quality"),
+        recent_form=p.get("recent_form"),
         body_only=body_only,
     )
 
@@ -2680,6 +3974,8 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         "name": bm["name"],
         "stand": bm["stand"] or "?",
         "proj_xwoba": proj["xwOBA"],
+        "proj_xwoba_raw": float(proj.get("xwOBA_raw", proj["xwOBA"]) or proj["xwOBA"]),
+        "bbtype_adj_pts": float(proj.get("xwOBA_adj_pts", 0.0) or 0.0),
         "delta_pts": delta,
         "k_pct": _outcome_prob(out, "Strikeout"),
         "bb_pct": _outcome_prob(out, "Walk"),
@@ -3310,7 +4606,18 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
     #   (matchup_key, pitcher_name) -> list of (position, hitter_name, status, hitter_team)
     lineup_groups: dict[tuple[str, str], list[tuple[int, str, str, str]]] = {}
 
-    with csv_path.open("r", encoding="utf-8", newline="") as f:
+    # Older CSVs (pre-fetch_lineups encoding fix) were written using the
+    # platform default (cp1252 on Windows), so non-ASCII names like "García"
+    # would explode under strict utf-8. Try utf-8 with a BOM-tolerant codec
+    # first, fall back to cp1252.
+    try:
+        f = csv_path.open("r", encoding="utf-8-sig", newline="")
+        f.read(1)
+        f.seek(0)
+    except UnicodeDecodeError:
+        f.close()
+        f = csv_path.open("r", encoding="cp1252", newline="")
+    with f:
         reader = csv.reader(f)
         for row in reader:
             row = [c.strip() for c in row if c.strip()]
