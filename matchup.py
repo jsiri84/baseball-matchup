@@ -4764,8 +4764,8 @@ def _resolve_workers(workers: int | None) -> int:
 def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
     legacy_rows: list[tuple[str, str]] = []
     # Lineup format groups:
-    #   (matchup_key, pitcher_name) -> list of (position, hitter_name, status, hitter_team)
-    lineup_groups: dict[tuple[str, str], list[tuple[int, str, str, str]]] = {}
+    #   (matchup_key, pitcher_name) -> list of (position, hitter_name, status, hitter_team, hitter_id, pitcher_id)
+    lineup_groups: dict[tuple[str, str], list[tuple[int, str, str, str, int | None, int | None]]] = {}
 
     # Older CSVs (pre-fetch_lineups encoding fix) were written using the
     # platform default (cp1252 on Windows), so non-ASCII names like "García"
@@ -4786,7 +4786,7 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
                 continue
 
             if len(row) >= 4 and "@" in row[0]:
-                # Lineup format: away@home,hitter_name,pitcher_name,lineup_position[,status]
+                # Lineup format: away@home,hitter_name,pitcher_name,lineup_position[,status[,hitter_team[,hitter_id[,pitcher_id]]]]
                 matchup_key, hitter_name, pitcher_name = row[0], row[1], row[2]
                 try:
                     pos = int(row[3])
@@ -4794,8 +4794,10 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
                     pos = len(lineup_groups.get((matchup_key, pitcher_name), [])) + 1
                 status = row[4].lower() if len(row) >= 5 else "confirmed"
                 hitter_team = row[5].strip().upper() if len(row) >= 6 and row[5].strip() else ""
+                hitter_id: int | None = int(row[6]) if len(row) >= 7 and row[6].strip().isdigit() else None
+                pitcher_id: int | None = int(row[7]) if len(row) >= 8 and row[7].strip().isdigit() else None
                 lineup_groups.setdefault((matchup_key, pitcher_name), []).append(
-                    (pos, hitter_name, status, hitter_team)
+                    (pos, hitter_name, status, hitter_team, hitter_id, pitcher_id)
                 )
             else:
                 # Legacy format: batter,pitcher (any extra columns ignored)
@@ -4808,13 +4810,22 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
         # Pre-resolve unique players once.
         all_hitters: set[str] = set()
         all_pitchers: set[str] = set()
+        # Track known MLBAM IDs from CSV (col 7 = hitter, col 8 = pitcher)
+        csv_hitter_ids: dict[str, int] = {}   # name -> mlbam_id
+        csv_pitcher_ids: dict[str, int] = {}  # name -> mlbam_id
         for (_mk, pname), batters in lineup_groups.items():
             all_pitchers.add(pname)
-            for _pos, h, _status, _team in batters:
+            for _pos, h, _status, _team, h_id, p_id in batters:
                 all_hitters.add(h)
+                if h_id is not None:
+                    csv_hitter_ids[h] = h_id
+                if p_id is not None:
+                    csv_pitcher_ids[pname] = p_id
 
-        hitter_id_map = {h: _resolve_player(h) for h in all_hitters}
-        pitcher_id_map = {p: _resolve_player(p) for p in all_pitchers}
+        hitter_id_map = {h: csv_hitter_ids[h] if h in csv_hitter_ids
+                         else _resolve_player(h) for h in all_hitters}
+        pitcher_id_map = {p: csv_pitcher_ids[p] if p in csv_pitcher_ids
+                          else _resolve_player(p) for p in all_pitchers}
 
         unique_b = set(hitter_id_map.values())
         unique_p = set(pitcher_id_map.values())
@@ -4834,9 +4845,9 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
                 return
             
             batters_sorted = sorted(batters, key=lambda x: x[0])
-            names_sorted = [name for _pos, name, _s, _t in batters_sorted]
-            teams_sorted = [team for _pos, _n, _s, team in batters_sorted]
-            is_projected = any(s == "projected" for _p, _n, s, _t in batters)
+            names_sorted = [name for _pos, name, _s, _t, _hid, _pid in batters_sorted]
+            teams_sorted = [team for _pos, _n, _s, team, _hid, _pid in batters_sorted]
+            is_projected = any(s == "projected" for _p, _n, s, _t, _hid, _pid in batters)
             # The hitters' team is the same for the whole group; pick the first
             # non-empty value as the canonical team code.
             hitter_team = next((t for t in teams_sorted if t), "")
