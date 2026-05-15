@@ -35,6 +35,7 @@ REPORTS_DIR = ROOT / "reports"
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ROUNDUP_RE = re.compile(r"^(top|bottom)(\d+)_(\d{4}-\d{2}-\d{2})\.html$", re.IGNORECASE)
+PROPS_RE = re.compile(r"^props_(\d{4}-\d{2}-\d{2})\.html$", re.IGNORECASE)
 PITCHER_RE = re.compile(
     r"^(?P<away>[a-z]{2,4})_at_(?P<home>[a-z]{2,4})_vs_(?P<slug>.+)_(?P<year>\d{4})\.html$",
     re.IGNORECASE,
@@ -135,6 +136,7 @@ def _list_dates() -> list[str]:
 def _classify_date_files(date_dir: Path) -> dict:
     """Bucket all .html files in a date dir into roundups vs per-game pitcher reports."""
     roundups: list[dict] = []
+    props_file: str | None = None
     games: dict[str, dict] = {}
     other: list[str] = []
     for p in sorted(date_dir.glob("*.html")):
@@ -149,6 +151,10 @@ def _classify_date_files(date_dir: Path) -> dict:
                 "n": int(n),
                 "filename": name,
             })
+            continue
+        m = PROPS_RE.match(name)
+        if m:
+            props_file = name
             continue
         m = PITCHER_RE.match(name)
         if m:
@@ -170,7 +176,7 @@ def _classify_date_files(date_dir: Path) -> dict:
     for g in games.values():
         g["pitchers"].sort(key=lambda p: p["name"].lower())
 
-    return {"roundups": roundups, "games": games, "other": other}
+    return {"roundups": roundups, "props": props_file, "games": games, "other": other}
 
 
 def _render_day_index(date_str: str, date_dir: Path) -> str:
@@ -216,6 +222,14 @@ def _render_day_index(date_str: str, date_dir: Path) -> str:
                 f'<a class="cta {cls}" href="{_href(r["filename"])}">'
                 f'<p class="cta-title">{_h(label)}</p>'
                 f'<p class="cta-sub">{_h(sub)}</p>'
+                f'</a>'
+            )
+        props_file = bucket.get("props")
+        if props_file:
+            parts.append(
+                f'<a class="cta top" href="{_href(props_file)}">'
+                f'<p class="cta-title">Props outlook</p>'
+                f'<p class="cta-sub">Top 30 HR &amp; Doubles probability</p>'
                 f'</a>'
             )
         parts.append('</div>')

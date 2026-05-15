@@ -4125,6 +4125,7 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         "k_pct": _outcome_prob(out, "Strikeout"),
         "bb_pct": _outcome_prob(out, "Walk"),
         "hr_pct": _outcome_prob(out, "Home Run"),
+        "dbl_pct": _outcome_prob(out, "Double"),
         "hit_pct": _outcome_prob(out, "Hit (any)"),
         "ob_pct": _outcome_prob(out, "On-base"),
         "best_pitch": best_pitch,
