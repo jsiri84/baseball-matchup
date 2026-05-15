@@ -992,6 +992,8 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
             "Adj batter xwOBA": b_x_adj,
             "Adj delta (pts)": (m_xwoba - m_xwoba_raw) * 1000,
             "Projected xwOBA": m_xwoba,
+            "Projected xBA": m_xba,
+            "Projected xSLG": m_xslg,
             "Projected Whiff %": m_whiff * 100,
         })
 
@@ -1087,6 +1089,8 @@ def shape_comps(bat_vs_pit: pd.DataFrame, arsenal: pd.DataFrame) -> pd.DataFrame
                 "n comps (eff)": 0.0,
                 "Whiff %": float("nan"),
                 "xwOBA": float("nan"),
+                "xBA": float("nan"),
+                "xSLG": float("nan"),
                 "Hard Hit %": float("nan"),
                 "Confidence": confidence,
             })
@@ -1101,6 +1105,7 @@ def shape_comps(bat_vs_pit: pd.DataFrame, arsenal: pd.DataFrame) -> pd.DataFrame
         n_bbe = float(bbe["weight"].sum())
         hh = (float(((bbe["launch_speed"] >= 95).astype(float) * bbe["weight"]).sum()) / n_bbe
               if n_bbe else 0.0)
+        xba_c, xslg_c = w_xba_xslg(comps)
 
         rows.append({
             "Pitch": ar["pitch_name"],
@@ -1108,6 +1113,8 @@ def shape_comps(bat_vs_pit: pd.DataFrame, arsenal: pd.DataFrame) -> pd.DataFrame
             "n comps (eff)": eff_n,
             "Whiff %": whiff_pct * 100,
             "xwOBA": w_xwoba(comps),
+            "xBA": xba_c,
+            "xSLG": xslg_c,
             "Hard Hit %": hh * 100,
             "Confidence": confidence,
         })
@@ -1131,13 +1138,20 @@ def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
     if pit_vs_bat.empty or arsenal.empty:
         return pd.DataFrame()
 
-    bat_zone_xwoba = {}
+    bat_zone_xwoba: dict = {}
+    bat_zone_xba: dict = {}
+    bat_zone_xslg: dict = {}
     for z in ALL_ZONES:
         cell = bat_vs_pit[bat_vs_pit["zone"] == z]
-        if cell.empty:
+        if cell.empty or not cell["events"].notna().any():
             bat_zone_xwoba[z] = float("nan")
+            bat_zone_xba[z] = float("nan")
+            bat_zone_xslg[z] = float("nan")
             continue
-        bat_zone_xwoba[z] = w_xwoba(cell) if cell["events"].notna().any() else float("nan")
+        bat_zone_xwoba[z] = w_xwoba(cell)
+        ba_z, slg_z = w_xba_xslg(cell)
+        bat_zone_xba[z] = ba_z
+        bat_zone_xslg[z] = slg_z
 
     rows = []
     for _, ar in arsenal.iterrows():
@@ -1150,18 +1164,28 @@ def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
             continue
         attack_share = attack / total
 
-        # Intersection metric: sum_z (attack_z * batter_xwoba_z). Impute league
-        # xwOBA on zones with no batter data so the score remains comparable
-        # across batters with different coverage maps.
-        intersect = 0.0
+        # Intersection metrics: sum_z (attack_z * batter_metric_z). Impute league
+        # baselines on zones with no batter data so each score remains comparable
+        # across batters with different coverage maps. Coverage % is shared
+        # across all three metrics (same underlying mask).
+        intersect_x = 0.0
+        intersect_a = 0.0
+        intersect_s = 0.0
         covered_share = 0.0
         for z in ALL_ZONES:
+            share = float(attack_share[z])
             xw = bat_zone_xwoba[z]
+            ba = bat_zone_xba[z]
+            slg = bat_zone_xslg[z]
             if math.isnan(xw):
-                intersect += attack_share[z] * LG_XWOBA
+                intersect_x += share * LG_XWOBA
+                intersect_a += share * LG_XBA
+                intersect_s += share * LG_XSLG
             else:
-                intersect += attack_share[z] * xw
-                covered_share += attack_share[z]
+                intersect_x += share * xw
+                intersect_a += share * (ba if not math.isnan(ba) else LG_XBA)
+                intersect_s += share * (slg if not math.isnan(slg) else LG_XSLG)
+                covered_share += share
 
         in_zone_share = float(attack_share.loc[IN_ZONE].sum())
         # Top 3 zones by attack share for this pitch
@@ -1172,7 +1196,9 @@ def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
             "Pitch": ar["pitch_name"],
             "In-zone %": in_zone_share * 100,
             "Top zones": top_zone_str,
-            "Intersection xwOBA": intersect,
+            "Intersection xwOBA": intersect_x,
+            "Intersection xBA": intersect_a,
+            "Intersection xSLG": intersect_s,
             "Coverage %": covered_share * 100,
         })
 
@@ -1182,7 +1208,7 @@ def zone_overlay(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFrame,
 # ---------- Layer 4: TTO curve --------------------------------------------
 
 def tto_curve(pit_vs_bat: pd.DataFrame) -> pd.DataFrame:
-    """xwOBA / K% / Whiff% / HardHit% allowed by times through the order."""
+    """xwOBA / xBA / xSLG / K% / Whiff% / HardHit% allowed by times through the order."""
     if pit_vs_bat.empty:
         return pd.DataFrame()
 
@@ -1202,10 +1228,13 @@ def tto_curve(pit_vs_bat: pd.DataFrame) -> pd.DataFrame:
               if n_bbe else 0.0)
         n_k_w = float((pa_rows["events"].isin(K_EVENTS).astype(float) * pa_rows["weight"]).sum())
         k_pct = n_k_w / n_pa_w if n_pa_w else 0.0
+        xba_t, xslg_t = w_xba_xslg(group)
         rows.append({
             "TTO": int(tto),
             "PA (eff)": n_pa_w,
             "xwOBA allowed": w_xwoba(group),
+            "xBA allowed": xba_t,
+            "xSLG allowed": xslg_t,
             "K %": k_pct * 100,
             "Whiff %": whiff * 100,
             "Hard Hit %": hh * 100,
@@ -1224,6 +1253,8 @@ def tto_projections(base_proj: dict, tto: pd.DataFrame, pitcher_overall: dict) -
     if tto.empty:
         return pd.DataFrame()
     base_pit_x = float(pitcher_overall.get("xwOBA", 0.0) or 0.0)
+    base_pit_a = float(pitcher_overall.get("xBA", 0.0) or 0.0)
+    base_pit_s = float(pitcher_overall.get("xSLG", 0.0) or 0.0)
     base_pit_k = float(pitcher_overall.get("K_pct", 0.0) or 0.0) * 100.0
     base_pit_whiff = float(pitcher_overall.get("Whiff_pct", 0.0) or 0.0) * 100.0
     base_pit_hh = float(pitcher_overall.get("HardHit_pct", 0.0) or 0.0) * 100.0
@@ -1231,6 +1262,8 @@ def tto_projections(base_proj: dict, tto: pd.DataFrame, pitcher_overall: dict) -
     def _shift(headline: float, allowed: float, base: float,
                lo: float, hi: float) -> float:
         if allowed is None or (isinstance(allowed, float) and math.isnan(allowed)):
+            return float("nan")
+        if base is None or (isinstance(base, float) and math.isnan(base)):
             return float("nan")
         return float(np.clip(headline + (float(allowed) - base), lo, hi))
 
@@ -1241,6 +1274,12 @@ def tto_projections(base_proj: dict, tto: pd.DataFrame, pitcher_overall: dict) -
             "Projected xwOBA": _shift(base_proj["xwOBA"],
                                        r.get("xwOBA allowed"),
                                        base_pit_x, 0.0, 1.0),
+            "Projected xBA": _shift(base_proj.get("xBA", float("nan")),
+                                     r.get("xBA allowed"),
+                                     base_pit_a, 0.0, 1.0),
+            "Projected xSLG": _shift(base_proj.get("xSLG", float("nan")),
+                                      r.get("xSLG allowed"),
+                                      base_pit_s, 0.0, 4.0),
             "Projected K %": _shift(base_proj["K_pct"] * 100,
                                      r.get("K %"),
                                      base_pit_k, 0.0, 100.0),
@@ -1475,6 +1514,8 @@ def discipline_panel(b: dict, p: dict) -> pd.DataFrame:
         ("GB %", b["GB_pct"] * 100, p["GB_pct"] * 100),
         ("Air %", b["Air_pct"] * 100, p["Air_pct"] * 100),
         ("xwOBA", b["xwOBA"], p["xwOBA"]),
+        ("xBA", b.get("xBA", float("nan")), p.get("xBA", float("nan"))),
+        ("xSLG", b.get("xSLG", float("nan")), p.get("xSLG", float("nan"))),
     ]
     return pd.DataFrame(rows, columns=["Metric", "Batter (vs same hand)", "Pitcher (vs same hand)"])
 
@@ -1653,24 +1694,44 @@ def edge_analysis(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
     bat_idx = batter_pt.set_index("pitch_name")
     pit_idx = pitcher_pt.set_index("pitch_name")
 
+    def _cell(idx, name, col):
+        if name not in idx.index:
+            return float("nan")
+        v = idx.loc[name, col]
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return float("nan")
+
     rows = []
     for pitch_name, p in marginal.items():
-        b_x = float(bat_idx.loc[pitch_name, "xwOBA"]) if pitch_name in bat_idx.index else float("nan")
-        pi_x = float(pit_idx.loc[pitch_name, "xwOBA"]) if pitch_name in pit_idx.index else float("nan")
+        b_x = _cell(bat_idx, pitch_name, "xwOBA")
+        pi_x = _cell(pit_idx, pitch_name, "xwOBA")
         if math.isnan(b_x) or math.isnan(pi_x):
             continue
+        b_a = _cell(bat_idx, pitch_name, "xBA")
+        pi_a = _cell(pit_idx, pitch_name, "xBA")
+        b_s = _cell(bat_idx, pitch_name, "xSLG")
+        pi_s = _cell(pit_idx, pitch_name, "xSLG")
         # Use the additive(b, p, lg) projection's distance from league as the edge
         # metric. Positive = the per-pitch matchup pulls projection above league
         # (batter edge); negative = pulls it below (pitcher edge). Weight by usage
         # so a low-usage pitch with a huge edge doesn't outrank a primary pitch.
+        # Edge ranking is anchored on xwOBA; xBA / xSLG are surfaced for context.
         proj_x = additive(b_x, pi_x, LG_XWOBA)
         edge = proj_x - LG_XWOBA
+        proj_a = (additive(b_a, pi_a, LG_XBA)
+                  if not (math.isnan(b_a) or math.isnan(pi_a)) else float("nan"))
+        proj_s = (additive(b_s, pi_s, LG_XSLG)
+                  if not (math.isnan(b_s) or math.isnan(pi_s)) else float("nan"))
         rows.append({
             "Pitch": pitch_name,
             "Usage %": p * 100,
             "Batter xwOBA": b_x,
             "Pitcher xwOBA allowed": pi_x,
             "Projected xwOBA": proj_x,
+            "Projected xBA": proj_a,
+            "Projected xSLG": proj_s,
             "Edge (pts)": edge * 1000,
             "edge_score": p * edge,
         })
@@ -2255,6 +2316,14 @@ def to_markdown(
     lines.append("")
     lines.append(f"**{narrative_text}**")
     lines.append("")
+    proj_a = proj.get("xBA", float("nan"))
+    proj_s = proj.get("xSLG", float("nan"))
+    lines.append(
+        f"_Projected slash: **xwOBA {fmt3(proj['xwOBA'])}** "
+        f"(lg {fmt3(LG_XWOBA)}) · **xBA {fmt3(proj_a)}** (lg {fmt3(LG_XBA)}) · "
+        f"**xSLG {fmt3(proj_s)}** (lg {fmt3(LG_XSLG)})._"
+    )
+    lines.append("")
     lines.append("| Frame | Projected xwOBA | Baseline | Δ (wOBA pts) | Read |")
     lines.append("|---|---:|---:|---:|---|")
     for label, key in (("vs league avg", "vs_league"),
@@ -2314,11 +2383,12 @@ def to_markdown(
     if tto_proj.empty:
         lines.append("_no TTO data available_")
     else:
-        lines.append("| TTO | Proj xwOBA | Proj K % | Proj Whiff % | Proj Hard Hit % | Sample (eff PA) |")
-        lines.append("|---:|---:|---:|---:|---:|---:|")
+        lines.append("| TTO | Proj xwOBA | Proj xBA | Proj xSLG | Proj K % | Proj Whiff % | Proj Hard Hit % | Sample (eff PA) |")
+        lines.append("|---:|---:|---:|---:|---:|---:|---:|---:|")
         for _, r in tto_proj.iterrows():
             lines.append(
                 f"| {int(r['TTO'])} | {fmt3(r['Projected xwOBA'])} | "
+                f"{fmt3(r.get('Projected xBA'))} | {fmt3(r.get('Projected xSLG'))} | "
                 f"{r['Projected K %']:.1f}% | {r['Projected Whiff %']:.1f}% | "
                 f"{r['Projected Hard Hit %']:.1f}% | {r['Sample (eff PA)']:.1f} |"
             )
@@ -2332,7 +2402,7 @@ def to_markdown(
     for _, r in panel.iterrows():
         b_val = r["Batter (vs same hand)"]
         p_val = r["Pitcher (vs same hand)"]
-        if r["Metric"] == "xwOBA":
+        if r["Metric"] in ("xwOBA", "xBA", "xSLG"):
             lines.append(f"| {r['Metric']} | {fmt3(b_val)} | {fmt3(p_val)} |")
         else:
             lines.append(f"| {r['Metric']} | {b_val:.1f}% | {p_val:.1f}% |")
@@ -2408,8 +2478,8 @@ def to_markdown(
     if pitch_table.empty:
         lines.append("_no arsenal data_")
     else:
-        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | Pitcher BB-mix | Adj batter xwOBA | Adj Δ (pts) | Projected xwOBA | Projected Whiff % |")
-        lines.append("|---|---:|---:|---:|:---|---:|---:|---:|---:|")
+        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | Pitcher BB-mix | Adj batter xwOBA | Adj Δ (pts) | Projected xwOBA | Projected xBA | Projected xSLG | Projected Whiff % |")
+        lines.append("|---|---:|---:|---:|:---|---:|---:|---:|---:|---:|---:|")
         for _, r in pitch_table.iterrows():
             adj_pts = float(r.get("Adj delta (pts)", 0.0))
             lines.append(
@@ -2418,7 +2488,9 @@ def to_markdown(
                 f"{r.get('Pitcher BB-mix', '')} | "
                 f"{fmt3(r.get('Adj batter xwOBA', r['Batter xwOBA']))} | "
                 f"{adj_pts:+.0f} | "
-                f"{fmt3(r['Projected xwOBA'])} | {r['Projected Whiff %']:.1f} |"
+                f"{fmt3(r['Projected xwOBA'])} | "
+                f"{fmt3(r.get('Projected xBA'))} | {fmt3(r.get('Projected xSLG'))} | "
+                f"{r['Projected Whiff %']:.1f} |"
             )
         lines.append("")
         lines.append(
@@ -2512,13 +2584,14 @@ def to_markdown(
     if comps.empty:
         lines.append("_no comps available_")
     else:
-        lines.append("| Pitch | Shape (eff velo / IVB / HB-in) | n comps (eff) | Whiff % | xwOBA | Hard Hit % | Confidence |")
-        lines.append("|---|---|---:|---:|---:|---:|---|")
+        lines.append("| Pitch | Shape (eff velo / IVB / HB-in) | n comps (eff) | Whiff % | xwOBA | xBA | xSLG | Hard Hit % | Confidence |")
+        lines.append("|---|---|---:|---:|---:|---:|---:|---:|---|")
         for _, r in comps.iterrows():
             lines.append(
                 f"| {r['Pitch']} | {r['Shape (eff velo / IVB / HB-in)']} | "
                 f"{r['n comps (eff)']:.1f} | {fmt_pct(r['Whiff %'])} | "
-                f"{fmt3(r['xwOBA'])} | {fmt_pct(r['Hard Hit %'])} | {r['Confidence']} |"
+                f"{fmt3(r['xwOBA'])} | {fmt3(r.get('xBA'))} | "
+                f"{fmt3(r.get('xSLG'))} | {fmt_pct(r['Hard Hit %'])} | {r['Confidence']} |"
             )
     lines.append("")
 
@@ -2528,17 +2601,19 @@ def to_markdown(
     if zone_overlay_df.empty:
         lines.append("_no zone data_")
     else:
-        lines.append("| Pitch | In-zone % | Top zones (attack share) | Intersection xwOBA | Coverage % |")
-        lines.append("|---|---:|---|---:|---:|")
+        lines.append("| Pitch | In-zone % | Top zones (attack share) | Intersection xwOBA | Intersection xBA | Intersection xSLG | Coverage % |")
+        lines.append("|---|---:|---|---:|---:|---:|---:|")
         for _, r in zone_overlay_df.iterrows():
             cov = r.get("Coverage %")
             cov_str = f"{cov:.0f}" if cov is not None and not (isinstance(cov, float) and math.isnan(cov)) else "—"
             lines.append(
                 f"| {r['Pitch']} | {r['In-zone %']:.1f} | "
-                f"{r['Top zones']} | {fmt3(r['Intersection xwOBA'])} | {cov_str} |"
+                f"{r['Top zones']} | {fmt3(r['Intersection xwOBA'])} | "
+                f"{fmt3(r.get('Intersection xBA'))} | {fmt3(r.get('Intersection xSLG'))} | "
+                f"{cov_str} |"
             )
         lines.append("")
-        lines.append("_Coverage % = share of the pitcher's attack on this pitch landing in zones with batter data; remainder imputed at league xwOBA._")
+        lines.append("_Coverage % = share of the pitcher's attack on this pitch landing in zones with batter data; remainder imputed at league baselines (xwOBA 0.315, xBA 0.245, xSLG 0.405)._")
     lines.append("")
 
     # ----- Bat tracking -----
@@ -2620,31 +2695,37 @@ def to_markdown(
     lines.append("")
     lines.append("**Pitches favoring the hitter**")
     lines.append("")
+    edge_header = (
+        "| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | "
+        "Projected xwOBA | Projected xBA | Projected xSLG | Edge (pts) |"
+    )
+    edge_sep = "|---|---:|---:|---:|---:|---:|---:|---:|"
+
+    def _edge_md(r) -> str:
+        return (
+            f"| {r['Pitch']} | {r['Usage %']:.1f} | "
+            f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} | "
+            f"{fmt3(r['Projected xwOBA'])} | {fmt3(r.get('Projected xBA'))} | "
+            f"{fmt3(r.get('Projected xSLG'))} | {r['Edge (pts)']:+.0f} |"
+        )
+
     if bat_fav.empty:
         lines.append("_no pitch in the arsenal projects above league for this hitter_")
     else:
-        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | Projected xwOBA | Edge (pts) |")
-        lines.append("|---|---:|---:|---:|---:|---:|")
+        lines.append(edge_header)
+        lines.append(edge_sep)
         for _, r in bat_fav.iterrows():
-            lines.append(
-                f"| {r['Pitch']} | {r['Usage %']:.1f} | "
-                f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} | "
-                f"{fmt3(r['Projected xwOBA'])} | {r['Edge (pts)']:+.0f} |"
-            )
+            lines.append(_edge_md(r))
     lines.append("")
     lines.append("**Pitches favoring the pitcher**")
     lines.append("")
     if pit_fav.empty:
         lines.append("_no pitch in the arsenal projects below league for this hitter_")
     else:
-        lines.append("| Pitch | Usage % | Batter xwOBA | Pitcher xwOBA allowed | Projected xwOBA | Edge (pts) |")
-        lines.append("|---|---:|---:|---:|---:|---:|")
+        lines.append(edge_header)
+        lines.append(edge_sep)
         for _, r in pit_fav.iterrows():
-            lines.append(
-                f"| {r['Pitch']} | {r['Usage %']:.1f} | "
-                f"{fmt3(r['Batter xwOBA'])} | {fmt3(r['Pitcher xwOBA allowed'])} | "
-                f"{fmt3(r['Projected xwOBA'])} | {r['Edge (pts)']:+.0f} |"
-            )
+            lines.append(_edge_md(r))
     lines.append("")
 
     # ----- Deception / spin axis / handedness -----
@@ -2975,6 +3056,25 @@ def to_html(
     parts.append('<section class="card">')
     parts.append("<h2>Verdict</h2>")
     parts.append(f'<p class="narrative">{_h(narrative_text)}</p>')
+
+    proj_x_h = float(proj.get("xwOBA", float("nan")))
+    proj_a_h = float(proj.get("xBA", float("nan"))) if proj.get("xBA") is not None else float("nan")
+    proj_s_h = float(proj.get("xSLG", float("nan"))) if proj.get("xSLG") is not None else float("nan")
+    cls_x_h = edge_class(proj_x_h, LG_XWOBA, 0.030, True)
+    cls_a_h = edge_class(proj_a_h, LG_XBA, 0.025, True)
+    cls_s_h = edge_class(proj_s_h, LG_XSLG, 0.040, True)
+    parts.append(
+        '<table class="proj-slash" style="margin-bottom:10px"><thead><tr>'
+        '<th>Projected slash</th><th>xwOBA</th><th>xBA</th><th>xSLG</th>'
+        '</tr></thead><tbody><tr>'
+        f'<td style="text-align:left;color:var(--muted)">'
+        f'lg {fmt3(LG_XWOBA)} / {fmt3(LG_XBA)} / {fmt3(LG_XSLG)}</td>'
+        f'{_td(fmt3(proj_x_h), cls_x_h)}'
+        f'{_td(fmt3(proj_a_h), cls_a_h)}'
+        f'{_td(fmt3(proj_s_h), cls_s_h)}'
+        '</tr></tbody></table>'
+    )
+
     parts.append("<table>")
     parts.append("<thead><tr><th>Frame</th><th>Projected xwOBA</th>"
                  "<th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>")
@@ -3078,16 +3178,23 @@ def to_html(
         parts.append('<p class="note">no TTO data available</p>')
     else:
         parts.append("<table><thead><tr>"
-                     "<th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th>"
+                     "<th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th>"
+                     "<th>Proj xSLG</th><th>Proj K %</th>"
                      "<th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th>"
                      "</tr></thead><tbody>")
         for _, r in tto_proj.iterrows():
             x = float(r["Projected xwOBA"])
+            a = r.get("Projected xBA")
+            s = r.get("Projected xSLG")
             cls_x = edge_class(x, LG_XWOBA, 0.030, batter_favors_high=True)
+            cls_a = edge_class(a, LG_XBA, 0.025, batter_favors_high=True)
+            cls_s = edge_class(s, LG_XSLG, 0.040, batter_favors_high=True)
             parts.append(
                 "<tr>"
                 f"<td>{int(r['TTO'])}</td>"
                 f"{_td(f'{x:.3f}', cls_x)}"
+                f"{_td(fmt3(a), cls_a)}"
+                f"{_td(fmt3(s), cls_s)}"
                 f"<td>{r['Projected K %']:.1f}%</td>"
                 f"<td>{r['Projected Whiff %']:.1f}%</td>"
                 f"<td>{r['Projected Hard Hit %']:.1f}%</td>"
@@ -3113,9 +3220,14 @@ def to_html(
         # Both columns use the same direction: high Whiff% is bad for the batter
         # whether the cell shows the batter's own rate or what the pitcher generates.
         # High HardHit% likewise is good for the batter on either side of the panel.
-        if metric == "xwOBA":
-            cls_b = edge_class(b_val, LG_XWOBA, 0.030, batter_favors_high=True)
-            cls_p = edge_class(p_val, LG_XWOBA, 0.030, batter_favors_high=True)
+        if metric in ("xwOBA", "xBA", "xSLG"):
+            ref, scale = {
+                "xwOBA": (LG_XWOBA, 0.030),
+                "xBA":   (LG_XBA,   0.025),
+                "xSLG":  (LG_XSLG,  0.040),
+            }[metric]
+            cls_b = edge_class(b_val, ref, scale, batter_favors_high=True)
+            cls_p = edge_class(p_val, ref, scale, batter_favors_high=True)
             parts.append(
                 "<tr>"
                 f"<td>{_h(metric)}</td>"
@@ -3246,17 +3358,22 @@ def to_html(
                      "<th style='text-align:left'>Pitcher BB-mix</th>"
                      "<th>Adj batter xwOBA</th>"
                      "<th>Adj &Delta; (pts)</th>"
-                     "<th>Projected xwOBA</th><th>Projected Whiff %</th>"
+                     "<th>Projected xwOBA</th><th>Projected xBA</th>"
+                     "<th>Projected xSLG</th><th>Projected Whiff %</th>"
                      "</tr></thead><tbody>")
         for _, r in pitch_table.iterrows():
             b_x = float(r["Batter xwOBA"])
             p_x = float(r["Pitcher xwOBA allowed"])
             proj_x = float(r["Projected xwOBA"])
+            proj_a = r.get("Projected xBA")
+            proj_s = r.get("Projected xSLG")
             b_x_adj = float(r.get("Adj batter xwOBA", b_x))
             adj_pts = float(r.get("Adj delta (pts)", 0.0))
             cls_b = edge_class(b_x, LG_XWOBA, 0.030, True)
             cls_p = edge_class(p_x, LG_XWOBA, 0.030, True)
             cls_proj = edge_class(proj_x, LG_XWOBA, 0.030, True)
+            cls_proj_a = edge_class(proj_a, LG_XBA, 0.025, True)
+            cls_proj_s = edge_class(proj_s, LG_XSLG, 0.040, True)
             cls_b_adj = edge_class(b_x_adj, LG_XWOBA, 0.030, True)
             # Treat the adj delta the same as a per-pitch xwOBA delta:
             # negative = pitcher edge (GB-mix discount on the batter), positive = hitter edge.
@@ -3278,6 +3395,8 @@ def to_html(
                 f"{_td(f'{b_x_adj:.3f}', cls_b_adj)}"
                 f"{_td(f'{adj_pts:+.0f}', cls_adj)}"
                 f"{_td(f'{proj_x:.3f}', cls_proj)}"
+                f"{_td(fmt3(proj_a), cls_proj_a)}"
+                f"{_td(fmt3(proj_s), cls_proj_s)}"
                 f"<td>{r['Projected Whiff %']:.1f}</td>"
                 "</tr>"
             )
@@ -3407,11 +3526,16 @@ def to_html(
         parts.append("<table><thead><tr>"
                      "<th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th>"
                      "<th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th>"
+                     "<th>xBA</th><th>xSLG</th>"
                      "<th>Hard Hit %</th><th>Confidence</th>"
                      "</tr></thead><tbody>")
         for _, r in comps.iterrows():
             xw = r["xwOBA"]
-            cls_x = edge_class(xw, LG_XWOBA, 0.030, True) if not (isinstance(xw, float) and math.isnan(xw)) else ""
+            xa = r.get("xBA")
+            xs = r.get("xSLG")
+            cls_x = edge_class(xw, LG_XWOBA, 0.030, True)
+            cls_a = edge_class(xa, LG_XBA, 0.025, True)
+            cls_s = edge_class(xs, LG_XSLG, 0.040, True)
             whiff = r["Whiff %"]
             cls_w = edge_class(whiff / 100.0 if not pd.isna(whiff) else float("nan"),
                                LG_WHIFF, 0.04, batter_favors_high=False)
@@ -3423,6 +3547,8 @@ def to_html(
                 f"<td>{r['n comps (eff)']:.1f}</td>"
                 f"{_td(_pct_or_dash(whiff), cls_w)}"
                 f"{_td(fmt3(xw), cls_x)}"
+                f"{_td(fmt3(xa), cls_a)}"
+                f"{_td(fmt3(xs), cls_s)}"
                 f"<td>{_pct_or_dash(r['Hard Hit %'])}</td>"
                 f"<td>{conf_pill}</td>"
                 "</tr>"
@@ -3439,12 +3565,19 @@ def to_html(
         parts.append("<table><thead><tr>"
                      "<th>Pitch</th><th>In-zone %</th>"
                      "<th>Top zones (attack share)</th><th>Intersection xwOBA</th>"
+                     "<th>Intersection xBA</th><th>Intersection xSLG</th>"
                      "<th>Coverage %</th>"
                      "</tr></thead><tbody>")
         for _, r in zone_overlay_df.iterrows():
             ix = r["Intersection xwOBA"]
+            ia = r.get("Intersection xBA")
+            iss = r.get("Intersection xSLG")
             cls_ix = edge_class(ix if not pd.isna(ix) else float("nan"),
                                 LG_XWOBA, 0.030, True)
+            cls_ia = edge_class(ia if (ia is not None and not pd.isna(ia)) else float("nan"),
+                                LG_XBA, 0.025, True)
+            cls_is = edge_class(iss if (iss is not None and not pd.isna(iss)) else float("nan"),
+                                LG_XSLG, 0.040, True)
             cov = r.get("Coverage %")
             cov_str = (f"{cov:.0f}"
                        if cov is not None and not (isinstance(cov, float) and math.isnan(cov))
@@ -3455,11 +3588,13 @@ def to_html(
                 f"<td>{r['In-zone %']:.1f}</td>"
                 f"<td>{_h(r['Top zones'])}</td>"
                 f"{_td(fmt3(ix), cls_ix)}"
+                f"{_td(fmt3(ia), cls_ia)}"
+                f"{_td(fmt3(iss), cls_is)}"
                 f"<td>{cov_str}</td>"
                 "</tr>"
             )
         parts.append("</tbody></table>")
-        parts.append("<p class='note'>Coverage % = share of the pitcher's attack on this pitch landing in zones with batter data; remainder imputed at league xwOBA (so two batters with different coverage maps stay comparable).</p>")
+        parts.append("<p class='note'>Coverage % = share of the pitcher's attack on this pitch landing in zones with batter data; remainder imputed at league baselines (xwOBA 0.315, xBA 0.245, xSLG 0.405) so two batters with different coverage maps stay comparable.</p>")
     parts.append("</section>")
 
     # ----- Bat tracking -----
@@ -3552,10 +3687,14 @@ def to_html(
         b_x = float(r["Batter xwOBA"])
         p_x = float(r["Pitcher xwOBA allowed"])
         proj_x = float(r["Projected xwOBA"])
+        proj_a = r.get("Projected xBA")
+        proj_s = r.get("Projected xSLG")
         edge_pts = float(r["Edge (pts)"])
         cls_b = edge_class(b_x, LG_XWOBA, 0.030, True)
         cls_p = edge_class(p_x, LG_XWOBA, 0.030, True)
         cls_proj = edge_class(proj_x, LG_XWOBA, 0.030, True)
+        cls_proj_a = edge_class(proj_a, LG_XBA, 0.025, True)
+        cls_proj_s = edge_class(proj_s, LG_XSLG, 0.040, True)
         cls_edge = (
             "pit-edge-strong" if edge_pts <= -25
             else "pit-edge-mild" if edge_pts <= -10
@@ -3570,26 +3709,34 @@ def to_html(
             f"{_td(f'{b_x:.3f}', cls_b)}"
             f"{_td(f'{p_x:.3f}', cls_p)}"
             f"{_td(f'{proj_x:.3f}', cls_proj)}"
+            f"{_td(fmt3(proj_a), cls_proj_a)}"
+            f"{_td(fmt3(proj_s), cls_proj_s)}"
             f"{_td(f'{edge_pts:+.0f}', cls_edge)}"
             "</tr>"
         )
 
+    edge_table_head = (
+        "<table><thead><tr>"
+        "<th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th>"
+        "<th>Pitcher xwOBA allowed</th><th>Projected xwOBA</th>"
+        "<th>Projected xBA</th><th>Projected xSLG</th>"
+        "<th>Edge (pts)</th>"
+        "</tr></thead><tbody>"
+    )
+
     parts.append('<section class="card">')
     parts.append("<h2>Edge analysis</h2>")
     parts.append('<p class="subtitle">Per-pitch matchup result vs league (additive '
-                 'batter + pitcher projection minus 0.315). <b>Edge (pts)</b> is the '
-                 'projection delta in wOBA points; positive favors the hitter, '
-                 'negative favors the pitcher. Tables only list pitches whose net '
-                 'projection actually leans in that direction.</p>')
+                 'batter + pitcher projection minus league baseline). <b>Edge (pts)</b> '
+                 'is the xwOBA projection delta in wOBA points; positive favors the '
+                 'hitter, negative favors the pitcher. Tables only list pitches whose '
+                 'net xwOBA projection actually leans in that direction; xBA / xSLG are '
+                 'shown for context (each colored vs its own league baseline).</p>')
     parts.append('<p class="subtitle" style="margin-top:10px"><b>Pitches favoring the hitter</b></p>')
     if bat_fav.empty:
         parts.append('<p class="note">no pitch in the arsenal projects above league for this hitter</p>')
     else:
-        parts.append("<table><thead><tr>"
-                     "<th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th>"
-                     "<th>Pitcher xwOBA allowed</th><th>Projected xwOBA</th>"
-                     "<th>Edge (pts)</th>"
-                     "</tr></thead><tbody>")
+        parts.append(edge_table_head)
         for _, r in bat_fav.iterrows():
             parts.append(_edge_row(r))
         parts.append("</tbody></table>")
@@ -3597,11 +3744,7 @@ def to_html(
     if pit_fav.empty:
         parts.append('<p class="note">no pitch in the arsenal projects below league for this hitter</p>')
     else:
-        parts.append("<table><thead><tr>"
-                     "<th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th>"
-                     "<th>Pitcher xwOBA allowed</th><th>Projected xwOBA</th>"
-                     "<th>Edge (pts)</th>"
-                     "</tr></thead><tbody>")
+        parts.append(edge_table_head)
         for _, r in pit_fav.iterrows():
             parts.append(_edge_row(r))
         parts.append("</tbody></table>")

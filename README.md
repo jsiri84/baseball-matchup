@@ -330,6 +330,16 @@ Templated from the projection, the top batter-favoring pitch in the arsenal, the
 
 > Skenes' split-finger is the projected matchup advantage, while Yordan Alvarez should look to drive the 4-seam fastball. Projection: 0.398 xwOBA (+83 pts vs league, Hitter). LHB vs RHP — opposite-side platoon advantage to the hitter.
 
+#### Projected slash strip
+
+Above the verdict box, a one-row strip shows the full projected slash line and the league baselines for each metric:
+
+| Projected slash               | xwOBA | xBA   | xSLG  |
+|-------------------------------|------:|------:|------:|
+| lg 0.315 / 0.245 / 0.405      | 0.398 | 0.301 | 0.612 |
+
+The three cells are colored against their own league baselines (`LG_XWOBA = 0.315`, `LG_XBA = 0.245`, `LG_XSLG = 0.405`) so the slash line is readable at a glance. `xwOBA` carries the bb_type and count-state blends; `xBA` / `xSLG` carry the bb_type blend only (count-state shifts are wOBA-pt anchored and don't propagate). Use `xBA` as the per-AB on-base shape and `xSLG` for power expectation.
+
 #### Verdict box (3 rows)
 
 | Frame                       | Projected xwOBA | Baseline | Δ (wOBA pts) | Read                              |
@@ -337,6 +347,8 @@ Templated from the projection, the top batter-favoring pitch in the arsenal, the
 | vs league avg               | 0.398           | 0.315    | +83          | **Edge: Hitter**                  |
 | vs Skenes' baseline         | 0.398           | 0.252    | +146         | Edge: Hitter (vs Pitcher norm)    |
 | vs Alvarez's baseline       | 0.398           | 0.433    | -35          | Edge: Pitcher (vs Batter norm)    |
+
+The verdict box is anchored on `xwOBA` because that's the metric all three baselines (league, pitcher, batter) are reported in; `xBA` / `xSLG` live in the slash strip above so the headline doesn't get crowded.
 
 - **vs league avg** — the absolute strength of this matchup. Above .315 means the batter projects above an average AB.
 - **vs pitcher's baseline** — does the batter do better or worse than the pitcher's typical opponent? Yordan vs Skenes projects +146 wOBA points above Skenes' typical hitter — Skenes is great, but this hitter is exceptional.
@@ -445,7 +457,8 @@ projected_xwOBA(TTO=t) = base_projection_xwOBA + (pitcher_xwOBA_allowed_at_TTO_t
 
 - **TTO** — 1 (first time through), 2 (second), 3+ (third or later)
 - **Proj xwOBA** — projection for this PA position
-- **Proj K %**, **Proj Whiff %**, **Proj Hard Hit %** — base headline rates (constant across TTOs in v1)
+- **Proj xBA**, **Proj xSLG** — same delta logic applied to expected batting average and expected slugging (`base_proj.xBA + (xBA_allowed_at_TTO_t - xBA_allowed_overall)` and the parallel for xSLG); colored against `LG_XBA = 0.245` and `LG_XSLG = 0.405`. Uses the bb_type-adjusted headline xBA / xSLG as the anchor; the count-state blend is xwOBA-only so xBA / xSLG move only via the per-TTO delta.
+- **Proj K %**, **Proj Whiff %**, **Proj Hard Hit %** — same per-TTO delta applied to each headline rate
 - **Sample (eff PA)** — weighted PA count from the pitcher's TTO bucket; small samples mean the delta is noisy
 
 Use this when a player will face the pitcher more than once in a game ("leadoff in the first" projects differently than "with two on in the sixth").
@@ -465,6 +478,10 @@ Both players' overall numbers, restricted to the relevant platoon:
 | GB %          | ground-ball share of BBE        | ground-ball share allowed              |
 | Air %         | fly + line + popup share of BBE | air-ball share allowed                 |
 | xwOBA         | per-PA expected wOBA            | per-PA expected wOBA allowed           |
+| xBA           | per-AB expected batting average (K's count as 0) | per-AB xBA allowed         |
+| xSLG          | per-AB expected slugging (K's count as 0) | per-AB xSLG allowed              |
+
+The xBA / xSLG cells are colored against `LG_XBA = 0.245` and `LG_XSLG = 0.405` respectively, using the same "high-is-better-for-batter" semantics as the xwOBA row — so a green Pitcher xBA cell still means "high xBA-allowed = bad for the pitcher" and the colors stay consistent across the row.
 
 Cell coloring uses the **same direction in both columns** because the metric semantics are symmetric: a high Whiff% is bad for the batter whether you're looking at the batter's own rate or the pitcher's whiff-generating rate.
 
@@ -511,9 +528,11 @@ The Layer 1 projection broken down by pitch type. One row per pitch in the pitch
 - **Adj batter xwOBA** — the batter's xwOBA on this pitch shifted to use the pitcher's bb_type mix instead of the batter's own career mix (see [bb_type adjustment](#bb_type-adjustment-anti-gb-overcredit) below)
 - **Adj Δ (pts)** — projected xwOBA change from the bb_type adjustment, in wOBA points. Negative = pitcher edge (their grounder-heavy mix discounts the projection); positive = hitter edge (the pitcher gives up more line drives / fly balls than the batter typically hits on this pitch).
 - **Projected xwOBA** — `additive(adj_batter, pitcher, LG_XWOBA)` for this pitch (uses the bb_type-adjusted batter input)
+- **Projected xBA** — `additive(adj_batter_xBA, pitcher_xBA_allowed, LG_XBA)` for this pitch, colored against `LG_XBA = 0.245`. Same bb_type adjustment is applied to the batter's per-pitch xBA before the additive.
+- **Projected xSLG** — same construction with `LG_XSLG = 0.405`. Useful for separating "lots of weak singles" (high xBA, modest xSLG) from "fewer balls in play but they leave the yard" (modest xBA, high xSLG).
 - **Projected Whiff %** — `log5(batter, pitcher, LG_WHIFF)` for this pitch
 
-All xwOBA columns are colored against `LG_XWOBA = 0.315`. A row with green Batter / Pitcher / Projected cells means: the batter is good against this pitch, the pitcher gives up a lot on this pitch, and the projected matchup result is well above league. A red Adj Δ cell on top of those means the pitcher's bb_type-inducing tendency is pulling the projection back toward earth.
+All three projected slash columns are colored against their own league baselines, so a row that's green on Projected xwOBA but red on Projected xSLG flags a high-OBP / low-power matchup, and vice versa. A row with green Batter / Pitcher / Projected cells means: the batter is good against this pitch, the pitcher gives up a lot on this pitch, and the projected matchup result is well above league. A red Adj Δ cell on top of those means the pitcher's bb_type-inducing tendency is pulling the projection back toward earth.
 
 #### bb_type adjustment (anti-GB-overcredit)
 
@@ -571,7 +590,7 @@ A comp matches when, in the batter's pitch-by-pitch history (platoon-filtered):
 - **Pitch** — arsenal pitch name
 - **Shape (eff velo / IVB / HB-in)** — the arsenal pitch's average shape (perceived velo, gravity-included vertical break, batter-perspective horizontal break)
 - **n comps (eff)** — weighted count of matching pitches in the batter's history
-- **Whiff %**, **xwOBA**, **Hard Hit %** — batter's results on the matched comps
+- **Whiff %**, **xwOBA**, **xBA**, **xSLG**, **Hard Hit %** — batter's results on the matched comps. xBA / xSLG are colored against `LG_XBA = 0.245` and `LG_XSLG = 0.405`, same direction as xwOBA, so you can read the slash line off the comp at a glance.
 - **Confidence** — sample-size tier:
   - `high` — `eff_n ≥ 30`
   - `medium` — `eff_n` between 15 and 30
@@ -593,7 +612,8 @@ Where the pitcher attacks with each pitch type, crossed with where the batter do
 - **Pitch** — arsenal pitch name
 - **In-zone %** — share of this pitch type that lands in zones 1-9 (Statcast in-zone grid)
 - **Top zones (attack share)** — the three most-attacked zones for this pitch, with shares (e.g., `z13=33%, z14=16%, z7=13%`)
-- **Intersection xwOBA** — `sum_z (pitcher_attack_share_z * batter_xwOBA_z)`. Restricted to zones with batter data.
+- **Intersection xwOBA** — `sum_z (pitcher_attack_share_z * batter_xwOBA_z)`. Zones with no batter data are imputed at `LG_XWOBA = 0.315` instead of being dropped, so two batters with very different coverage maps stay comparable; the **Coverage %** column reports the share of the pitcher's attack on this pitch that landed in zones where we actually have batter data.
+- **Intersection xBA**, **Intersection xSLG** — same construction with the per-zone batter xBA / xSLG, imputed at `LG_XBA = 0.245` / `LG_XSLG = 0.405` on zones with no data. Use the trio together to see *where* a pitch's damage projects: a sweeper that lives in chase zones may have a low Intersection xwOBA but a still-elevated Intersection xSLG if the rare contact in those zones is loud.
 
 The Statcast zone grid:
 
@@ -662,7 +682,7 @@ edge_score = marginal_usage * (batter_xwOBA - LG_XWOBA)
 - **Pitches favoring the hitter** — top 3 by `edge_score` (most positive)
 - **Pitches favoring the pitcher** — top 3 by `edge_score` (most negative)
 
-Each row shows the usage %, batter xwOBA, and pitcher xwOBA allowed. The HTML highlights the batter xwOBA column green in the hitter-favoring table, and the pitcher xwOBA column red in the pitcher-favoring table.
+Each row shows the usage %, batter xwOBA, pitcher xwOBA allowed, the projected xwOBA / xBA / xSLG triple, and the **Edge (pts)** wOBA-pt delta. Edge ranking and the sign-filter that decides which side of the table a pitch lands on are anchored on **xwOBA only** (so the two tables don't disagree on which pitches favor which side); the projected xBA and xSLG cells are surfaced for context and are each colored against their own league baseline. A pitch that's green on Projected xwOBA but white on Projected xSLG, for example, is a "weak-contact-hits" edge — singles-and-walks territory rather than power damage.
 
 This is a quick-glance answer to "which 3 pitches do I want to see, and which 3 should I lay off?".
 
