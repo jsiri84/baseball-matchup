@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import re
 import requests
 import csv
 from datetime import datetime, timedelta
@@ -58,9 +59,9 @@ def _pitcher_hand(name: str) -> Optional[str]:
     return None
 
 
-def get_projected_lineup(team_abbrev: str, opp_pitcher_name: str) -> List[Tuple[str, int]]:
+def get_projected_lineup(team_abbrev: str, opp_pitcher_name: str) -> List[Tuple[str, int, int]]:
     """Find the team's most recent batting order vs a same-handed starting pitcher.
-    Returns [] if nothing usable is found."""
+    Returns list of (name, lineup_position, mlbam_id) or [] if nothing usable."""
     team_id = _team_id_map().get(team_abbrev)
     target_hand = _pitcher_hand(opp_pitcher_name)
     if not team_id or not target_hand:
@@ -110,11 +111,11 @@ def get_projected_lineup(team_abbrev: str, opp_pitcher_name: str) -> List[Tuple[
 
         bo = box["teams"][our_side].get("battingOrder") or []
         players = box["teams"][our_side].get("players", {})
-        result: List[Tuple[str, int]] = []
+        result: List[Tuple[str, int, int]] = []
         for pos, pid in enumerate(bo, 1):
             name = players.get(f"ID{pid}", {}).get("person", {}).get("fullName")
             if name:
-                result.append((name, pos))
+                result.append((name, pos, pid))
         if len(result) == 9:
             return result
     return []
@@ -138,6 +139,14 @@ def fetch_starting_lineups_page() -> Optional[str]:
     except requests.RequestException as e:
         print(f"✗ Error fetching starting lineups page: {e}")
         return None
+
+
+def _extract_mlbam_id(href: str) -> Optional[int]:
+    """Extract MLBAM player ID from an MLB.com player link like /player/name-123456."""
+    if not href:
+        return None
+    m = re.search(r'-(\d+)$', href)
+    return int(m.group(1)) if m else None
 
 
 def parse_games(html_content: str) -> List[Dict]:
@@ -204,7 +213,8 @@ def parse_games(html_content: str) -> List[Dict]:
                     name_elem = li.find('a', class_='starting-lineups__player--link')
                     if name_elem:
                         hitter_name = name_elem.get_text().strip()
-                        game['away_hitters'].append((hitter_name, pos))
+                        mlbam_id = _extract_mlbam_id(name_elem.get('href', ''))
+                        game['away_hitters'].append((hitter_name, pos, mlbam_id))
 
             # Get home team hitters (always set the key, even if empty)
             game['home_hitters'] = []
@@ -214,7 +224,8 @@ def parse_games(html_content: str) -> List[Dict]:
                     name_elem = li.find('a', class_='starting-lineups__player--link')
                     if name_elem:
                         hitter_name = name_elem.get_text().strip()
-                        game['home_hitters'].append((hitter_name, pos))
+                        mlbam_id = _extract_mlbam_id(name_elem.get('href', ''))
+                        game['home_hitters'].append((hitter_name, pos, mlbam_id))
             
             # Match with pitcher info from the same game index
             if game_idx < len(pitcher_overviews):
@@ -223,6 +234,8 @@ def parse_games(html_content: str) -> List[Dict]:
                 
                 away_pitcher = ""
                 home_pitcher = ""
+                away_pitcher_id: Optional[int] = None
+                home_pitcher_id: Optional[int] = None
                 pitcher_count = 0
                 
                 # Extract non-empty pitcher summaries
@@ -233,14 +246,19 @@ def parse_games(html_content: str) -> List[Dict]:
                         if name_link:
                             name = name_link.get_text().strip()
                             if name:
+                                pid = _extract_mlbam_id(name_link.get('href', ''))
                                 if pitcher_count == 0:
                                     away_pitcher = name
+                                    away_pitcher_id = pid
                                 elif pitcher_count == 1:
                                     home_pitcher = name
+                                    home_pitcher_id = pid
                                 pitcher_count += 1
                 
                 game['away_pitcher'] = away_pitcher
                 game['home_pitcher'] = home_pitcher
+                game['away_pitcher_id'] = away_pitcher_id
+                game['home_pitcher_id'] = home_pitcher_id
             
             if game and 'away_hitters' in game and 'home_hitters' in game:
                 games.append(game)
@@ -261,15 +279,86 @@ def _normal_pitcher_names(pitcher_name: str, opener_bulk: Dict[str, str]) -> Lis
     return names
 
 
-def generate_csv_rows(games: List[Dict], opener_bulk: Dict[str, str]) -> List[Tuple[str, str, str, str, str, str]]:
+def _enrich_pitcher_ids_from_statsapi(games: List[Dict]) -> None:
+    """Fill in missing pitcher MLBAM IDs using the StatsAPI schedule endpoint."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    try:
+        r = requests.get(
+            f"{STATSAPI}/schedule",
+            params={"sportId": 1, "date": today, "hydrate": "probablePitcher,team"},
+            timeout=15,
+        )
+        r.raise_for_status()
+    except requests.RequestException:
+        return
+
+    api_games = {}
+    for d in r.json().get("dates", []):
+        for g in d.get("games", []):
+            away_abbr = g["teams"]["away"]["team"].get("abbreviation", "")
+            home_abbr = g["teams"]["home"]["team"].get("abbreviation", "")
+            away_pp = g["teams"]["away"].get("probablePitcher", {})
+            home_pp = g["teams"]["home"].get("probablePitcher", {})
+            api_games[(away_abbr, home_abbr)] = {
+                "away_pitcher_id": away_pp.get("id"),
+                "home_pitcher_id": home_pp.get("id"),
+            }
+
+    for game in games:
+        key = (game.get("away_code", ""), game.get("home_code", ""))
+        api = api_games.get(key)
+        if not api:
+            continue
+        if not game.get("away_pitcher_id") and api.get("away_pitcher_id"):
+            game["away_pitcher_id"] = api["away_pitcher_id"]
+        if not game.get("home_pitcher_id") and api.get("home_pitcher_id"):
+            game["home_pitcher_id"] = api["home_pitcher_id"]
+
+
+def _resolve_hitter_ids_from_statsapi(games: List[Dict]) -> None:
+    """For confirmed lineups missing MLBAM IDs, look up each hitter by name
+    via the StatsAPI people/search endpoint."""
+    for game in games:
+        for side in ("away", "home"):
+            hitters = game.get(f"{side}_hitters") or []
+            updated = []
+            for entry in hitters:
+                name, pos = entry[0], entry[1]
+                mlbam_id = entry[2] if len(entry) > 2 else None
+                if mlbam_id is None:
+                    mlbam_id = _search_player_id(name)
+                updated.append((name, pos, mlbam_id))
+            game[f"{side}_hitters"] = updated
+
+
+def _search_player_id(name: str) -> Optional[int]:
+    """Look up a player's MLBAM ID via StatsAPI people/search."""
+    try:
+        r = requests.get(
+            f"{STATSAPI}/people/search",
+            params={"names": name, "sportId": 1, "active": True},
+            timeout=10,
+        )
+        r.raise_for_status()
+        people = r.json().get("people", [])
+        if people:
+            return people[0].get("id")
+    except requests.RequestException:
+        pass
+    return None
+
+
+def generate_csv_rows(games: List[Dict], opener_bulk: Dict[str, str]) -> List[Tuple[str, str, str, str, str, str, str, str]]:
     """
     Generate CSV rows from parsed games.
 
     Returns:
         List of tuples
-            (matchup, hitter_name, pitcher_name, lineup_position, status, hitter_team)
-        where status is "projected" or "confirmed" and hitter_team is the
-        2-3 letter team code of the hitter's own team.
+            (matchup, hitter_name, pitcher_name, lineup_position, status,
+             hitter_team, hitter_mlbam_id, pitcher_mlbam_id)
+        where status is "projected" or "confirmed", hitter_team is the
+        2-3 letter team code of the hitter's own team, and the MLBAM ID
+        columns are numeric strings (or empty if unavailable).
     """
     rows = []
 
@@ -280,21 +369,31 @@ def generate_csv_rows(games: List[Dict], opener_bulk: Dict[str, str]) -> List[Tu
 
         away_pitcher = game.get('away_pitcher', '')
         home_pitcher = game.get('home_pitcher', '')
+        away_pitcher_id = game.get('away_pitcher_id')
+        home_pitcher_id = game.get('home_pitcher_id')
         away_status = "projected" if game.get('away_projected') else "confirmed"
         home_status = "projected" if game.get('home_projected') else "confirmed"
 
         home_pitcher_names = _normal_pitcher_names(home_pitcher, opener_bulk)
         away_pitcher_names = _normal_pitcher_names(away_pitcher, opener_bulk)
 
-        for hitter_name, position in game.get('away_hitters', []):
+        for entry in game.get('away_hitters', []):
+            hitter_name, position = entry[0], entry[1]
+            hitter_id = entry[2] if len(entry) > 2 else None
             for pitcher_name in home_pitcher_names:
                 rows.append((matchup_key, hitter_name, pitcher_name, str(position),
-                             away_status, away_team))
+                             away_status, away_team,
+                             str(hitter_id) if hitter_id else "",
+                             str(home_pitcher_id) if home_pitcher_id else ""))
 
-        for hitter_name, position in game.get('home_hitters', []):
+        for entry in game.get('home_hitters', []):
+            hitter_name, position = entry[0], entry[1]
+            hitter_id = entry[2] if len(entry) > 2 else None
             for pitcher_name in away_pitcher_names:
                 rows.append((matchup_key, hitter_name, pitcher_name, str(position),
-                             home_status, home_team))
+                             home_status, home_team,
+                             str(hitter_id) if hitter_id else "",
+                             str(away_pitcher_id) if away_pitcher_id else ""))
 
     return rows
 
@@ -392,6 +491,10 @@ def main(argv=None):
     # Fill in missing lineups using most recent same-handed batting order
     print("Filling in missing lineups (if any)...")
     fill_missing_lineups(games)
+
+    # Enrich with MLBAM IDs from StatsAPI (fills in any missing pitcher/hitter IDs)
+    _enrich_pitcher_ids_from_statsapi(games)
+    _resolve_hitter_ids_from_statsapi(games)
 
     projected_sides = []
     for g in games:
