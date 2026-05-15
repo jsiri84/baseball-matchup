@@ -4117,6 +4117,8 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         "name": bm["name"],
         "stand": bm["stand"] or "?",
         "proj_xwoba": proj["xwOBA"],
+        "proj_xba": float(proj.get("xBA", float("nan"))) if proj.get("xBA") is not None else float("nan"),
+        "proj_xslg": float(proj.get("xSLG", float("nan"))) if proj.get("xSLG") is not None else float("nan"),
         "proj_xwoba_raw": float(proj.get("xwOBA_raw", proj["xwOBA"]) or proj["xwOBA"]),
         "bbtype_adj_pts": float(proj.get("xwOBA_adj_pts", 0.0) or 0.0),
         "delta_pts": delta,
@@ -4302,13 +4304,14 @@ def to_lineup_markdown(pitcher_meta: dict, season: int,
     lines.append("## Lineup grid")
     lines.append("")
     lines.append(
-        "| # | Batter | Hand | Proj xwOBA | Δ (pts) | K% | BB% | HR% | Hit% | OB% | Best pitch (xwOBA) | Worst pitch (xwOBA) | Verdict |"
+        "| # | Batter | Hand | Proj xwOBA | Proj xBA | Proj xSLG | Δ (pts) | K% | BB% | HR% | Hit% | OB% | Best pitch (xwOBA) | Worst pitch (xwOBA) | Verdict |"
     )
-    lines.append("|---:|---|:-:|---:|---:|---:|---:|---:|---:|---:|---|---|:-:|")
+    lines.append("|---:|---|:-:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|:-:|")
     for r in summary_rows:
         lines.append(
             f"| {r['spot']} | {r['name']} | {r['stand']}HB | "
-            f"{r['proj_xwoba']:.3f} | {r['delta_pts']:+.0f} | "
+            f"{r['proj_xwoba']:.3f} | {fmt3(r.get('proj_xba'))} | {fmt3(r.get('proj_xslg'))} | "
+            f"{r['delta_pts']:+.0f} | "
             f"{r['k_pct']*100:.1f}% | {r['bb_pct']*100:.1f}% | "
             f"{r['hr_pct']*100:.1f}% | {r['hit_pct']*100:.1f}% | "
             f"{r['ob_pct']*100:.1f}% | {r['best_pitch']} | {r['worst_pitch']} | "
@@ -4364,11 +4367,19 @@ def to_lineup_markdown(pitcher_meta: dict, season: int,
 def _summary_for_block(r: dict, pname: str) -> str:
     """Inline summary line for a per-batter <details><summary>."""
     delta_str = f"{r['delta_pts']:+.0f} pts"
+    xba = r.get("proj_xba")
+    xslg = r.get("proj_xslg")
+    slash_bits = [f"xwOBA <b>{r['proj_xwoba']:.3f}</b>"]
+    if xba is not None and not (isinstance(xba, float) and math.isnan(xba)):
+        slash_bits.append(f"xBA <b>{xba:.3f}</b>")
+    if xslg is not None and not (isinstance(xslg, float) and math.isnan(xslg)):
+        slash_bits.append(f"xSLG <b>{xslg:.3f}</b>")
+    slash_str = " / ".join(slash_bits)
     return (
         f'<span class="spot">{r["spot"]}.</span>'
         f'<span class="name">{_h(r["name"])}</span>'
         f'<span class="badge">{_h(r["stand"])}HB</span>'
-        f'<span class="summary-stat">proj xwOBA <b>{r["proj_xwoba"]:.3f}</b> ({delta_str})</span>'
+        f'<span class="summary-stat">proj {slash_str} ({delta_str})</span>'
         f'<span class="summary-stat">K <b>{r["k_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">BB <b>{r["bb_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">HR <b>{r["hr_pct"]*100:.1f}%</b></span>'
@@ -4490,7 +4501,8 @@ def to_lineup_html(pitcher_meta: dict, season: int,
     parts.append("<h2>Lineup grid</h2>")
     parts.append('<table class="lineup-grid"><thead><tr>'
                  '<th>#</th><th style="text-align:left">Batter</th><th>Hand</th>'
-                 '<th>Proj xwOBA</th><th>&Delta; (pts)</th>'
+                 '<th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th>'
+                 '<th>&Delta; (pts)</th>'
                  '<th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th><th>OB%</th>'
                  '<th style="text-align:left">Best pitch</th>'
                  '<th style="text-align:left">Worst pitch</th>'
@@ -4499,6 +4511,10 @@ def to_lineup_html(pitcher_meta: dict, season: int,
     for r in summary_rows:
         # Color cells: xwOBA + delta against league; K/BB/HR/Hit against league outcome rates.
         proj_cls = edge_class(r["proj_xwoba"], LG_XWOBA, 0.025, batter_favors_high=True)
+        xba = r.get("proj_xba")
+        xslg = r.get("proj_xslg")
+        xba_cls = edge_class(xba, LG_XBA, 0.025, batter_favors_high=True)
+        xslg_cls = edge_class(xslg, LG_XSLG, 0.040, batter_favors_high=True)
         delta_cls_row = (
             "bat-edge-strong" if r["delta_pts"] >= 50
             else "bat-edge-mild" if r["delta_pts"] >= 25
@@ -4527,6 +4543,8 @@ def to_lineup_html(pitcher_meta: dict, season: int,
             f'<td class="name"><a href="#{_h(r["anchor"])}">{_h(r["name"])}</a></td>'
             f'<td class="handpill"><span class="pill">{_h(r["stand"])}HB</span></td>'
             f'{_td(f"{r['proj_xwoba']:.3f}", proj_cls)}'
+            f'{_td(fmt3(xba), xba_cls)}'
+            f'{_td(fmt3(xslg), xslg_cls)}'
             f'{_td(f"{r['delta_pts']:+.0f}", delta_cls_row)}'
             f'{_td(f"{r['k_pct']*100:.1f}%", k_cls)}'
             f'{_td(f"{r['bb_pct']*100:.1f}%", bb_cls)}'

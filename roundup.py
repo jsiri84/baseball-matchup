@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from datetime import date as date_cls
 from pathlib import Path
@@ -33,11 +34,14 @@ from matchup import (
     LG_BB_PCT,
     LG_K_PCT,
     LG_OUTCOMES,
+    LG_XBA,
+    LG_XSLG,
     LG_XWOBA,
     _HTML_CSS,
     _h,
     _td,
     edge_class,
+    fmt3,
 )
 from log_setup import setup_logging
 
@@ -100,6 +104,14 @@ def _summary_line(rank: int, row: dict) -> str:
     sr = row["sr"]
     delta_str = f"{sr['delta_pts']:+.0f} pts"
     proj_flag = ' <span class="badge" title="Projected lineup">PROJ</span>' if row["projected"] else ""
+    slash_bits = [f"xwOBA <b>{sr['proj_xwoba']:.3f}</b>"]
+    xba = sr.get("proj_xba")
+    xslg = sr.get("proj_xslg")
+    if xba is not None and not (isinstance(xba, float) and math.isnan(xba)):
+        slash_bits.append(f"xBA <b>{xba:.3f}</b>")
+    if xslg is not None and not (isinstance(xslg, float) and math.isnan(xslg)):
+        slash_bits.append(f"xSLG <b>{xslg:.3f}</b>")
+    slash_str = " / ".join(slash_bits)
     return (
         f'<span class="spot">{rank}.</span>'
         f'<span class="name">{_h(sr["name"])}</span>'
@@ -107,7 +119,7 @@ def _summary_line(rank: int, row: dict) -> str:
         f'<span class="summary-stat">{_h(row["team"] or "?")} '
         f'vs <b>{_h(row["pitcher_name"] or "?")}</b> '
         f'({_h(row["p_throws"])}HP){proj_flag}</span>'
-        f'<span class="summary-stat">proj xwOBA <b>{sr["proj_xwoba"]:.3f}</b> ({delta_str})</span>'
+        f'<span class="summary-stat">proj {slash_str} ({delta_str})</span>'
         f'<span class="summary-stat">K <b>{sr["k_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">BB <b>{sr["bb_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">HR <b>{sr["hr_pct"]*100:.1f}%</b></span>'
@@ -119,6 +131,10 @@ def _summary_line(rank: int, row: dict) -> str:
 def _grid_row_html(rank: int, row: dict) -> str:
     sr = row["sr"]
     proj_cls = edge_class(sr["proj_xwoba"], LG_XWOBA, 0.025, batter_favors_high=True)
+    xba = sr.get("proj_xba")
+    xslg = sr.get("proj_xslg")
+    xba_cls = edge_class(xba, LG_XBA, 0.025, batter_favors_high=True)
+    xslg_cls = edge_class(xslg, LG_XSLG, 0.040, batter_favors_high=True)
     delta_cls = (
         "bat-edge-strong" if sr["delta_pts"] >= 50
         else "bat-edge-mild" if sr["delta_pts"] >= 25
@@ -144,6 +160,8 @@ def _grid_row_html(rank: int, row: dict) -> str:
         f'<td class="name">{_h(row["pitcher_name"] or "?")} '
         f'<span class="pill">{_h(row["p_throws"])}HP</span></td>'
         f'{_td(f"{sr['proj_xwoba']:.3f}", proj_cls)}'
+        f'{_td(fmt3(xba), xba_cls)}'
+        f'{_td(fmt3(xslg), xslg_cls)}'
         f'{_td(f"{sr['delta_pts']:+.0f}", delta_cls)}'
         f'{_td(f"{sr['k_pct']*100:.1f}%", k_cls)}'
         f'{_td(f"{sr['bb_pct']*100:.1f}%", bb_cls)}'
@@ -186,7 +204,8 @@ def _build_html(title: str, subtitle: str, rows: list[dict],
                  '<th>#</th><th>Team</th>'
                  '<th style="text-align:left">Batter</th><th>Hand</th>'
                  '<th style="text-align:left">Pitcher</th>'
-                 '<th>Proj xwOBA</th><th>&Delta; (pts)</th>'
+                 '<th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th>'
+                 '<th>&Delta; (pts)</th>'
                  '<th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th><th>OB%</th>'
                  '<th style="text-align:left">Best pitch</th>'
                  '<th style="text-align:left">Worst pitch</th>'
