@@ -131,6 +131,8 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 .cq-panel table tbody td { padding: 5px 8px; }
 .cq-panel .sweet td:first-child { background: #f1f5f9; font-weight: 600; }
 .cq-panel .sweet td:first-child::before { content: '\2605  '; color: #2563eb; }
+.report-timestamp { color: var(--muted); font-size: 11px; text-align: right;
+                    margin: 16px 0 8px 0; font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -144,7 +146,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <div class="lineup-hero">
 <div class="stat">Lineup avg xwOBA<b class="">0.304</b></div>
 <div class="stat">vs league<b class="">-11 pts</b></div>
-<div class="stat">Expected K<b>4.7</b></div>
+<div class="stat">Expected K<b>4.9</b></div>
 <div class="stat">Expected BB<b>1.4</b></div>
 <div class="stat">Expected hits<b>6.7</b></div>
 <div class="stat">Expected HR<b>0.51</b></div>
@@ -156,38 +158,38 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <h2>Projected pitcher line by BF (20&ndash;30)</h2>
 <p class="subtitle">Cycles through the order, blending Nick Martinez's <b>3.70</b> P/PA with the lineup's <b>3.85</b> P/PA average (long PAs winsorized at 10). Each row shows the cumulative line at that BF.</p>
 <table class="pitcher-bf"><thead><tr><th>BF</th><th>Pitches</th><th>K</th><th>BB</th><th>Hits</th><th>HR</th><th>Outs</th></tr></thead><tbody>
-<tr><td><b>20</b></td><td>76</td><td>3.4</td><td>1.0</td><td>5.0</td><td>0.37</td><td>13.9</td></tr>
-<tr><td><b>21</b></td><td>79</td><td>3.5</td><td>1.1</td><td>5.3</td><td>0.39</td><td>14.5</td></tr>
-<tr><td><b>22</b></td><td>83</td><td>3.7</td><td>1.2</td><td>5.5</td><td>0.45</td><td>15.2</td></tr>
-<tr><td><b>23</b></td><td>87</td><td>3.9</td><td>1.2</td><td>5.8</td><td>0.48</td><td>15.9</td></tr>
-<tr><td><b>24</b></td><td>90</td><td>4.1</td><td>1.3</td><td>6.0</td><td>0.49</td><td>16.5</td></tr>
-<tr><td><b>25</b></td><td>94</td><td>4.2</td><td>1.3</td><td>6.3</td><td>0.49</td><td>17.2</td></tr>
-<tr><td><b>26</b></td><td>98</td><td>4.4</td><td>1.3</td><td>6.5</td><td>0.51</td><td>17.9</td></tr>
-<tr><td><b>27</b></td><td>102</td><td>4.7</td><td>1.4</td><td>6.7</td><td>0.51</td><td>18.7</td></tr>
-<tr><td><b>28</b></td><td>106</td><td>4.8</td><td>1.5</td><td>7.0</td><td>0.52</td><td>19.4</td></tr>
-<tr><td><b>29</b></td><td>110</td><td>4.9</td><td>1.5</td><td>7.2</td><td>0.54</td><td>20.1</td></tr>
-<tr><td><b>30</b></td><td>113</td><td>5.0</td><td>1.5</td><td>7.5</td><td>0.56</td><td>20.7</td></tr>
+<tr><td><b>20</b></td><td>76</td><td>3.5</td><td>1.0</td><td>5.0</td><td>0.37</td><td>13.9</td></tr>
+<tr><td><b>21</b></td><td>79</td><td>3.7</td><td>1.1</td><td>5.3</td><td>0.39</td><td>14.5</td></tr>
+<tr><td><b>22</b></td><td>83</td><td>3.9</td><td>1.2</td><td>5.5</td><td>0.45</td><td>15.2</td></tr>
+<tr><td><b>23</b></td><td>87</td><td>4.1</td><td>1.2</td><td>5.8</td><td>0.48</td><td>15.9</td></tr>
+<tr><td><b>24</b></td><td>90</td><td>4.3</td><td>1.3</td><td>6.0</td><td>0.49</td><td>16.5</td></tr>
+<tr><td><b>25</b></td><td>94</td><td>4.4</td><td>1.3</td><td>6.3</td><td>0.49</td><td>17.2</td></tr>
+<tr><td><b>26</b></td><td>98</td><td>4.7</td><td>1.3</td><td>6.5</td><td>0.51</td><td>17.9</td></tr>
+<tr><td><b>27</b></td><td>102</td><td>4.9</td><td>1.4</td><td>6.7</td><td>0.51</td><td>18.7</td></tr>
+<tr><td><b>28</b></td><td>106</td><td>5.0</td><td>1.5</td><td>7.0</td><td>0.52</td><td>19.4</td></tr>
+<tr><td><b>29</b></td><td>110</td><td>5.2</td><td>1.5</td><td>7.2</td><td>0.54</td><td>20.1</td></tr>
+<tr><td><b>30</b></td><td>113</td><td>5.3</td><td>1.5</td><td>7.5</td><td>0.56</td><td>20.7</td></tr>
 </tbody></table>
 </section>
 <section class="card">
 <h2>Lineup grid</h2>
 <table class="lineup-grid"><thead><tr><th>#</th><th style="text-align:left">Batter</th><th>Hand</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>&Delta; (pts)</th><th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th><th>OB%</th><th style="text-align:left">Best pitch</th><th style="text-align:left">Worst pitch</th><th>Verdict</th></tr></thead><tbody>
-<tr><td class="spot">1</td><td class="name"><a href="#batter-1">Xavier Edwards</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-mild">0.292</td><td>0.239</td><td class="pit-edge-mild">0.381</td><td>-23</td><td class="bat-edge-strong">12.7%</td><td class="pit-edge-mild">6.2%</td><td class="pit-edge-strong">0.7%</td><td class="bat-edge-mild">24.9%</td><td>31.3%</td><td class="pitch-cell">4-Seam Fastball (0.339)</td><td class="pitch-cell">Changeup (0.256)</td><td class="verdict neutral">Even</td></tr>
-<tr><td class="spot">2</td><td class="name"><a href="#batter-2">Liam Hicks</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-mild">0.291</td><td>0.238</td><td class="pit-edge-mild">0.384</td><td>-24</td><td class="bat-edge-strong">12.9%</td><td class="pit-edge-mild">6.1%</td><td class="pit-edge-mild">2.2%</td><td class="bat-edge-mild">23.8%</td><td>30.9%</td><td class="pitch-cell">Cutter (0.357)</td><td class="pitch-cell">Changeup (0.251)</td><td class="verdict neutral">Even</td></tr>
-<tr><td class="spot">3</td><td class="name"><a href="#batter-3">Otto Lopez</a></td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.359</td><td class="bat-edge-mild">0.275</td><td class="bat-edge-strong">0.482</td><td class="bat-edge-mild">+44</td><td class="bat-edge-strong">11.4%</td><td class="pit-edge-strong">3.6%</td><td class="pit-edge-mild">2.1%</td><td class="bat-edge-strong">31.9%</td><td class="bat-edge-strong">36.3%</td><td class="pitch-cell">Sinker (0.408)</td><td class="pitch-cell">Changeup (0.232)</td><td class="verdict bat-edge-mild">Slight Hitter</td></tr>
-<tr><td class="spot">4</td><td class="name"><a href="#batter-4">Kyle Stowers</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-mild">0.347</td><td>0.248</td><td>0.416</td><td class="bat-edge-mild">+32</td><td>23.7%</td><td class="pit-edge-mild">6.5%</td><td class="bat-edge-strong">5.7%</td><td class="bat-edge-mild">24.1%</td><td>31.1%</td><td class="pitch-cell">Cutter (0.441)</td><td class="pitch-cell">Changeup (0.349)</td><td class="verdict bat-edge-mild">Slight Hitter</td></tr>
-<tr><td class="spot">5</td><td class="name"><a href="#batter-5">Connor Norby</a></td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-mild">0.337</td><td>0.255</td><td>0.410</td><td>+22</td><td class="bat-edge-mild">19.1%</td><td class="pit-edge-strong">2.9%</td><td>3.5%</td><td class="bat-edge-strong">26.9%</td><td>31.7%</td><td class="pitch-cell">Sinker (0.395)</td><td class="pitch-cell">Changeup (0.197)</td><td class="verdict neutral">Even</td></tr>
-<tr><td class="spot">6</td><td class="name"><a href="#batter-6">Jakob Marsee</a></td><td class="handpill"><span class="pill">LHB</span></td><td>0.311</td><td>0.256</td><td>0.412</td><td>-4</td><td class="bat-edge-mild">18.9%</td><td class="pit-edge-mild">7.3%</td><td class="pit-edge-strong">0.5%</td><td class="bat-edge-strong">25.2%</td><td class="bat-edge-mild">33.1%</td><td class="pitch-cell">Curveball (0.378)</td><td class="pitch-cell">Changeup (0.332)</td><td class="verdict neutral">Even</td></tr>
-<tr><td class="spot">7</td><td class="name"><a href="#batter-7">Javier Sanoja</a></td><td class="handpill"><span class="pill">RHB</span></td><td>0.314</td><td>0.250</td><td class="bat-edge-mild">0.430</td><td>-1</td><td class="bat-edge-strong">10.7%</td><td class="pit-edge-strong">3.6%</td><td class="pit-edge-strong">0.4%</td><td class="bat-edge-strong">27.6%</td><td>31.2%</td><td class="pitch-cell">4-Seam Fastball (0.305)</td><td class="pitch-cell">Changeup (0.249)</td><td class="verdict neutral">Even</td></tr>
-<tr><td class="spot">8</td><td class="name"><a href="#batter-8">Owen Caissie</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.272</td><td>0.240</td><td class="pit-edge-mild">0.371</td><td class="pit-edge-mild">-43</td><td class="pit-edge-mild">24.2%</td><td class="pit-edge-strong">5.1%</td><td class="pit-edge-mild">2.1%</td><td>22.7%</td><td class="pit-edge-mild">28.3%</td><td class="pitch-cell">Cutter (0.366)</td><td class="pitch-cell">Changeup (0.252)</td><td class="verdict pit-edge-mild">Slight Pitcher</td></tr>
-<tr><td class="spot">9</td><td class="name"><a href="#batter-9">Joe Mack</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.218</td><td>0.246</td><td>0.395</td><td class="pit-edge-strong">-97</td><td>21.6%</td><td class="pit-edge-strong">5.0%</td><td class="pit-edge-strong">0.0%</td><td class="pit-edge-strong">16.7%</td><td class="pit-edge-strong">21.7%</td><td class="pitch-cell">Cutter (0.451)</td><td class="pitch-cell">Changeup (0.000)</td><td class="verdict pit-edge-mild">Edge Pitcher</td></tr>
+<tr><td class="spot">1</td><td class="name"><a href="#batter-1">Xavier Edwards</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-mild">0.292</td><td>0.239</td><td class="pit-edge-mild">0.381</td><td>-23</td><td class="bat-edge-strong">14.3%</td><td class="pit-edge-mild">6.2%</td><td class="pit-edge-strong">0.7%</td><td class="bat-edge-mild">24.9%</td><td>31.3%</td><td class="pitch-cell">4-Seam Fastball (0.339)</td><td class="pitch-cell">Changeup (0.256)</td><td class="verdict neutral">Even</td></tr>
+<tr><td class="spot">2</td><td class="name"><a href="#batter-2">Liam Hicks</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-mild">0.291</td><td>0.238</td><td class="pit-edge-mild">0.384</td><td>-24</td><td class="bat-edge-strong">14.5%</td><td class="pit-edge-mild">6.1%</td><td class="pit-edge-mild">2.2%</td><td class="bat-edge-mild">23.8%</td><td>30.9%</td><td class="pitch-cell">Cutter (0.357)</td><td class="pitch-cell">Changeup (0.251)</td><td class="verdict neutral">Even</td></tr>
+<tr><td class="spot">3</td><td class="name"><a href="#batter-3">Otto Lopez</a></td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.359</td><td class="bat-edge-mild">0.275</td><td class="bat-edge-strong">0.482</td><td class="bat-edge-mild">+44</td><td class="bat-edge-strong">13.2%</td><td class="pit-edge-strong">3.6%</td><td class="pit-edge-mild">2.1%</td><td class="bat-edge-strong">31.9%</td><td class="bat-edge-strong">36.3%</td><td class="pitch-cell">Sinker (0.408)</td><td class="pitch-cell">Changeup (0.232)</td><td class="verdict bat-edge-mild">Slight Hitter</td></tr>
+<tr><td class="spot">4</td><td class="name"><a href="#batter-4">Kyle Stowers</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-mild">0.347</td><td>0.248</td><td>0.416</td><td class="bat-edge-mild">+32</td><td>23.4%</td><td class="pit-edge-mild">6.5%</td><td class="bat-edge-strong">5.7%</td><td class="bat-edge-mild">24.1%</td><td>31.1%</td><td class="pitch-cell">Cutter (0.441)</td><td class="pitch-cell">Changeup (0.349)</td><td class="verdict bat-edge-mild">Slight Hitter</td></tr>
+<tr><td class="spot">5</td><td class="name"><a href="#batter-5">Connor Norby</a></td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-mild">0.337</td><td>0.255</td><td>0.410</td><td>+22</td><td class="bat-edge-mild">19.7%</td><td class="pit-edge-strong">2.9%</td><td>3.5%</td><td class="bat-edge-strong">26.9%</td><td>31.7%</td><td class="pitch-cell">Sinker (0.395)</td><td class="pitch-cell">Changeup (0.197)</td><td class="verdict neutral">Even</td></tr>
+<tr><td class="spot">6</td><td class="name"><a href="#batter-6">Jakob Marsee</a></td><td class="handpill"><span class="pill">LHB</span></td><td>0.311</td><td>0.256</td><td>0.412</td><td>-4</td><td class="bat-edge-mild">19.6%</td><td class="pit-edge-mild">7.3%</td><td class="pit-edge-strong">0.5%</td><td class="bat-edge-strong">25.2%</td><td class="bat-edge-mild">33.1%</td><td class="pitch-cell">Curveball (0.378)</td><td class="pitch-cell">Changeup (0.332)</td><td class="verdict neutral">Even</td></tr>
+<tr><td class="spot">7</td><td class="name"><a href="#batter-7">Javier Sanoja</a></td><td class="handpill"><span class="pill">RHB</span></td><td>0.314</td><td>0.250</td><td class="bat-edge-mild">0.430</td><td>-1</td><td class="bat-edge-strong">12.5%</td><td class="pit-edge-strong">3.6%</td><td class="pit-edge-strong">0.4%</td><td class="bat-edge-strong">27.6%</td><td>31.2%</td><td class="pitch-cell">4-Seam Fastball (0.305)</td><td class="pitch-cell">Changeup (0.249)</td><td class="verdict neutral">Even</td></tr>
+<tr><td class="spot">8</td><td class="name"><a href="#batter-8">Owen Caissie</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.272</td><td>0.240</td><td class="pit-edge-mild">0.371</td><td class="pit-edge-mild">-43</td><td>23.9%</td><td class="pit-edge-strong">5.1%</td><td class="pit-edge-mild">2.1%</td><td>22.7%</td><td class="pit-edge-mild">28.3%</td><td class="pitch-cell">Cutter (0.366)</td><td class="pitch-cell">Changeup (0.252)</td><td class="verdict pit-edge-mild">Slight Pitcher</td></tr>
+<tr><td class="spot">9</td><td class="name"><a href="#batter-9">Joe Mack</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.218</td><td>0.246</td><td>0.395</td><td class="pit-edge-strong">-97</td><td>21.8%</td><td class="pit-edge-strong">5.0%</td><td class="pit-edge-strong">0.0%</td><td class="pit-edge-strong">16.7%</td><td class="pit-edge-strong">21.7%</td><td class="pitch-cell">Cutter (0.451)</td><td class="pitch-cell">Changeup (0.000)</td><td class="verdict pit-edge-mild">Edge Pitcher</td></tr>
 </tbody></table>
 <p class="note">Click a batter's name (or the row below) to expand the full per-batter matchup report. Cells are colored vs the league baseline for that metric.</p>
 </section>
 <section class="card">
 <h2>Per-batter detail</h2>
 <details class="batter-block" id="batter-1">
-<summary><span class="spot">1.</span><span class="name">Xavier Edwards</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.292</b> / xBA <b>0.239</b> / xSLG <b>0.381</b> (-23 pts)</span><span class="summary-stat">K <b>12.7%</b></span><span class="summary-stat">BB <b>6.2%</b></span><span class="summary-stat">HR <b>0.7%</b></span><span class="summary-stat">Hit <b>24.9%</b></span><span class="verdict-pill neutral">Even</span></summary>
+<summary><span class="spot">1.</span><span class="name">Xavier Edwards</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.292</b> / xBA <b>0.239</b> / xSLG <b>0.381</b> (-23 pts)</span><span class="summary-stat">K <b>14.3%</b></span><span class="summary-stat">BB <b>6.2%</b></span><span class="summary-stat">HR <b>0.7%</b></span><span class="summary-stat">Hit <b>24.9%</b></span><span class="verdict-pill neutral">Even</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Xavier Edwards <span class="badge">LHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -207,14 +209,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">12.7%</td><td>+687</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">14.3%</td><td>+599</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">6.2%</td><td>+1519</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">0.2%</td><td>+46609</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">19.6%</td><td>+410</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="pit-edge-mild">3.7%</td><td>+2612</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td class="bat-edge-mild">0.9%</td><td>+10695</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">0.7%</td><td>+14611</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">56.0%</td><td>-127</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">54.4%</td><td>-119</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">24.9%</td><td>+302</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td>31.3%</td><td>+220</td><td>31.7%</td></tr>
@@ -224,14 +226,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">23.8%</td><td class="odds">+320</td><td class="avg">0.25</td><td class="bat-edge-strong">33.5%</td><td class="odds">+199</td><td class="avg">0.38</td><td class="bat-edge-strong">41.9%</td><td class="odds">+139</td><td class="avg">0.51</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">26.6%</td><td class="odds">+276</td><td class="avg">0.29</td><td class="bat-edge-strong">37.1%</td><td class="odds">+170</td><td class="avg">0.43</td><td class="bat-edge-strong">46.1%</td><td class="odds">+117</td><td class="avg">0.57</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">12.0%</td><td class="odds">+735</td><td class="avg">0.12</td><td class="pit-edge-mild">17.4%</td><td class="odds">+474</td><td class="avg">0.19</td><td class="pit-edge-mild">22.5%</td><td class="odds">+344</td><td class="avg">0.25</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">0.4%</td><td class="odds">+23280</td><td class="avg">0.00</td><td class="pit-edge-strong">0.6%</td><td class="odds">+15503</td><td class="avg">0.01</td><td class="pit-edge-strong">0.9%</td><td class="odds">+11615</td><td class="avg">0.01</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">35.4%</td><td class="odds">+183</td><td class="avg">0.39</td><td class="bat-edge-strong">48.0%</td><td class="odds">+108</td><td class="avg">0.59</td><td class="bat-edge-strong">58.2%</td><td class="odds">-139</td><td class="avg">0.78</td></tr>
 <tr><td>Double</td><td class="pit-edge-mild">7.2%</td><td class="odds">+1282</td><td class="avg">0.07</td><td class="pit-edge-mild">10.7%</td><td class="odds">+838</td><td class="avg">0.11</td><td class="pit-edge-mild">14.0%</td><td class="odds">+617</td><td class="avg">0.15</td></tr>
 <tr><td>Triple</td><td class="bat-edge-mild">1.8%</td><td class="odds">+5322</td><td class="avg">0.02</td><td class="bat-edge-mild">2.8%</td><td class="odds">+3532</td><td class="avg">0.03</td><td class="bat-edge-mild">3.7%</td><td class="odds">+2636</td><td class="avg">0.04</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">1.4%</td><td class="odds">+7281</td><td class="avg">0.01</td><td class="pit-edge-strong">2.0%</td><td class="odds">+4837</td><td class="avg">0.02</td><td class="pit-edge-strong">2.7%</td><td class="odds">+3616</td><td class="avg">0.03</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">80.6%</td><td class="odds">-417</td><td class="avg">1.12</td><td class="pit-edge-mild">91.5%</td><td class="odds">-1075</td><td class="avg">1.68</td><td>96.3%</td><td class="odds">-2570</td><td class="avg">2.24</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">79.2%</td><td class="odds">-381</td><td class="avg">1.09</td><td class="pit-edge-mild">90.5%</td><td class="odds">-954</td><td class="avg">1.63</td><td>95.7%</td><td class="odds">-2212</td><td class="avg">2.18</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">43.6%</td><td class="odds">+129</td><td class="avg">0.50</td><td class="bat-edge-mild">57.6%</td><td class="odds">-136</td><td class="avg">0.75</td><td>68.2%</td><td class="odds">-214</td><td class="avg">1.00</td></tr>
 <tr><td>On-base</td><td>52.8%</td><td class="odds">-112</td><td class="avg">0.63</td><td>67.6%</td><td class="odds">-208</td><td class="avg">0.94</td><td>77.7%</td><td class="odds">-349</td><td class="avg">1.25</td></tr>
 </tbody></table>
@@ -239,9 +241,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="pit-edge-mild">0.277</td><td class="pit-edge-mild">0.218</td><td class="pit-edge-mild">0.362</td><td>16.9%</td><td>11.7%</td><td>29.6%</td><td>132.2</td></tr>
-<tr><td>2</td><td class="pit-edge-mild">0.274</td><td>0.237</td><td class="pit-edge-mild">0.376</td><td>13.0%</td><td>11.6%</td><td>32.0%</td><td>99.9</td></tr>
-<tr><td>3</td><td class="bat-edge-mild">0.352</td><td class="bat-edge-strong">0.291</td><td class="bat-edge-mild">0.432</td><td>3.5%</td><td>9.6%</td><td>37.3%</td><td>62.9</td></tr>
+<tr><td>1</td><td class="pit-edge-mild">0.277</td><td class="pit-edge-mild">0.218</td><td class="pit-edge-mild">0.362</td><td>18.5%</td><td>11.7%</td><td>29.6%</td><td>132.2</td></tr>
+<tr><td>2</td><td class="pit-edge-mild">0.274</td><td>0.237</td><td class="pit-edge-mild">0.376</td><td>14.6%</td><td>11.6%</td><td>32.0%</td><td>99.9</td></tr>
+<tr><td>3</td><td class="bat-edge-mild">0.352</td><td class="bat-edge-strong">0.291</td><td class="bat-edge-mild">0.432</td><td>5.1%</td><td>9.6%</td><td>37.3%</td><td>62.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -481,7 +483,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-2">
-<summary><span class="spot">2.</span><span class="name">Liam Hicks</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.291</b> / xBA <b>0.238</b> / xSLG <b>0.384</b> (-24 pts)</span><span class="summary-stat">K <b>12.9%</b></span><span class="summary-stat">BB <b>6.1%</b></span><span class="summary-stat">HR <b>2.2%</b></span><span class="summary-stat">Hit <b>23.8%</b></span><span class="verdict-pill neutral">Even</span></summary>
+<summary><span class="spot">2.</span><span class="name">Liam Hicks</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.291</b> / xBA <b>0.238</b> / xSLG <b>0.384</b> (-24 pts)</span><span class="summary-stat">K <b>14.5%</b></span><span class="summary-stat">BB <b>6.1%</b></span><span class="summary-stat">HR <b>2.2%</b></span><span class="summary-stat">Hit <b>23.8%</b></span><span class="verdict-pill neutral">Even</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Liam Hicks <span class="badge">LHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -501,14 +503,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">12.9%</td><td>+677</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">14.5%</td><td>+591</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">6.1%</td><td>+1527</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td>1.0%</td><td>+10318</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">19.8%</td><td>+405</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="pit-edge-strong">1.7%</td><td>+5675</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td>—</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-mild">2.2%</td><td>+4402</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">56.2%</td><td>-129</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">54.7%</td><td>-121</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td>23.8%</td><td>+321</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td>30.9%</td><td>+224</td><td>31.7%</td></tr>
@@ -518,14 +520,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">24.1%</td><td class="odds">+315</td><td class="avg">0.26</td><td class="bat-edge-strong">33.9%</td><td class="odds">+195</td><td class="avg">0.39</td><td class="bat-edge-strong">42.4%</td><td class="odds">+136</td><td class="avg">0.52</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">26.8%</td><td class="odds">+273</td><td class="avg">0.29</td><td class="bat-edge-strong">37.4%</td><td class="odds">+167</td><td class="avg">0.43</td><td class="bat-edge-strong">46.5%</td><td class="odds">+115</td><td class="avg">0.58</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">11.9%</td><td class="odds">+739</td><td class="avg">0.12</td><td class="pit-edge-mild">17.3%</td><td class="odds">+477</td><td class="avg">0.18</td><td class="pit-edge-mild">22.4%</td><td class="odds">+346</td><td class="avg">0.25</td></tr>
 <tr><td>HBP</td><td class="pit-edge-mild">1.9%</td><td class="odds">+5134</td><td class="avg">0.02</td><td class="pit-edge-mild">2.9%</td><td class="odds">+3406</td><td class="avg">0.03</td><td class="pit-edge-mild">3.8%</td><td class="odds">+2542</td><td class="avg">0.04</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">35.7%</td><td class="odds">+180</td><td class="avg">0.40</td><td class="bat-edge-strong">48.5%</td><td class="odds">+106</td><td class="avg">0.59</td><td class="bat-edge-strong">58.7%</td><td class="odds">-142</td><td class="avg">0.79</td></tr>
 <tr><td>Double</td><td class="pit-edge-strong">3.4%</td><td class="odds">+2813</td><td class="avg">0.03</td><td class="pit-edge-strong">5.1%</td><td class="odds">+1859</td><td class="avg">0.05</td><td class="pit-edge-strong">6.7%</td><td class="odds">+1382</td><td class="avg">0.07</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-mild">4.4%</td><td class="odds">+2176</td><td class="avg">0.04</td><td class="pit-edge-mild">6.5%</td><td class="odds">+1434</td><td class="avg">0.07</td><td class="pit-edge-mild">8.6%</td><td class="odds">+1064</td><td class="avg">0.09</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">80.9%</td><td class="odds">-422</td><td class="avg">1.12</td><td class="pit-edge-mild">91.6%</td><td class="odds">-1094</td><td class="avg">1.69</td><td>96.3%</td><td class="odds">-2628</td><td class="avg">2.25</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">79.4%</td><td class="odds">-386</td><td class="avg">1.09</td><td class="pit-edge-mild">90.7%</td><td class="odds">-972</td><td class="avg">1.64</td><td>95.8%</td><td class="odds">-2265</td><td class="avg">2.19</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">41.9%</td><td class="odds">+139</td><td class="avg">0.48</td><td>55.7%</td><td class="odds">-126</td><td class="avg">0.71</td><td>66.2%</td><td class="odds">-196</td><td class="avg">0.95</td></tr>
 <tr><td>On-base</td><td>52.2%</td><td class="odds">-109</td><td class="avg">0.62</td><td>67.0%</td><td class="odds">-203</td><td class="avg">0.93</td><td>77.2%</td><td class="odds">-338</td><td class="avg">1.24</td></tr>
 </tbody></table>
@@ -533,9 +535,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="pit-edge-mild">0.277</td><td class="pit-edge-mild">0.217</td><td class="pit-edge-mild">0.365</td><td>17.0%</td><td>11.6%</td><td>30.3%</td><td>132.2</td></tr>
-<tr><td>2</td><td class="pit-edge-mild">0.273</td><td>0.236</td><td class="pit-edge-mild">0.379</td><td>13.2%</td><td>11.5%</td><td>32.7%</td><td>99.9</td></tr>
-<tr><td>3</td><td class="bat-edge-mild">0.351</td><td class="bat-edge-strong">0.290</td><td class="bat-edge-mild">0.436</td><td>3.7%</td><td>9.5%</td><td>38.0%</td><td>62.9</td></tr>
+<tr><td>1</td><td class="pit-edge-mild">0.277</td><td class="pit-edge-mild">0.217</td><td class="pit-edge-mild">0.365</td><td>18.6%</td><td>11.6%</td><td>30.3%</td><td>132.2</td></tr>
+<tr><td>2</td><td class="pit-edge-mild">0.273</td><td>0.236</td><td class="pit-edge-mild">0.379</td><td>14.8%</td><td>11.5%</td><td>32.7%</td><td>99.9</td></tr>
+<tr><td>3</td><td class="bat-edge-mild">0.351</td><td class="bat-edge-strong">0.290</td><td class="bat-edge-mild">0.436</td><td>5.3%</td><td>9.5%</td><td>38.0%</td><td>62.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -774,7 +776,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-3">
-<summary><span class="spot">3.</span><span class="name">Otto Lopez</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.359</b> / xBA <b>0.275</b> / xSLG <b>0.482</b> (+44 pts)</span><span class="summary-stat">K <b>11.4%</b></span><span class="summary-stat">BB <b>3.6%</b></span><span class="summary-stat">HR <b>2.1%</b></span><span class="summary-stat">Hit <b>31.9%</b></span><span class="verdict-pill bat-edge-mild">Slight Hitter</span></summary>
+<summary><span class="spot">3.</span><span class="name">Otto Lopez</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.359</b> / xBA <b>0.275</b> / xSLG <b>0.482</b> (+44 pts)</span><span class="summary-stat">K <b>13.2%</b></span><span class="summary-stat">BB <b>3.6%</b></span><span class="summary-stat">HR <b>2.1%</b></span><span class="summary-stat">Hit <b>31.9%</b></span><span class="verdict-pill bat-edge-mild">Slight Hitter</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Otto Lopez <span class="badge">RHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -794,14 +796,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">11.4%</td><td>+776</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">13.2%</td><td>+660</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">3.6%</td><td>+2654</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="pit-edge-mild">0.8%</td><td>+11709</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">23.9%</td><td>+319</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="bat-edge-mild">5.6%</td><td>+1671</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.2%</td><td>+42344</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-mild">2.1%</td><td>+4662</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">52.2%</td><td>-109</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-mild">50.5%</td><td>-102</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-strong">31.9%</td><td>+214</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td class="bat-edge-mild">36.3%</td><td>+175</td><td>31.7%</td></tr>
@@ -811,14 +813,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">21.5%</td><td class="odds">+365</td><td class="avg">0.23</td><td class="bat-edge-strong">30.5%</td><td class="odds">+228</td><td class="avg">0.34</td><td class="bat-edge-strong">38.4%</td><td class="odds">+160</td><td class="avg">0.46</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">24.6%</td><td class="odds">+307</td><td class="avg">0.26</td><td class="bat-edge-strong">34.5%</td><td class="odds">+190</td><td class="avg">0.39</td><td class="bat-edge-strong">43.1%</td><td class="odds">+132</td><td class="avg">0.53</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">7.1%</td><td class="odds">+1303</td><td class="avg">0.07</td><td class="pit-edge-strong">10.5%</td><td class="odds">+852</td><td class="avg">0.11</td><td class="pit-edge-strong">13.8%</td><td class="odds">+627</td><td class="avg">0.15</td></tr>
 <tr><td>HBP</td><td class="pit-edge-mild">1.7%</td><td class="odds">+5830</td><td class="avg">0.02</td><td class="pit-edge-mild">2.5%</td><td class="odds">+3870</td><td class="avg">0.03</td><td class="pit-edge-mild">3.3%</td><td class="odds">+2890</td><td class="avg">0.03</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">42.1%</td><td class="odds">+138</td><td class="avg">0.48</td><td class="bat-edge-strong">55.9%</td><td class="odds">-127</td><td class="avg">0.72</td><td class="bat-edge-strong">66.4%</td><td class="odds">-198</td><td class="avg">0.96</td></tr>
 <tr><td>Double</td><td class="bat-edge-mild">11.0%</td><td class="odds">+811</td><td class="avg">0.11</td><td class="bat-edge-mild">16.0%</td><td class="odds">+525</td><td class="avg">0.17</td><td class="bat-edge-mild">20.7%</td><td class="odds">+382</td><td class="avg">0.23</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.5%</td><td class="odds">+21147</td><td class="avg">0.00</td><td class="pit-edge-mild">0.7%</td><td class="odds">+14081</td><td class="avg">0.01</td><td class="pit-edge-mild">0.9%</td><td class="odds">+10549</td><td class="avg">0.01</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-mild">4.2%</td><td class="odds">+2306</td><td class="avg">0.04</td><td class="pit-edge-mild">6.2%</td><td class="odds">+1521</td><td class="avg">0.06</td><td class="pit-edge-mild">8.1%</td><td class="odds">+1129</td><td class="avg">0.08</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-mild">77.2%</td><td class="odds">-339</td><td class="avg">1.04</td><td class="pit-edge-mild">89.1%</td><td class="odds">-818</td><td class="avg">1.57</td><td>94.8%</td><td class="odds">-1823</td><td class="avg">2.09</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-mild">75.5%</td><td class="odds">-308</td><td class="avg">1.01</td><td>87.9%</td><td class="odds">-724</td><td class="avg">1.51</td><td>94.0%</td><td class="odds">-1565</td><td class="avg">2.02</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-strong">53.6%</td><td class="odds">-115</td><td class="avg">0.64</td><td class="bat-edge-strong">68.4%</td><td class="odds">-216</td><td class="avg">0.96</td><td class="bat-edge-mild">78.4%</td><td class="odds">-364</td><td class="avg">1.27</td></tr>
 <tr><td>On-base</td><td class="bat-edge-mild">59.5%</td><td class="odds">-147</td><td class="avg">0.73</td><td class="bat-edge-mild">74.2%</td><td class="odds">-288</td><td class="avg">1.09</td><td class="bat-edge-mild">83.6%</td><td class="odds">-509</td><td class="avg">1.45</td></tr>
 </tbody></table>
@@ -826,9 +828,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="bat-edge-mild">0.330</td><td>0.251</td><td>0.420</td><td>12.6%</td><td>14.9%</td><td>32.3%</td><td>147.5</td></tr>
-<tr><td>2</td><td class="bat-edge-strong">0.387</td><td class="bat-edge-strong">0.303</td><td class="bat-edge-strong">0.542</td><td>10.1%</td><td>12.3%</td><td>36.7%</td><td>101.5</td></tr>
-<tr><td>3</td><td class="bat-edge-strong">0.385</td><td class="bat-edge-strong">0.288</td><td class="bat-edge-strong">0.538</td><td>10.7%</td><td>8.5%</td><td>37.4%</td><td>54.9</td></tr>
+<tr><td>1</td><td class="bat-edge-mild">0.330</td><td>0.251</td><td>0.420</td><td>14.4%</td><td>14.9%</td><td>32.3%</td><td>147.5</td></tr>
+<tr><td>2</td><td class="bat-edge-strong">0.387</td><td class="bat-edge-strong">0.303</td><td class="bat-edge-strong">0.542</td><td>11.8%</td><td>12.3%</td><td>36.7%</td><td>101.5</td></tr>
+<tr><td>3</td><td class="bat-edge-strong">0.385</td><td class="bat-edge-strong">0.288</td><td class="bat-edge-strong">0.538</td><td>12.4%</td><td>8.5%</td><td>37.4%</td><td>54.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -1065,7 +1067,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-4">
-<summary><span class="spot">4.</span><span class="name">Kyle Stowers</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.347</b> / xBA <b>0.248</b> / xSLG <b>0.416</b> (+32 pts)</span><span class="summary-stat">K <b>23.7%</b></span><span class="summary-stat">BB <b>6.5%</b></span><span class="summary-stat">HR <b>5.7%</b></span><span class="summary-stat">Hit <b>24.1%</b></span><span class="verdict-pill bat-edge-mild">Slight Hitter</span></summary>
+<summary><span class="spot">4.</span><span class="name">Kyle Stowers</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.347</b> / xBA <b>0.248</b> / xSLG <b>0.416</b> (+32 pts)</span><span class="summary-stat">K <b>23.4%</b></span><span class="summary-stat">BB <b>6.5%</b></span><span class="summary-stat">HR <b>5.7%</b></span><span class="summary-stat">Hit <b>24.1%</b></span><span class="verdict-pill bat-edge-mild">Slight Hitter</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Kyle Stowers <span class="badge">LHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -1085,14 +1087,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td>23.7%</td><td>+322</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td>23.4%</td><td>+327</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">6.5%</td><td>+1450</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="pit-edge-mild">0.6%</td><td>+15886</td><td>1.2%</td></tr>
 <tr><td>Single</td><td>13.5%</td><td>+639</td><td>14.0%</td></tr>
 <tr><td>Double</td><td>4.3%</td><td>+2240</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td>0.6%</td><td>+17591</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="bat-edge-strong">5.7%</td><td>+1656</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td>45.2%</td><td>+121</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td>45.4%</td><td>+120</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">24.1%</td><td>+316</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td>31.1%</td><td>+221</td><td>31.7%</td></tr>
@@ -1102,14 +1104,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td>41.7%</td><td class="odds">+140</td><td class="avg">0.47</td><td>55.5%</td><td class="odds">-125</td><td class="avg">0.71</td><td>66.1%</td><td class="odds">-195</td><td class="avg">0.95</td></tr>
+<tr><td>Strikeout</td><td>41.4%</td><td class="odds">+142</td><td class="avg">0.47</td><td>55.1%</td><td class="odds">-123</td><td class="avg">0.70</td><td>65.6%</td><td class="odds">-191</td><td class="avg">0.94</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">12.5%</td><td class="odds">+701</td><td class="avg">0.13</td><td class="pit-edge-mild">18.1%</td><td class="odds">+451</td><td class="avg">0.19</td><td class="pit-edge-mild">23.4%</td><td class="odds">+327</td><td class="avg">0.26</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">1.2%</td><td class="odds">+7918</td><td class="avg">0.01</td><td class="pit-edge-strong">1.9%</td><td class="odds">+5262</td><td class="avg">0.02</td><td class="pit-edge-strong">2.5%</td><td class="odds">+3934</td><td class="avg">0.03</td></tr>
 <tr><td>Single</td><td>25.2%</td><td class="odds">+296</td><td class="avg">0.27</td><td>35.3%</td><td class="odds">+183</td><td class="avg">0.41</td><td>44.1%</td><td class="odds">+127</td><td class="avg">0.54</td></tr>
 <tr><td>Double</td><td>8.4%</td><td class="odds">+1096</td><td class="avg">0.09</td><td>12.3%</td><td class="odds">+714</td><td class="avg">0.13</td><td>16.0%</td><td class="odds">+524</td><td class="avg">0.17</td></tr>
 <tr><td>Triple</td><td>1.1%</td><td class="odds">+8771</td><td class="avg">0.01</td><td>1.7%</td><td class="odds">+5830</td><td class="avg">0.02</td><td>2.2%</td><td class="odds">+4360</td><td class="avg">0.02</td></tr>
 <tr><td>Home Run</td><td class="bat-edge-strong">11.1%</td><td class="odds">+804</td><td class="avg">0.11</td><td class="bat-edge-strong">16.1%</td><td class="odds">+520</td><td class="avg">0.17</td><td class="bat-edge-strong">20.9%</td><td class="odds">+378</td><td class="avg">0.23</td></tr>
-<tr><td>In-play out</td><td>70.0%</td><td class="odds">-233</td><td class="avg">0.90</td><td>83.5%</td><td class="odds">-507</td><td class="avg">1.36</td><td>91.0%</td><td class="odds">-1008</td><td class="avg">1.81</td></tr>
+<tr><td>In-play out</td><td>70.2%</td><td class="odds">-236</td><td class="avg">0.91</td><td>83.7%</td><td class="odds">-515</td><td class="avg">1.36</td><td>91.1%</td><td class="odds">-1027</td><td class="avg">1.82</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">42.3%</td><td class="odds">+136</td><td class="avg">0.48</td><td>56.2%</td><td class="odds">-128</td><td class="avg">0.72</td><td>66.7%</td><td class="odds">-201</td><td class="avg">0.96</td></tr>
 <tr><td>On-base</td><td>52.6%</td><td class="odds">-111</td><td class="avg">0.62</td><td>67.3%</td><td class="odds">-206</td><td class="avg">0.93</td><td>77.5%</td><td class="odds">-345</td><td class="avg">1.25</td></tr>
 </tbody></table>
@@ -1117,9 +1119,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="bat-edge-mild">0.332</td><td class="pit-edge-mild">0.227</td><td>0.396</td><td>27.8%</td><td>24.5%</td><td>35.1%</td><td>132.2</td></tr>
-<tr><td>2</td><td>0.329</td><td>0.246</td><td>0.411</td><td>24.0%</td><td>24.4%</td><td>37.5%</td><td>99.9</td></tr>
-<tr><td>3</td><td class="bat-edge-strong">0.407</td><td class="bat-edge-strong">0.300</td><td class="bat-edge-strong">0.467</td><td>14.5%</td><td>22.4%</td><td>42.8%</td><td>62.9</td></tr>
+<tr><td>1</td><td class="bat-edge-mild">0.332</td><td class="pit-edge-mild">0.227</td><td>0.396</td><td>27.6%</td><td>24.5%</td><td>35.1%</td><td>132.2</td></tr>
+<tr><td>2</td><td>0.329</td><td>0.246</td><td>0.411</td><td>23.7%</td><td>24.4%</td><td>37.5%</td><td>99.9</td></tr>
+<tr><td>3</td><td class="bat-edge-strong">0.407</td><td class="bat-edge-strong">0.300</td><td class="bat-edge-strong">0.467</td><td>14.2%</td><td>22.4%</td><td>42.8%</td><td>62.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -1355,7 +1357,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-5">
-<summary><span class="spot">5.</span><span class="name">Connor Norby</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.337</b> / xBA <b>0.255</b> / xSLG <b>0.410</b> (+22 pts)</span><span class="summary-stat">K <b>19.1%</b></span><span class="summary-stat">BB <b>2.9%</b></span><span class="summary-stat">HR <b>3.5%</b></span><span class="summary-stat">Hit <b>26.9%</b></span><span class="verdict-pill neutral">Even</span></summary>
+<summary><span class="spot">5.</span><span class="name">Connor Norby</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.337</b> / xBA <b>0.255</b> / xSLG <b>0.410</b> (+22 pts)</span><span class="summary-stat">K <b>19.7%</b></span><span class="summary-stat">BB <b>2.9%</b></span><span class="summary-stat">HR <b>3.5%</b></span><span class="summary-stat">Hit <b>26.9%</b></span><span class="verdict-pill neutral">Even</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Connor Norby <span class="badge">RHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -1375,14 +1377,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-mild">19.1%</td><td>+425</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-mild">19.7%</td><td>+407</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">2.9%</td><td>+3322</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="bat-edge-mild">1.9%</td><td>+5198</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="bat-edge-mild">16.7%</td><td>+498</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="bat-edge-strong">6.6%</td><td>+1417</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.2%</td><td>+64356</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td>3.5%</td><td>+2776</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-mild">49.2%</td><td>+103</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-mild">48.5%</td><td>+106</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">26.9%</td><td>+271</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td>31.7%</td><td>+215</td><td>31.7%</td></tr>
@@ -1392,14 +1394,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-mild">34.5%</td><td class="odds">+190</td><td class="avg">0.38</td><td class="bat-edge-mild">47.0%</td><td class="odds">+113</td><td class="avg">0.57</td><td class="bat-edge-mild">57.1%</td><td class="odds">-133</td><td class="avg">0.76</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-mild">35.5%</td><td class="odds">+181</td><td class="avg">0.39</td><td class="bat-edge-mild">48.3%</td><td class="odds">+107</td><td class="avg">0.59</td><td class="bat-edge-mild">58.5%</td><td class="odds">-141</td><td class="avg">0.79</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">5.8%</td><td class="odds">+1636</td><td class="avg">0.06</td><td class="pit-edge-strong">8.5%</td><td class="odds">+1075</td><td class="avg">0.09</td><td class="pit-edge-strong">11.2%</td><td class="odds">+794</td><td class="avg">0.12</td></tr>
 <tr><td>HBP</td><td class="bat-edge-strong">3.7%</td><td class="odds">+2574</td><td class="avg">0.04</td><td class="bat-edge-strong">5.6%</td><td class="odds">+1700</td><td class="avg">0.06</td><td class="bat-edge-strong">7.3%</td><td class="odds">+1263</td><td class="avg">0.08</td></tr>
 <tr><td>Single</td><td class="bat-edge-mild">30.6%</td><td class="odds">+226</td><td class="avg">0.33</td><td class="bat-edge-mild">42.2%</td><td class="odds">+137</td><td class="avg">0.50</td><td class="bat-edge-mild">51.9%</td><td class="odds">-108</td><td class="avg">0.67</td></tr>
 <tr><td>Double</td><td class="bat-edge-strong">12.8%</td><td class="odds">+684</td><td class="avg">0.13</td><td class="bat-edge-strong">18.5%</td><td class="odds">+440</td><td class="avg">0.20</td><td class="bat-edge-strong">23.9%</td><td class="odds">+319</td><td class="avg">0.26</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.3%</td><td class="odds">+32153</td><td class="avg">0.00</td><td class="pit-edge-mild">0.5%</td><td class="odds">+21419</td><td class="avg">0.00</td><td class="pit-edge-mild">0.6%</td><td class="odds">+16051</td><td class="avg">0.01</td></tr>
 <tr><td>Home Run</td><td class="bat-edge-mild">6.8%</td><td class="odds">+1363</td><td class="avg">0.07</td><td class="bat-edge-mild">10.1%</td><td class="odds">+893</td><td class="avg">0.10</td><td class="bat-edge-mild">13.2%</td><td class="odds">+658</td><td class="avg">0.14</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-mild">74.2%</td><td class="odds">-287</td><td class="avg">0.98</td><td>86.9%</td><td class="odds">-662</td><td class="avg">1.48</td><td>93.3%</td><td class="odds">-1400</td><td class="avg">1.97</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-mild">73.5%</td><td class="odds">-278</td><td class="avg">0.97</td><td>86.4%</td><td class="odds">-634</td><td class="avg">1.46</td><td>93.0%</td><td class="odds">-1326</td><td class="avg">1.94</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">46.6%</td><td class="odds">+115</td><td class="avg">0.54</td><td class="bat-edge-mild">61.0%</td><td class="odds">-156</td><td class="avg">0.81</td><td class="bat-edge-mild">71.5%</td><td class="odds">-251</td><td class="avg">1.08</td></tr>
 <tr><td>On-base</td><td>53.4%</td><td class="odds">-115</td><td class="avg">0.63</td><td>68.2%</td><td class="odds">-215</td><td class="avg">0.95</td><td>78.3%</td><td class="odds">-361</td><td class="avg">1.27</td></tr>
 </tbody></table>
@@ -1407,9 +1409,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td>0.308</td><td class="pit-edge-mild">0.230</td><td class="pit-edge-mild">0.348</td><td>20.3%</td><td>24.1%</td><td>29.5%</td><td>147.5</td></tr>
-<tr><td>2</td><td class="bat-edge-strong">0.365</td><td class="bat-edge-mild">0.282</td><td class="bat-edge-strong">0.470</td><td>17.7%</td><td>21.5%</td><td>33.9%</td><td>101.5</td></tr>
-<tr><td>3</td><td class="bat-edge-strong">0.363</td><td class="bat-edge-mild">0.268</td><td class="bat-edge-strong">0.466</td><td>18.3%</td><td>17.7%</td><td>34.5%</td><td>54.9</td></tr>
+<tr><td>1</td><td>0.308</td><td class="pit-edge-mild">0.230</td><td class="pit-edge-mild">0.348</td><td>20.9%</td><td>24.1%</td><td>29.5%</td><td>147.5</td></tr>
+<tr><td>2</td><td class="bat-edge-strong">0.365</td><td class="bat-edge-mild">0.282</td><td class="bat-edge-strong">0.470</td><td>18.4%</td><td>21.5%</td><td>33.9%</td><td>101.5</td></tr>
+<tr><td>3</td><td class="bat-edge-strong">0.363</td><td class="bat-edge-mild">0.268</td><td class="bat-edge-strong">0.466</td><td>19.0%</td><td>17.7%</td><td>34.5%</td><td>54.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -1646,7 +1648,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-6">
-<summary><span class="spot">6.</span><span class="name">Jakob Marsee</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.311</b> / xBA <b>0.256</b> / xSLG <b>0.412</b> (-4 pts)</span><span class="summary-stat">K <b>18.9%</b></span><span class="summary-stat">BB <b>7.3%</b></span><span class="summary-stat">HR <b>0.5%</b></span><span class="summary-stat">Hit <b>25.2%</b></span><span class="verdict-pill neutral">Even</span></summary>
+<summary><span class="spot">6.</span><span class="name">Jakob Marsee</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.311</b> / xBA <b>0.256</b> / xSLG <b>0.412</b> (-4 pts)</span><span class="summary-stat">K <b>19.6%</b></span><span class="summary-stat">BB <b>7.3%</b></span><span class="summary-stat">HR <b>0.5%</b></span><span class="summary-stat">Hit <b>25.2%</b></span><span class="verdict-pill neutral">Even</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Jakob Marsee <span class="badge">LHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -1666,14 +1668,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-mild">18.9%</td><td>+430</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-mild">19.6%</td><td>+411</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td>7.3%</td><td>+1268</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="pit-edge-mild">0.6%</td><td>+17020</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">17.9%</td><td>+459</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="bat-edge-mild">6.0%</td><td>+1571</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td class="bat-edge-mild">0.8%</td><td>+12619</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">0.5%</td><td>+18849</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-mild">48.0%</td><td>+108</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td>47.3%</td><td>+111</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">25.2%</td><td>+297</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td>33.1%</td><td>+202</td><td>31.7%</td></tr>
@@ -1683,14 +1685,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-mild">34.2%</td><td class="odds">+193</td><td class="avg">0.38</td><td class="bat-edge-mild">46.6%</td><td class="odds">+115</td><td class="avg">0.57</td><td class="bat-edge-mild">56.7%</td><td class="odds">-131</td><td class="avg">0.75</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-mild">35.3%</td><td class="odds">+183</td><td class="avg">0.39</td><td class="bat-edge-mild">47.9%</td><td class="odds">+109</td><td class="avg">0.59</td><td class="bat-edge-mild">58.1%</td><td class="odds">-139</td><td class="avg">0.78</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">14.1%</td><td class="odds">+610</td><td class="avg">0.15</td><td class="pit-edge-mild">20.4%</td><td class="odds">+391</td><td class="avg">0.22</td><td class="pit-edge-mild">26.2%</td><td class="odds">+282</td><td class="avg">0.29</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">1.2%</td><td class="odds">+8485</td><td class="avg">0.01</td><td class="pit-edge-strong">1.7%</td><td class="odds">+5640</td><td class="avg">0.02</td><td class="pit-edge-strong">2.3%</td><td class="odds">+4218</td><td class="avg">0.02</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">32.6%</td><td class="odds">+207</td><td class="avg">0.36</td><td class="bat-edge-strong">44.7%</td><td class="odds">+124</td><td class="avg">0.54</td><td class="bat-edge-mild">54.6%</td><td class="odds">-120</td><td class="avg">0.72</td></tr>
 <tr><td>Double</td><td class="bat-edge-strong">11.6%</td><td class="odds">+761</td><td class="avg">0.12</td><td class="bat-edge-strong">16.9%</td><td class="odds">+492</td><td class="avg">0.18</td><td class="bat-edge-strong">21.9%</td><td class="odds">+357</td><td class="avg">0.24</td></tr>
 <tr><td>Triple</td><td class="bat-edge-mild">1.6%</td><td class="odds">+6285</td><td class="avg">0.02</td><td class="bat-edge-mild">2.3%</td><td class="odds">+4173</td><td class="avg">0.02</td><td class="bat-edge-mild">3.1%</td><td class="odds">+3118</td><td class="avg">0.03</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">1.1%</td><td class="odds">+9400</td><td class="avg">0.01</td><td class="pit-edge-strong">1.6%</td><td class="odds">+6250</td><td class="avg">0.02</td><td class="pit-edge-strong">2.1%</td><td class="odds">+4675</td><td class="avg">0.02</td></tr>
-<tr><td>In-play out</td><td>73.0%</td><td class="odds">-270</td><td class="avg">0.96</td><td>86.0%</td><td class="odds">-613</td><td class="avg">1.44</td><td>92.7%</td><td class="odds">-1272</td><td class="avg">1.92</td></tr>
+<tr><td>In-play out</td><td>72.3%</td><td class="odds">-261</td><td class="avg">0.95</td><td>85.4%</td><td class="odds">-585</td><td class="avg">1.42</td><td>92.3%</td><td class="odds">-1201</td><td class="avg">1.89</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">44.1%</td><td class="odds">+127</td><td class="avg">0.50</td><td class="bat-edge-mild">58.2%</td><td class="odds">-139</td><td class="avg">0.76</td><td class="bat-edge-mild">68.7%</td><td class="odds">-219</td><td class="avg">1.01</td></tr>
 <tr><td>On-base</td><td>55.2%</td><td class="odds">-123</td><td class="avg">0.66</td><td>70.1%</td><td class="odds">-234</td><td class="avg">0.99</td><td>80.0%</td><td class="odds">-399</td><td class="avg">1.32</td></tr>
 </tbody></table>
@@ -1698,9 +1700,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="pit-edge-mild">0.296</td><td>0.235</td><td>0.392</td><td>23.0%</td><td>16.4%</td><td>31.5%</td><td>132.2</td></tr>
-<tr><td>2</td><td class="pit-edge-mild">0.292</td><td>0.254</td><td>0.406</td><td>19.2%</td><td>16.3%</td><td>33.9%</td><td>99.9</td></tr>
-<tr><td>3</td><td class="bat-edge-strong">0.371</td><td class="bat-edge-strong">0.308</td><td class="bat-edge-mild">0.463</td><td>9.7%</td><td>14.2%</td><td>39.1%</td><td>62.9</td></tr>
+<tr><td>1</td><td class="pit-edge-mild">0.296</td><td>0.235</td><td>0.392</td><td>23.7%</td><td>16.4%</td><td>31.5%</td><td>132.2</td></tr>
+<tr><td>2</td><td class="pit-edge-mild">0.292</td><td>0.254</td><td>0.406</td><td>19.8%</td><td>16.3%</td><td>33.9%</td><td>99.9</td></tr>
+<tr><td>3</td><td class="bat-edge-strong">0.371</td><td class="bat-edge-strong">0.308</td><td class="bat-edge-mild">0.463</td><td>10.4%</td><td>14.2%</td><td>39.1%</td><td>62.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -1938,7 +1940,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-7">
-<summary><span class="spot">7.</span><span class="name">Javier Sanoja</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.314</b> / xBA <b>0.250</b> / xSLG <b>0.430</b> (-1 pts)</span><span class="summary-stat">K <b>10.7%</b></span><span class="summary-stat">BB <b>3.6%</b></span><span class="summary-stat">HR <b>0.4%</b></span><span class="summary-stat">Hit <b>27.6%</b></span><span class="verdict-pill neutral">Even</span></summary>
+<summary><span class="spot">7.</span><span class="name">Javier Sanoja</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.314</b> / xBA <b>0.250</b> / xSLG <b>0.430</b> (-1 pts)</span><span class="summary-stat">K <b>12.5%</b></span><span class="summary-stat">BB <b>3.6%</b></span><span class="summary-stat">HR <b>0.4%</b></span><span class="summary-stat">Hit <b>27.6%</b></span><span class="verdict-pill neutral">Even</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Javier Sanoja <span class="badge">RHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -1958,14 +1960,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">10.7%</td><td>+835</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">12.5%</td><td>+699</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">3.6%</td><td>+2683</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+85816359</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="bat-edge-mild">16.6%</td><td>+503</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="bat-edge-strong">10.0%</td><td>+895</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td>0.6%</td><td>+16408</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">0.4%</td><td>+27805</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">58.1%</td><td>-139</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">56.3%</td><td>-129</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-mild">27.6%</td><td>+263</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td>31.2%</td><td>+221</td><td>31.7%</td></tr>
@@ -1975,14 +1977,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="bat-edge-strong">20.3%</td><td class="odds">+394</td><td class="avg">0.21</td><td class="bat-edge-strong">28.8%</td><td class="odds">+247</td><td class="avg">0.32</td><td class="bat-edge-strong">36.4%</td><td class="odds">+175</td><td class="avg">0.43</td></tr>
+<tr><td>Strikeout</td><td class="bat-edge-strong">23.5%</td><td class="odds">+326</td><td class="avg">0.25</td><td class="bat-edge-strong">33.0%</td><td class="odds">+203</td><td class="avg">0.38</td><td class="bat-edge-strong">41.4%</td><td class="odds">+141</td><td class="avg">0.50</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">7.1%</td><td class="odds">+1317</td><td class="avg">0.07</td><td class="pit-edge-strong">10.4%</td><td class="odds">+862</td><td class="avg">0.11</td><td class="pit-edge-strong">13.6%</td><td class="odds">+634</td><td class="avg">0.14</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+42908155</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+28605420</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+21454052</td><td class="avg">0.00</td></tr>
 <tr><td>Single</td><td class="bat-edge-mild">30.4%</td><td class="odds">+229</td><td class="avg">0.33</td><td class="bat-edge-mild">41.9%</td><td class="odds">+138</td><td class="avg">0.50</td><td class="bat-edge-mild">51.6%</td><td class="odds">-106</td><td class="avg">0.66</td></tr>
 <tr><td>Double</td><td class="bat-edge-strong">19.1%</td><td class="odds">+424</td><td class="avg">0.20</td><td class="bat-edge-strong">27.2%</td><td class="odds">+267</td><td class="avg">0.30</td><td class="bat-edge-strong">34.5%</td><td class="odds">+190</td><td class="avg">0.40</td></tr>
 <tr><td>Triple</td><td>1.2%</td><td class="odds">+8179</td><td class="avg">0.01</td><td>1.8%</td><td class="odds">+5436</td><td class="avg">0.02</td><td>2.4%</td><td class="odds">+4065</td><td class="avg">0.02</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">0.7%</td><td class="odds">+13878</td><td class="avg">0.01</td><td class="pit-edge-strong">1.1%</td><td class="odds">+9235</td><td class="avg">0.01</td><td class="pit-edge-strong">1.4%</td><td class="odds">+6914</td><td class="avg">0.01</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">82.5%</td><td class="odds">-470</td><td class="avg">1.16</td><td class="pit-edge-mild">92.7%</td><td class="odds">-1262</td><td class="avg">1.74</td><td class="pit-edge-mild">96.9%</td><td class="odds">-3152</td><td class="avg">2.33</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">80.9%</td><td class="odds">-424</td><td class="avg">1.13</td><td class="pit-edge-mild">91.7%</td><td class="odds">-1099</td><td class="avg">1.69</td><td>96.4%</td><td class="odds">-2645</td><td class="avg">2.25</td></tr>
 <tr><td>Hit (any)</td><td class="bat-edge-strong">47.6%</td><td class="odds">+110</td><td class="avg">0.55</td><td class="bat-edge-mild">62.0%</td><td class="odds">-163</td><td class="avg">0.83</td><td class="bat-edge-mild">72.5%</td><td class="odds">-264</td><td class="avg">1.10</td></tr>
 <tr><td>On-base</td><td>52.6%</td><td class="odds">-111</td><td class="avg">0.62</td><td>67.4%</td><td class="odds">-207</td><td class="avg">0.94</td><td>77.6%</td><td class="odds">-346</td><td class="avg">1.25</td></tr>
 </tbody></table>
@@ -1990,9 +1992,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="pit-edge-mild">0.285</td><td class="pit-edge-mild">0.226</td><td class="pit-edge-mild">0.367</td><td>11.9%</td><td>8.1%</td><td>28.7%</td><td>147.5</td></tr>
-<tr><td>2</td><td class="bat-edge-mild">0.342</td><td class="bat-edge-mild">0.278</td><td class="bat-edge-strong">0.489</td><td>9.4%</td><td>5.5%</td><td>33.1%</td><td>101.5</td></tr>
-<tr><td>3</td><td class="bat-edge-mild">0.340</td><td class="bat-edge-mild">0.263</td><td class="bat-edge-strong">0.485</td><td>9.9%</td><td>1.7%</td><td>33.7%</td><td>54.9</td></tr>
+<tr><td>1</td><td class="pit-edge-mild">0.285</td><td class="pit-edge-mild">0.226</td><td class="pit-edge-mild">0.367</td><td>13.7%</td><td>8.1%</td><td>28.7%</td><td>147.5</td></tr>
+<tr><td>2</td><td class="bat-edge-mild">0.342</td><td class="bat-edge-mild">0.278</td><td class="bat-edge-strong">0.489</td><td>11.2%</td><td>5.5%</td><td>33.1%</td><td>101.5</td></tr>
+<tr><td>3</td><td class="bat-edge-mild">0.340</td><td class="bat-edge-mild">0.263</td><td class="bat-edge-strong">0.485</td><td>11.8%</td><td>1.7%</td><td>33.7%</td><td>54.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -2228,7 +2230,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-8">
-<summary><span class="spot">8.</span><span class="name">Owen Caissie</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.272</b> / xBA <b>0.240</b> / xSLG <b>0.371</b> (-43 pts)</span><span class="summary-stat">K <b>24.2%</b></span><span class="summary-stat">BB <b>5.1%</b></span><span class="summary-stat">HR <b>2.1%</b></span><span class="summary-stat">Hit <b>22.7%</b></span><span class="verdict-pill pit-edge-mild">Slight Pitcher</span></summary>
+<summary><span class="spot">8.</span><span class="name">Owen Caissie</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.272</b> / xBA <b>0.240</b> / xSLG <b>0.371</b> (-43 pts)</span><span class="summary-stat">K <b>23.9%</b></span><span class="summary-stat">BB <b>5.1%</b></span><span class="summary-stat">HR <b>2.1%</b></span><span class="summary-stat">Hit <b>22.7%</b></span><span class="verdict-pill pit-edge-mild">Slight Pitcher</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Owen Caissie <span class="badge">LHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -2248,14 +2250,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td>24.2%</td><td>+313</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td>23.9%</td><td>+319</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">5.1%</td><td>+1868</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="pit-edge-mild">0.5%</td><td>+18451</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="bat-edge-mild">17.1%</td><td>+485</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="pit-edge-mild">3.5%</td><td>+2729</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td>—</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-mild">2.1%</td><td>+4746</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td>47.5%</td><td>+111</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-mild">47.8%</td><td>+109</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td>22.7%</td><td>+341</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td class="pit-edge-mild">28.3%</td><td>+253</td><td>31.7%</td></tr>
@@ -2265,14 +2267,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td class="pit-edge-mild">42.6%</td><td class="odds">+135</td><td class="avg">0.48</td><td>56.5%</td><td class="odds">-130</td><td class="avg">0.73</td><td>67.1%</td><td class="odds">-204</td><td class="avg">0.97</td></tr>
+<tr><td>Strikeout</td><td>42.1%</td><td class="odds">+138</td><td class="avg">0.48</td><td>55.9%</td><td class="odds">-127</td><td class="avg">0.72</td><td>66.4%</td><td class="odds">-198</td><td class="avg">0.96</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">9.9%</td><td class="odds">+910</td><td class="avg">0.10</td><td class="pit-edge-strong">14.5%</td><td class="odds">+591</td><td class="avg">0.15</td><td class="pit-edge-strong">18.8%</td><td class="odds">+431</td><td class="avg">0.20</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">1.1%</td><td class="odds">+9201</td><td class="avg">0.01</td><td class="pit-edge-strong">1.6%</td><td class="odds">+6117</td><td class="avg">0.02</td><td class="pit-edge-strong">2.1%</td><td class="odds">+4575</td><td class="avg">0.02</td></tr>
 <tr><td>Single</td><td class="bat-edge-strong">31.2%</td><td class="odds">+220</td><td class="avg">0.34</td><td class="bat-edge-mild">43.0%</td><td class="odds">+133</td><td class="avg">0.51</td><td class="bat-edge-mild">52.7%</td><td class="odds">-112</td><td class="avg">0.68</td></tr>
 <tr><td>Double</td><td class="pit-edge-mild">6.9%</td><td class="odds">+1340</td><td class="avg">0.07</td><td class="pit-edge-mild">10.2%</td><td class="odds">+877</td><td class="avg">0.11</td><td class="pit-edge-mild">13.4%</td><td class="odds">+646</td><td class="avg">0.14</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-mild">4.1%</td><td class="odds">+2349</td><td class="avg">0.04</td><td class="pit-edge-mild">6.1%</td><td class="odds">+1549</td><td class="avg">0.06</td><td class="pit-edge-mild">8.0%</td><td class="odds">+1150</td><td class="avg">0.08</td></tr>
-<tr><td>In-play out</td><td>72.4%</td><td class="odds">-262</td><td class="avg">0.95</td><td>85.5%</td><td class="odds">-590</td><td class="avg">1.42</td><td>92.4%</td><td class="odds">-1212</td><td class="avg">1.90</td></tr>
+<tr><td>In-play out</td><td>72.8%</td><td class="odds">-267</td><td class="avg">0.96</td><td>85.8%</td><td class="odds">-604</td><td class="avg">1.43</td><td>92.6%</td><td class="odds">-1249</td><td class="avg">1.91</td></tr>
 <tr><td>Hit (any)</td><td>40.2%</td><td class="odds">+149</td><td class="avg">0.45</td><td>53.8%</td><td class="odds">-116</td><td class="avg">0.68</td><td>64.3%</td><td class="odds">-180</td><td class="avg">0.91</td></tr>
 <tr><td>On-base</td><td class="pit-edge-mild">48.6%</td><td class="odds">+106</td><td class="avg">0.57</td><td class="pit-edge-mild">63.1%</td><td class="odds">-171</td><td class="avg">0.85</td><td>73.6%</td><td class="odds">-278</td><td class="avg">1.13</td></tr>
 </tbody></table>
@@ -2280,9 +2282,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="pit-edge-strong">0.258</td><td class="pit-edge-mild">0.219</td><td class="pit-edge-mild">0.352</td><td>28.4%</td><td>26.1%</td><td>31.6%</td><td>132.2</td></tr>
-<tr><td>2</td><td class="pit-edge-strong">0.254</td><td>0.238</td><td class="pit-edge-mild">0.366</td><td>24.5%</td><td>26.0%</td><td>34.0%</td><td>99.9</td></tr>
-<tr><td>3</td><td class="bat-edge-mild">0.332</td><td class="bat-edge-strong">0.292</td><td>0.422</td><td>15.1%</td><td>23.9%</td><td>39.3%</td><td>62.9</td></tr>
+<tr><td>1</td><td class="pit-edge-strong">0.258</td><td class="pit-edge-mild">0.219</td><td class="pit-edge-mild">0.352</td><td>28.0%</td><td>26.1%</td><td>31.6%</td><td>132.2</td></tr>
+<tr><td>2</td><td class="pit-edge-strong">0.254</td><td>0.238</td><td class="pit-edge-mild">0.366</td><td>24.2%</td><td>26.0%</td><td>34.0%</td><td>99.9</td></tr>
+<tr><td>3</td><td class="bat-edge-mild">0.332</td><td class="bat-edge-strong">0.292</td><td>0.422</td><td>14.7%</td><td>23.9%</td><td>39.3%</td><td>62.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -2518,7 +2520,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </div>
 </details>
 <details class="batter-block" id="batter-9">
-<summary><span class="spot">9.</span><span class="name">Joe Mack</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.218</b> / xBA <b>0.246</b> / xSLG <b>0.395</b> (-97 pts)</span><span class="summary-stat">K <b>21.6%</b></span><span class="summary-stat">BB <b>5.0%</b></span><span class="summary-stat">HR <b>0.0%</b></span><span class="summary-stat">Hit <b>16.7%</b></span><span class="verdict-pill pit-edge-mild">Edge Pitcher</span></summary>
+<summary><span class="spot">9.</span><span class="name">Joe Mack</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.218</b> / xBA <b>0.246</b> / xSLG <b>0.395</b> (-97 pts)</span><span class="summary-stat">K <b>21.8%</b></span><span class="summary-stat">BB <b>5.0%</b></span><span class="summary-stat">HR <b>0.0%</b></span><span class="summary-stat">Hit <b>16.7%</b></span><span class="verdict-pill pit-edge-mild">Edge Pitcher</span></summary>
 <div class="batter-body">
 <header class="page-head">
 <h1>Joe Mack <span class="badge">LHB</span> vs Nick Martinez <span class="badge">RHP</span></h1>
@@ -2538,14 +2540,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Per-PA outcome distribution</h2>
 <table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td>21.6%</td><td>+363</td><td>22.5%</td></tr>
+<tr><td>Strikeout</td><td>21.8%</td><td>+359</td><td>22.5%</td></tr>
 <tr><td>Walk</td><td class="pit-edge-mild">5.0%</td><td>+1905</td><td>8.5%</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+203504452</td><td>1.2%</td></tr>
 <tr><td>Single</td><td class="pit-edge-strong">7.0%</td><td>+1324</td><td>14.0%</td></tr>
 <tr><td>Double</td><td class="bat-edge-strong">9.7%</td><td>+931</td><td>4.5%</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td>—</td><td>0.5%</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">0.0%</td><td>—</td><td>3.0%</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">56.7%</td><td>-131</td><td>45.8%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">56.5%</td><td>-130</td><td>45.8%</td></tr>
 <tr class="divider-row"><td colspan="4">rollups</td></tr>
 <tr><td>Hit (any)</td><td class="pit-edge-mild">16.7%</td><td>+498</td><td>22.0%</td></tr>
 <tr><td>On-base</td><td class="pit-edge-strong">21.7%</td><td>+361</td><td>31.7%</td></tr>
@@ -2555,14 +2557,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
 <table class="multi-pa">
 <thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
-<tr><td>Strikeout</td><td>38.5%</td><td class="odds">+160</td><td class="avg">0.43</td><td>51.8%</td><td class="odds">-107</td><td class="avg">0.65</td><td>62.2%</td><td class="odds">-165</td><td class="avg">0.86</td></tr>
+<tr><td>Strikeout</td><td>38.8%</td><td class="odds">+158</td><td class="avg">0.44</td><td>52.1%</td><td class="odds">-109</td><td class="avg">0.65</td><td>62.6%</td><td class="odds">-167</td><td class="avg">0.87</td></tr>
 <tr><td>Walk</td><td class="pit-edge-strong">9.7%</td><td class="odds">+928</td><td class="avg">0.10</td><td class="pit-edge-strong">14.2%</td><td class="odds">+603</td><td class="avg">0.15</td><td class="pit-edge-strong">18.5%</td><td class="odds">+440</td><td class="avg">0.20</td></tr>
 <tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+101752201</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+67834784</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+50876076</td><td class="avg">0.00</td></tr>
 <tr><td>Single</td><td class="pit-edge-strong">13.6%</td><td class="odds">+638</td><td class="avg">0.14</td><td class="pit-edge-strong">19.6%</td><td class="odds">+410</td><td class="avg">0.21</td><td class="pit-edge-strong">25.3%</td><td class="odds">+296</td><td class="avg">0.28</td></tr>
 <tr><td>Double</td><td class="bat-edge-strong">18.5%</td><td class="odds">+442</td><td class="avg">0.19</td><td class="bat-edge-strong">26.4%</td><td class="odds">+279</td><td class="avg">0.29</td><td class="bat-edge-strong">33.5%</td><td class="odds">+199</td><td class="avg">0.39</td></tr>
 <tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td></tr>
 <tr><td>Home Run</td><td class="pit-edge-strong">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">—</td><td class="avg">0.00</td></tr>
-<tr><td>In-play out</td><td class="pit-edge-strong">81.2%</td><td class="odds">-433</td><td class="avg">1.13</td><td class="pit-edge-mild">91.9%</td><td class="odds">-1131</td><td class="avg">1.70</td><td>96.5%</td><td class="odds">-2744</td><td class="avg">2.27</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">81.1%</td><td class="odds">-429</td><td class="avg">1.13</td><td class="pit-edge-mild">91.8%</td><td class="odds">-1116</td><td class="avg">1.70</td><td>96.4%</td><td class="odds">-2697</td><td class="avg">2.26</td></tr>
 <tr><td>Hit (any)</td><td class="pit-edge-strong">30.6%</td><td class="odds">+226</td><td class="avg">0.33</td><td class="pit-edge-mild">42.2%</td><td class="odds">+137</td><td class="avg">0.50</td><td class="pit-edge-mild">51.9%</td><td class="odds">-108</td><td class="avg">0.67</td></tr>
 <tr><td>On-base</td><td class="pit-edge-strong">38.7%</td><td class="odds">+158</td><td class="avg">0.43</td><td class="pit-edge-strong">52.0%</td><td class="odds">-108</td><td class="avg">0.65</td><td class="pit-edge-mild">62.4%</td><td class="odds">-166</td><td class="avg">0.87</td></tr>
 </tbody></table>
@@ -2570,9 +2572,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <section class="card">
 <h2>Projection by times through the order</h2>
 <table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
-<tr><td>1</td><td class="pit-edge-strong">0.203</td><td class="pit-edge-mild">0.225</td><td class="pit-edge-mild">0.376</td><td>25.7%</td><td>26.2%</td><td>31.6%</td><td>132.2</td></tr>
-<tr><td>2</td><td class="pit-edge-strong">0.200</td><td>0.244</td><td>0.390</td><td>21.9%</td><td>26.1%</td><td>34.1%</td><td>99.9</td></tr>
-<tr><td>3</td><td class="pit-edge-mild">0.278</td><td class="bat-edge-strong">0.298</td><td class="bat-edge-mild">0.446</td><td>12.4%</td><td>24.0%</td><td>39.3%</td><td>62.9</td></tr>
+<tr><td>1</td><td class="pit-edge-strong">0.203</td><td class="pit-edge-mild">0.225</td><td class="pit-edge-mild">0.376</td><td>25.9%</td><td>26.2%</td><td>31.6%</td><td>132.2</td></tr>
+<tr><td>2</td><td class="pit-edge-strong">0.200</td><td>0.244</td><td>0.390</td><td>22.1%</td><td>26.1%</td><td>34.1%</td><td>99.9</td></tr>
+<tr><td>3</td><td class="pit-edge-mild">0.278</td><td class="bat-edge-strong">0.298</td><td class="bat-edge-mild">0.446</td><td>12.6%</td><td>24.0%</td><td>39.3%</td><td>62.9</td></tr>
 </tbody></table>
 </section>
 <section class="card">
@@ -2816,6 +2818,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <li>Cell coloring in the grid: <span class='bat-edge-strong' style='padding:1px 6px;border-radius:4px'>strong batter edge</span>, <span class='bat-edge-mild' style='padding:1px 6px;border-radius:4px'>mild batter edge</span>, <span class='pit-edge-mild' style='padding:1px 6px;border-radius:4px'>mild pitcher edge</span>, <span class='pit-edge-strong' style='padding:1px 6px;border-radius:4px'>strong pitcher edge</span> &mdash; relative to league baseline.</li>
 </ul>
 </footer>
+<div class="report-timestamp">Generated 2026-05-16 16:17:28 EDT</div>
 </main>
 <style>
 th.sortable { cursor: pointer; user-select: none; }

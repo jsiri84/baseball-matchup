@@ -129,6 +129,8 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 .cq-panel table tbody td { padding: 5px 8px; }
 .cq-panel .sweet td:first-child { background: #f1f5f9; font-weight: 600; }
 .cq-panel .sweet td:first-child::before { content: '\2605  '; color: #2563eb; }
+.report-timestamp { color: var(--muted); font-size: 11px; text-align: right;
+                    margin: 16px 0 8px 0; font-variant-numeric: tabular-nums; }
 
 .acc-section { margin-bottom: 28px; }
 .acc-section h2 { margin-bottom: 6px; }
@@ -170,14 +172,14 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <div class="acc-section"><h2>Calibration: proj on-contact xwOBA → actual on-contact xwOBA</h2>
 <div class="acc-note">On-contact xwOBA strips BABIP noise; converges 2-3x faster than rolled-up xwOBA. PA &ge; 3.</div>
 <table class="acc-table"><thead><tr><th class="label">Proj bin</th><th>n</th><th>mean proj</th><th>mean actual</th><th>&Delta; pts</th><th>95% CI</th></tr></thead><tbody>
-<tr><td class="label">&lt;.250</td><td>5</td><td>0.176</td><td>0.270</td><td class="delta-pos">+94</td><td>[0.100, 0.439]</td></tr>
-<tr><td class="label">.250-.274</td><td>6</td><td>0.261</td><td>0.185</td><td class="delta-neg">-76</td><td>[0.063, 0.306]</td></tr>
-<tr><td class="label">.275-.299</td><td>5</td><td>0.289</td><td>0.286</td><td class="delta-zero">-3</td><td>[0.152, 0.421]</td></tr>
-<tr><td class="label">.300-.324</td><td>8</td><td>0.314</td><td>0.284</td><td class="delta-neg">-30</td><td>[0.157, 0.411]</td></tr>
-<tr><td class="label">.325-.349</td><td>25</td><td>0.337</td><td>0.365</td><td class="delta-pos">+28</td><td>[0.271, 0.460]</td></tr>
-<tr><td class="label">.350-.374</td><td>31</td><td>0.362</td><td>0.362</td><td class="delta-zero">-1</td><td>[0.289, 0.435]</td></tr>
-<tr><td class="label">.375-.399</td><td>18</td><td>0.387</td><td>0.388</td><td class="delta-zero">+1</td><td>[0.251, 0.525]</td></tr>
-<tr><td class="label">&gt;=.400</td><td>73</td><td>0.443</td><td>0.398</td><td class="delta-neg">-45</td><td>[0.327, 0.469]</td></tr>
+<tr><td class="label">&lt;.250</td><td>4</td><td>0.159</td><td>0.260</td><td class="delta-pos">+102</td><td>[0.046, 0.475]</td></tr>
+<tr><td class="label">.250-.274</td><td>6</td><td>0.258</td><td>0.228</td><td class="delta-neg">-30</td><td>[0.113, 0.344]</td></tr>
+<tr><td class="label">.275-.299</td><td>6</td><td>0.291</td><td>0.246</td><td class="delta-neg">-45</td><td>[0.111, 0.381]</td></tr>
+<tr><td class="label">.300-.324</td><td>10</td><td>0.314</td><td>0.308</td><td class="delta-neg">-6</td><td>[0.184, 0.432]</td></tr>
+<tr><td class="label">.325-.349</td><td>24</td><td>0.339</td><td>0.318</td><td class="delta-neg">-21</td><td>[0.244, 0.393]</td></tr>
+<tr><td class="label">.350-.374</td><td>25</td><td>0.362</td><td>0.409</td><td class="delta-pos">+47</td><td>[0.312, 0.506]</td></tr>
+<tr><td class="label">.375-.399</td><td>30</td><td>0.386</td><td>0.386</td><td class="delta-zero">+0</td><td>[0.285, 0.488]</td></tr>
+<tr><td class="label">&gt;=.400</td><td>66</td><td>0.437</td><td>0.396</td><td class="delta-neg">-41</td><td>[0.321, 0.470]</td></tr>
 </tbody></table>
 </div>
 <div class="acc-section"><h2>Calibration: proj hard-hit% → actual hard-hit%</h2>
@@ -196,12 +198,12 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <div class="acc-section"><h2>Calibration: proj K% → actual K%</h2>
 <div class="acc-note">Strikeout rate. Discrete event, low-variance baseline. PA &ge; 3.</div>
 <table class="acc-table"><thead><tr><th class="label">Proj bin</th><th>n</th><th>mean proj</th><th>mean actual</th><th>&Delta; pts</th><th>95% CI</th></tr></thead><tbody>
-<tr><td class="label">0-15%</td><td>17</td><td>12.0%</td><td>12.4%</td><td class="delta-zero">+4</td><td>[3.6%, 35.0%]</td></tr>
-<tr><td class="label">15-20%</td><td>34</td><td>17.6%</td><td>14.1%</td><td class="delta-neg">-35</td><td>[6.1%, 29.4%]</td></tr>
-<tr><td class="label">20-25%</td><td>44</td><td>22.5%</td><td>25.3%</td><td class="delta-pos">+28</td><td>[14.8%, 39.8%]</td></tr>
-<tr><td class="label">25-30%</td><td>45</td><td>27.5%</td><td>25.8%</td><td class="delta-neg">-17</td><td>[15.3%, 40.1%]</td></tr>
-<tr><td class="label">30-35%</td><td>24</td><td>32.3%</td><td>29.2%</td><td class="delta-neg">-31</td><td>[15.0%, 49.2%]</td></tr>
-<tr><td class="label">&gt;=35%</td><td>11</td><td>37.4%</td><td>21.5%</td><td class="delta-neg">-159</td><td>[6.7%, 51.1%]</td></tr>
+<tr><td class="label">0-15%</td><td>11</td><td>12.4%</td><td>6.8%</td><td class="delta-neg">-56</td><td>[1.0%, 35.0%]</td></tr>
+<tr><td class="label">15-20%</td><td>34</td><td>17.7%</td><td>17.4%</td><td class="delta-zero">-3</td><td>[8.2%, 33.2%]</td></tr>
+<tr><td class="label">20-25%</td><td>55</td><td>22.5%</td><td>22.5%</td><td class="delta-zero">+0</td><td>[13.5%, 35.1%]</td></tr>
+<tr><td class="label">25-30%</td><td>51</td><td>27.2%</td><td>28.0%</td><td class="delta-pos">+8</td><td>[17.6%, 41.5%]</td></tr>
+<tr><td class="label">30-35%</td><td>22</td><td>32.1%</td><td>24.8%</td><td class="delta-neg">-73</td><td>[11.5%, 45.7%]</td></tr>
+<tr><td class="label">&gt;=35%</td><td>2</td><td>35.3%</td><td>12.5%</td><td class="delta-neg">-228</td><td>[0.7%, 73.6%]</td></tr>
 </tbody></table>
 <div class="acc-note">League baseline: 22.5%. A well-calibrated model has &Delta; pts near zero in every bin.</div>
 </div>
@@ -219,9 +221,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <div class="acc-note">For each metric, compares projected std (across hitter-games with PA &ge; 3) to the implied true between-hitter std after subtracting per-PA sampling noise. Raw actual std also shown so you can see how much of it is genuine between-hitter spread vs single-game noise. <b>Ratio = proj std / corrected actual std.</b> <span class="skill-neg">&lt; 0.85</span> = projections too narrow (hedging toward league); <span class="skill-pos">&gt; 1.15</span> = projections too wide (overconfident at tails); 0.85-1.15 = calibrated spread. On short windows (few days) the bias correction can fail (corrected std non-finite) — gather more data.</div>
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n</th><th title="Mean sample-size denominator: PA for headline / K / BB; n_bip for hard-hit and on-contact xwOBA">mean n</th><th>mean proj</th><th>mean actual</th><th>proj std</th><th>actual std (raw)</th><th>actual std (corrected)</th><th>ratio</th><th>read</th></tr></thead><tbody>
 <tr><td class="label">xwOBA</td><td>175</td><td>4.1</td><td>0.319</td><td>0.321</td><td>0.037</td><td>0.200</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
-<tr><td class="label">on-contact xwOBA</td><td>171</td><td>2.8</td><td>0.382</td><td>0.366</td><td>0.070</td><td>0.266</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
+<tr><td class="label">on-contact xwOBA</td><td>171</td><td>2.8</td><td>0.378</td><td>0.366</td><td>0.065</td><td>0.266</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
 <tr><td class="label">hard-hit %</td><td>171</td><td>2.8</td><td>0.404</td><td>0.404</td><td>0.070</td><td>0.332</td><td>0.067</td><td class="">1.03</td><td class="">calibrated</td></tr>
-<tr><td class="label">K %</td><td>175</td><td>4.1</td><td>0.241</td><td>0.223</td><td>0.070</td><td>0.236</td><td>0.113</td><td class="skill-neg">0.62</td><td class="skill-neg">hedging</td></tr>
+<tr><td class="label">K %</td><td>175</td><td>4.1</td><td>0.237</td><td>0.223</td><td>0.056</td><td>0.236</td><td>0.113</td><td class="skill-neg">0.49</td><td class="skill-neg">hedging</td></tr>
 <tr><td class="label">BB %</td><td>175</td><td>4.1</td><td>0.085</td><td>0.097</td><td>0.036</td><td>0.143</td><td>0.037</td><td class="">0.99</td><td class="">calibrated</td></tr>
 </tbody></table></div>
 <div class="acc-section"><h2>Headline xwOBA RMSE by PA count</h2>
@@ -235,23 +237,23 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <div class="acc-section"><h2>Per-PA log-loss vs baselines</h2>
 <div class="acc-note">Proper score on the 8-class outcome distribution. Lower is better. Skill = 1 − model / baseline. Positive skill means the model is doing real work beyond the league prior. Sample shrinks fast in early-season windows.</div>
 <table class="acc-table"><thead><tr><th class="label">Source</th><th>n PA</th><th>log-loss</th><th>Brier</th><th>skill (LL)</th><th>skill (Brier)</th></tr></thead><tbody>
-<tr><td class="label">Model</td><td>742</td><td>1.495</td><td>0.707</td><td class="skill-pos">0.5%</td><td class="skill-pos">0.2%</td></tr>
+<tr><td class="label">Model</td><td>742</td><td>1.493</td><td>0.705</td><td class="skill-pos">0.6%</td><td class="skill-pos">0.4%</td></tr>
 <tr><td class="label">League prior</td><td>742</td><td>1.502</td><td>0.708</td><td class="">0.0%</td><td class="">0.0%</td></tr>
 </tbody></table></div>
 <div class="acc-section"><h2>Hitter-grain accuracy (RMSE / MAE / bias)</h2>
 <div class="acc-note">RMSE / MAE on the proj vs actual headline numbers, computed only on hitters with PA ≥ 1. Lower is better. Bias = mean(actual − proj); persistent non-zero bias signals systematic under/over-projection.</div>
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n</th><th>RMSE</th><th>MAE</th><th>bias</th></tr></thead><tbody>
 <tr><td class="label">xwOBA</td><td>193</td><td>0.204</td><td>0.159</td><td class="delta-neg">-0.009</td></tr>
-<tr><td class="label">on-contact xwOBA</td><td>183</td><td>0.266</td><td>0.212</td><td class="delta-neg">-0.025</td></tr>
+<tr><td class="label">on-contact xwOBA</td><td>183</td><td>0.264</td><td>0.210</td><td class="delta-neg">-0.021</td></tr>
 <tr><td class="label">hard-hit %</td><td>183</td><td>0.352</td><td>0.291</td><td class="delta-pos">0.006</td></tr>
-<tr><td class="label">K %</td><td>193</td><td>0.255</td><td>0.209</td><td class="delta-neg">-0.012</td></tr>
+<tr><td class="label">K %</td><td>193</td><td>0.255</td><td>0.207</td><td class="delta-neg">-0.007</td></tr>
 <tr><td class="label">BB %</td><td>193</td><td>0.156</td><td>0.117</td><td class="delta-pos">0.014</td></tr>
 </tbody></table></div>
 <div class="acc-section"><h2>Discrimination: Spearman rho per slate</h2>
 <div class="acc-note">For each date with at least 30 played hitters, Spearman rank correlation between projected and actual. Sustained positive rho means the model is ordering hitters correctly even when individual deltas are noisy. Spearman is less sensitive to BABIP outliers than RMSE.</div>
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n days</th><th>mean &rho;</th><th>p25</th><th>median</th><th>p75</th></tr></thead><tbody>
 <tr><td class="label">xwOBA</td><td>1</td><td>0.204</td><td>0.204</td><td>0.204</td><td>0.204</td></tr>
-<tr><td class="label">on-contact xwOBA</td><td>1</td><td>0.090</td><td>0.090</td><td>0.090</td><td>0.090</td></tr>
+<tr><td class="label">on-contact xwOBA</td><td>1</td><td>0.107</td><td>0.107</td><td>0.107</td><td>0.107</td></tr>
 <tr><td class="label">hard-hit %</td><td>1</td><td>0.025</td><td>0.025</td><td>0.025</td><td>0.025</td></tr>
 </tbody></table>
 <details><summary>Per-day xwOBA rank correlation</summary>
@@ -260,6 +262,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </tbody></table></details>
 </div>
 </section>
+<div class="report-timestamp">Generated 2026-05-16 16:19:08 EDT</div>
 </main>
 <style>
 th.sortable { cursor: pointer; user-select: none; }

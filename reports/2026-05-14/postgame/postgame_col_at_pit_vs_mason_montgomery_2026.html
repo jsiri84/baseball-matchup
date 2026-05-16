@@ -129,6 +129,8 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 .cq-panel table tbody td { padding: 5px 8px; }
 .cq-panel .sweet td:first-child { background: #f1f5f9; font-weight: 600; }
 .cq-panel .sweet td:first-child::before { content: '\2605  '; color: #2563eb; }
+.report-timestamp { color: var(--muted); font-size: 11px; text-align: right;
+                    margin: 16px 0 8px 0; font-variant-numeric: tabular-nums; }
 
 .verdict-neutral { color: var(--muted); }
 .line { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -176,30 +178,30 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 <table class="lineup-grid">
 <thead><tr><th>#</th><th style="text-align:left">Batter</th><th>Hand</th><th>Proj xwOBA</th><th>Actual xwOBA</th><th>Actual xBA</th><th>&Delta; xwOBA pts</th><th>On-contact xwOBA proj → act</th><th>&Delta; contact pts</th><th>Hard contact (xBA)</th><th>Weak / K (xBA)</th><th style="text-align:left">Line</th><th title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">Proj</th><th>Verdict (contact / discipline / outcome)</th></tr></thead>
 <tbody>
-<tr><td class="spot">1</td><td class="name">Jordan Beck</td><td class="handpill"><span class="pill">RHB</span></td><td>0.304</td><td>0.323</td><td class="bat-edge-strong">0.327</td><td class="num delta-pos">+19</td><td class="num">0.453 → 0.431</td><td class="num delta-neg">-22</td><td class="num">1: .766</td><td class="num">2: .009 / .534 · 1K</td><td class="line">1-for-4 · 1 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill verdict-neutral" title="Outcome">Matched outcome</span></div></td></tr>
-<tr><td class="spot">2</td><td class="name">Brenton Doyle</td><td class="handpill"><span class="pill">RHB</span></td><td>0.309</td><td class="pit-edge-strong">0.186</td><td class="pit-edge-strong">0.154</td><td class="num delta-neg">-123</td><td class="num">0.408 → 0.371</td><td class="num delta-neg">-37</td><td class="num">1: .551</td><td class="num">1: .064 · 2K</td><td class="line">0-for-4 · 2 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill pit-edge-strong" title="Discipline">More aggressive (+)</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
-<tr><td class="spot">3</td><td class="name">Hunter Goodman</td><td class="handpill"><span class="pill">RHB</span></td><td class="pit-edge-mild">0.294</td><td class="pit-edge-strong">0.157</td><td class="pit-edge-strong">0.166</td><td class="num delta-neg">-138</td><td class="num">0.427 → 0.157</td><td class="num delta-neg">-271</td><td class="num">1: .606</td><td class="num">3: .011 / .046 / .003</td><td class="line">1-for-4</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >65 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
-<tr><td class="spot">4</td><td class="name">TJ Rumfield</td><td class="handpill"><span class="pill">LHB</span></td><td>0.319</td><td class="bat-edge-strong">0.566</td><td class="bat-edge-strong">0.456</td><td class="num delta-pos">+248</td><td class="num">0.419 → 0.873</td><td class="num delta-pos">+454</td><td class="num">1: .911</td><td class="num">1K</td><td class="line">1-for-2 · 1 R, 2 BB, 1 K</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >65 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill bat-edge-strong" title="Contact">Beat contact (+)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill bat-edge-strong" title="Outcome">Beat outcome (+)</span></div></td></tr>
-<tr><td class="spot">5</td><td class="name">Willi Castro</td><td class="handpill"><span class="pill">LHB</span></td><td>0.318</td><td class="pit-edge-strong">0.196</td><td class="pit-edge-strong">0.033</td><td class="num delta-neg">-122</td><td class="num">0.438 → 0.088</td><td class="num delta-neg">-350</td><td class="num">1: .098</td><td class="num">2K</td><td class="line">0-for-3 · 1 R, 1 BB, 2 K</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >65 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
-<tr><td class="spot">6</td><td class="name">Mickey Moniak</td><td class="handpill"><span class="pill">LHB</span></td><td>0.321</td><td class="pit-edge-mild">0.298</td><td class="pit-edge-strong">0.180</td><td class="num delta-neg">-23</td><td class="num">0.488 → 0.165</td><td class="num delta-neg">-323</td><td class="num">—</td><td class="num">3: .483 / .003 / .054</td><td class="line">0-for-3 · 1 BB</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill verdict-neutral" title="Outcome">Matched outcome</span></div></td></tr>
-<tr><td class="spot">7</td><td class="name">Troy Johnston</td><td class="handpill"><span class="pill">LHB</span></td><td>0.311</td><td class="bat-edge-mild">0.348</td><td class="bat-edge-strong">0.317</td><td class="num delta-pos">+37</td><td class="num">0.409 → 0.348</td><td class="num delta-neg">-62</td><td class="num">2: .274 / .609</td><td class="num">1: .069</td><td class="line">1-for-3 · 2 RBI</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill bat-edge-mild" title="Outcome">Beat outcome</span></div></td></tr>
-<tr><td class="spot">8</td><td class="name">Ezequiel Tovar</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-mild">0.328</td><td class="bat-edge-strong">0.451</td><td class="bat-edge-strong">0.449</td><td class="num delta-pos">+123</td><td class="num">0.490 → 0.451</td><td class="num delta-neg">-38</td><td class="num">2: .926 / .420</td><td class="num">1: .001</td><td class="line">1-for-3</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill bat-edge-strong" title="Outcome">Beat outcome (+)</span></div></td></tr>
-<tr><td class="spot">9</td><td class="name">Edouard Julien</td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.252</td><td class="pit-edge-strong">0.119</td><td class="pit-edge-strong">0.127</td><td class="num delta-neg">-134</td><td class="num">0.332 → 0.178</td><td class="num delta-neg">-154</td><td class="num">1: .252</td><td class="num">1: .130 · 1K</td><td class="line">0-for-3 · 1 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill pit-edge-mild" title="Discipline">More aggressive</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">1</td><td class="name">Jordan Beck</td><td class="handpill"><span class="pill">RHB</span></td><td>0.304</td><td>0.323</td><td class="bat-edge-strong">0.327</td><td class="num delta-pos">+19</td><td class="num">0.425 → 0.431</td><td class="num delta-pos">+6</td><td class="num">1: .766</td><td class="num">2: .009 / .534 · 1K</td><td class="line">1-for-4 · 1 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill verdict-neutral" title="Outcome">Matched outcome</span></div></td></tr>
+<tr><td class="spot">2</td><td class="name">Brenton Doyle</td><td class="handpill"><span class="pill">RHB</span></td><td>0.309</td><td class="pit-edge-strong">0.186</td><td class="pit-edge-strong">0.154</td><td class="num delta-neg">-123</td><td class="num">0.394 → 0.371</td><td class="num delta-neg">-23</td><td class="num">1: .551</td><td class="num">1: .064 · 2K</td><td class="line">0-for-4 · 2 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill pit-edge-strong" title="Discipline">More aggressive (+)</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">3</td><td class="name">Hunter Goodman</td><td class="handpill"><span class="pill">RHB</span></td><td class="pit-edge-mild">0.294</td><td class="pit-edge-strong">0.157</td><td class="pit-edge-strong">0.166</td><td class="num delta-neg">-138</td><td class="num">0.402 → 0.157</td><td class="num delta-neg">-246</td><td class="num">1: .606</td><td class="num">3: .011 / .046 / .003</td><td class="line">1-for-4</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >65 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">4</td><td class="name">TJ Rumfield</td><td class="handpill"><span class="pill">LHB</span></td><td>0.319</td><td class="bat-edge-strong">0.566</td><td class="bat-edge-strong">0.456</td><td class="num delta-pos">+248</td><td class="num">0.406 → 0.873</td><td class="num delta-pos">+467</td><td class="num">1: .911</td><td class="num">1K</td><td class="line">1-for-2 · 1 R, 2 BB, 1 K</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >65 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill bat-edge-strong" title="Contact">Beat contact (+)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill bat-edge-strong" title="Outcome">Beat outcome (+)</span></div></td></tr>
+<tr><td class="spot">5</td><td class="name">Willi Castro</td><td class="handpill"><span class="pill">LHB</span></td><td>0.318</td><td class="pit-edge-strong">0.196</td><td class="pit-edge-strong">0.033</td><td class="num delta-neg">-122</td><td class="num">0.421 → 0.088</td><td class="num delta-neg">-333</td><td class="num">1: .098</td><td class="num">2K</td><td class="line">0-for-3 · 1 R, 1 BB, 2 K</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >65 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">6</td><td class="name">Mickey Moniak</td><td class="handpill"><span class="pill">LHB</span></td><td>0.321</td><td class="pit-edge-mild">0.298</td><td class="pit-edge-strong">0.180</td><td class="num delta-neg">-23</td><td class="num">0.456 → 0.165</td><td class="num delta-neg">-291</td><td class="num">—</td><td class="num">3: .483 / .003 / .054</td><td class="line">0-for-3 · 1 BB</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill verdict-neutral" title="Outcome">Matched outcome</span></div></td></tr>
+<tr><td class="spot">7</td><td class="name">Troy Johnston</td><td class="handpill"><span class="pill">LHB</span></td><td>0.311</td><td class="bat-edge-mild">0.348</td><td class="bat-edge-strong">0.317</td><td class="num delta-pos">+37</td><td class="num">0.396 → 0.348</td><td class="num delta-neg">-48</td><td class="num">2: .274 / .609</td><td class="num">1: .069</td><td class="line">1-for-3 · 2 RBI</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill bat-edge-mild" title="Outcome">Beat outcome</span></div></td></tr>
+<tr><td class="spot">8</td><td class="name">Ezequiel Tovar</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-mild">0.328</td><td class="bat-edge-strong">0.451</td><td class="bat-edge-strong">0.449</td><td class="num delta-pos">+123</td><td class="num">0.460 → 0.451</td><td class="num delta-neg">-9</td><td class="num">2: .926 / .420</td><td class="num">1: .001</td><td class="line">1-for-3</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill bat-edge-strong" title="Outcome">Beat outcome (+)</span></div></td></tr>
+<tr><td class="spot">9</td><td class="name">Edouard Julien</td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.252</td><td class="pit-edge-strong">0.119</td><td class="pit-edge-strong">0.127</td><td class="num delta-neg">-134</td><td class="num">0.312 → 0.178</td><td class="num delta-neg">-134</td><td class="num">1: .252</td><td class="num">1: .130 · 1K</td><td class="line">0-for-3 · 1 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±65 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±65 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill pit-edge-mild" title="Discipline">More aggressive</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
 </tbody></table>
 <p class="note">&Delta; xwOBA pts = (actual − proj) × 1000. &Delta; contact pts = (actual on-contact xwOBA − proj on-contact xwOBA) × 1000. On-contact xwOBA strips BABIP noise from results.</p>
 </section>
 <section class="card">
 <h2>Per-PA contact quality (Savant view)</h2>
 <div class="pa-grid-wrap" id="batter-1-pa"><h3>#1 Jordan Beck <span class="pill">RHB</span> · 1-for-4 · 1 K</h3>
-<div class="summary-line">BIP 3 · log-loss 1.521 vs lg 1.539 (skill +1.1% over 4 PA)</div>
+<div class="summary-line">BIP 3 · log-loss 1.494 vs lg 1.539 (skill +2.9% over 4 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.453</td><td>0.431</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.425</td><td>0.431</td></tr>
 <tr><td class="label">Hard-hit %</td><td>50.5%</td><td>33.3%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>66.7%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>95.4</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>102.6</td></tr>
 <tr><td class="label">Whiff %</td><td>31.9%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>37.8%</td><td>25.0%</td></tr>
+<tr><td class="label">K %</td><td>34.4%</td><td>25.0%</td></tr>
 <tr><td class="label">BB %</td><td>9.1%</td><td>0.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -211,15 +213,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-2-pa"><h3>#2 Brenton Doyle <span class="pill">RHB</span> · 0-for-4 · 2 K</h3>
-<div class="summary-line">BIP 2 · log-loss 1.055 vs lg 1.136 (skill +7.1% over 4 PA)</div>
+<div class="summary-line">BIP 2 · log-loss 1.062 vs lg 1.136 (skill +6.5% over 4 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.408</td><td>0.371</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.394</td><td>0.371</td></tr>
 <tr><td class="label">Hard-hit %</td><td>50.2%</td><td>50.0%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>50.0%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>87.3</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>107.1</td></tr>
 <tr><td class="label">Whiff %</td><td>32.2%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>32.0%</td><td>50.0%</td></tr>
+<tr><td class="label">K %</td><td>29.9%</td><td>50.0%</td></tr>
 <tr><td class="label">BB %</td><td>10.9%</td><td>0.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -231,15 +233,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-3-pa"><h3>#3 Hunter Goodman <span class="pill">RHB</span> · 1-for-4</h3>
-<div class="summary-line">BIP 4 · log-loss 1.400 vs lg 1.077 (skill -29.9% over 4 PA)</div>
+<div class="summary-line">BIP 4 · log-loss 1.331 vs lg 1.077 (skill -23.6% over 4 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.427</td><td>0.157</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.402</td><td>0.157</td></tr>
 <tr><td class="label">Hard-hit %</td><td>48.6%</td><td>25.0%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>0.0%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>89.0</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>104.2</td></tr>
 <tr><td class="label">Whiff %</td><td>33.3%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>37.2%</td><td>0.0%</td></tr>
+<tr><td class="label">K %</td><td>34.0%</td><td>0.0%</td></tr>
 <tr><td class="label">BB %</td><td>9.5%</td><td>0.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -251,15 +253,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-4-pa"><h3>#4 TJ Rumfield <span class="pill">LHB</span> · 1-for-2 · 1 R, 2 BB, 1 K</h3>
-<div class="summary-line">BIP 1 · log-loss 1.722 vs lg 2.097 (skill +17.9% over 4 PA)</div>
+<div class="summary-line">BIP 1 · log-loss 1.737 vs lg 2.097 (skill +17.2% over 4 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.419</td><td>0.873</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.406</td><td>0.873</td></tr>
 <tr><td class="label">Hard-hit %</td><td>31.0%</td><td>100.0%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>100.0%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>95.4</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>95.4</td></tr>
 <tr><td class="label">Whiff %</td><td>37.3%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>31.1%</td><td>25.0%</td></tr>
+<tr><td class="label">K %</td><td>29.2%</td><td>25.0%</td></tr>
 <tr><td class="label">BB %</td><td>10.9%</td><td>50.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -271,15 +273,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-5-pa"><h3>#5 Willi Castro <span class="pill">LHB</span> · 0-for-3 · 1 R, 1 BB, 2 K</h3>
-<div class="summary-line">BIP 1 · log-loss 1.404 vs lg 1.557 (skill +9.9% over 4 PA)</div>
+<div class="summary-line">BIP 1 · log-loss 1.424 vs lg 1.557 (skill +8.6% over 4 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.438</td><td>0.088</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.421</td><td>0.088</td></tr>
 <tr><td class="label">Hard-hit %</td><td>30.6%</td><td>100.0%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>0.0%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>96.6</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>96.6</td></tr>
 <tr><td class="label">Whiff %</td><td>37.3%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>33.0%</td><td>50.0%</td></tr>
+<tr><td class="label">K %</td><td>30.7%</td><td>50.0%</td></tr>
 <tr><td class="label">BB %</td><td>9.7%</td><td>25.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -291,15 +293,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-6-pa"><h3>#6 Mickey Moniak <span class="pill">LHB</span> · 0-for-3 · 1 BB</h3>
-<div class="summary-line">BIP 3 · log-loss 1.419 vs lg 1.202 (skill -18.1% over 4 PA)</div>
+<div class="summary-line">BIP 3 · log-loss 1.340 vs lg 1.202 (skill -11.4% over 4 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.488</td><td>0.165</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.456</td><td>0.165</td></tr>
 <tr><td class="label">Hard-hit %</td><td>31.5%</td><td>0.0%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>0.0%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>77.1</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>93.2</td></tr>
 <tr><td class="label">Whiff %</td><td>44.8%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>38.6%</td><td>0.0%</td></tr>
+<tr><td class="label">K %</td><td>35.0%</td><td>0.0%</td></tr>
 <tr><td class="label">BB %</td><td>10.4%</td><td>25.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -311,15 +313,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-7-pa"><h3>#7 Troy Johnston <span class="pill">LHB</span> · 1-for-3 · 2 RBI</h3>
-<div class="summary-line">BIP 3 · log-loss 5.391 vs lg 1.554 (skill -246.8% over 3 PA)</div>
+<div class="summary-line">BIP 3 · log-loss 5.350 vs lg 1.554 (skill -244.2% over 3 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.409</td><td>0.348</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.396</td><td>0.348</td></tr>
 <tr><td class="label">Hard-hit %</td><td>30.7%</td><td>66.7%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>66.7%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>96.4</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>101.5</td></tr>
 <tr><td class="label">Whiff %</td><td>21.7%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>31.6%</td><td>0.0%</td></tr>
+<tr><td class="label">K %</td><td>29.6%</td><td>0.0%</td></tr>
 <tr><td class="label">BB %</td><td>11.0%</td><td>0.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -330,15 +332,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-8-pa"><h3>#8 Ezequiel Tovar <span class="pill">RHB</span> · 1-for-3</h3>
-<div class="summary-line">BIP 3 · log-loss 1.468 vs lg 1.176 (skill -24.8% over 3 PA)</div>
+<div class="summary-line">BIP 3 · log-loss 1.396 vs lg 1.176 (skill -18.8% over 3 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.490</td><td>0.451</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.460</td><td>0.451</td></tr>
 <tr><td class="label">Hard-hit %</td><td>46.2%</td><td>66.7%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>33.3%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>98.1</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>108.2</td></tr>
 <tr><td class="label">Whiff %</td><td>37.0%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>37.5%</td><td>0.0%</td></tr>
+<tr><td class="label">K %</td><td>34.2%</td><td>0.0%</td></tr>
 <tr><td class="label">BB %</td><td>10.7%</td><td>0.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -349,15 +351,15 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 <div class="pa-grid-wrap" id="batter-9-pa"><h3>#9 Edouard Julien <span class="pill">LHB</span> · 0-for-3 · 1 K</h3>
-<div class="summary-line">BIP 2 · log-loss 1.013 vs lg 1.018 (skill +0.5% over 3 PA)</div>
+<div class="summary-line">BIP 2 · log-loss 0.985 vs lg 1.018 (skill +3.2% over 3 PA)</div>
 <table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
-<tr><td class="label">On-contact xwOBA</td><td>0.332</td><td>0.178</td></tr>
+<tr><td class="label">On-contact xwOBA</td><td>0.312</td><td>0.178</td></tr>
 <tr><td class="label">Hard-hit %</td><td>30.7%</td><td>50.0%</td></tr>
 <tr><td class="label">Sweet-spot %</td><td>—</td><td>0.0%</td></tr>
 <tr><td class="label">Avg EV</td><td>—</td><td>94.3</td></tr>
 <tr><td class="label">Max EV</td><td>—</td><td>96.4</td></tr>
 <tr><td class="label">Whiff %</td><td>38.8%</td><td>—</td></tr>
-<tr><td class="label">K %</td><td>37.3%</td><td>33.3%</td></tr>
+<tr><td class="label">K %</td><td>34.0%</td><td>33.3%</td></tr>
 <tr><td class="label">BB %</td><td>12.3%</td><td>0.0%</td></tr>
 <tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
 </tbody></table>
@@ -368,6 +370,7 @@ td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; 
 </tbody></table>
 </div>
 </section>
+<div class="report-timestamp">Generated 2026-05-16 16:19:04 EDT</div>
 </main>
 <style>
 th.sortable { cursor: pointer; user-select: none; }
