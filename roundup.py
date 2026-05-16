@@ -53,11 +53,30 @@ LG_OB_PCT = sum(LG_OUTCOMES[k] for k in ("1B", "2B", "3B", "HR", "BB", "HBP"))
 
 
 def _load_sidecars(report_dir: Path) -> list[dict]:
+    """Load all pregame game-entries for a date.
+
+    Prefers the consolidated ``_data/slate.json`` (single canonical source of
+    truth, regenerated each batch run); falls back to legacy per-game JSONs
+    for older report directories that predate the slate format.
+    """
     data_dir = report_dir / "_data"
     if not data_dir.exists():
         return []
+    slate_path = data_dir / "slate.json"
+    if slate_path.exists():
+        try:
+            payload = json.loads(slate_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            print(f"[roundup] failed to read {slate_path.name}: {exc}",
+                  file=sys.stderr)
+        else:
+            games = payload.get("games", [])
+            if games:
+                return list(games)
     out: list[dict] = []
     for p in sorted(data_dir.glob("*.json")):
+        if p.name == "slate.json" or p.name.startswith("_postgame"):
+            continue
         try:
             out.append(json.loads(p.read_text(encoding="utf-8")))
         except Exception as exc:

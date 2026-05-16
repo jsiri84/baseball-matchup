@@ -43,8 +43,9 @@ logs/
 *_summary.md
 *_pitcher_summary.md
 
-# Daily lineup pulls from fetch_lineups.py
+# Daily lineup pulls from fetch_lineups.py (.bak.* = pre-overwrite snapshots)
 matchups_*.csv
+matchups_*.csv.*.bak
 
 # Misc
 *.log

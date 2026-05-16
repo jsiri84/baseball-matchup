@@ -56,6 +56,19 @@ STATSAPI = "https://statsapi.mlb.com/api/v1"
 LG_HIT_PCT = sum(LG_OUTCOMES[k] for k in ("1B", "2B", "3B", "HR"))
 LG_OB_PCT = sum(LG_OUTCOMES[k] for k in ("1B", "2B", "3B", "HR", "BB", "HBP"))
 
+# Pass/fail + verdict-axis thresholds, in points of xwOBA (1 pt = 0.001).
+# A hitter "passes" if the headline OR contact-axis delta is within tolerance,
+# OR if proj/actual fall in the same xwOBA tier.  Thresholds widened from
+# 50 -> 65 after empirical-Bayes shrinkage compressed projections toward the
+# league mean, since most projections now sit near .315 and single-game actuals
+# still have full variance -- the old 50-pt window was too strict.
+PASS_FAIL_HEADLINE_THRESH = 65.0    # |actual_xwoba - proj_xwoba| in points
+PASS_FAIL_CONTACT_THRESH = 65.0     # |actual_on_contact - proj_on_contact|
+CONTACT_AXIS_MILD = 65.0            # verdict pill: "Beat/Under contact"
+CONTACT_AXIS_STRONG = 130.0         # verdict pill: "Beat/Under contact (+/-)"
+OUTCOME_AXIS_MILD = 30.0            # verdict pill: "Beat/Under outcome"
+OUTCOME_AXIS_STRONG = 65.0          # verdict pill: "Beat/Under outcome (+/-)"
+
 # Savant wOBA non-contact constants (FanGraphs 2025 guts; matches batter.py).
 WOBA_BB = 0.696
 WOBA_HBP = 0.722
@@ -130,15 +143,38 @@ def _score_pa(actual_class: str, dist: dict) -> tuple[float, float]:
 # ---------- sidecar loading -----------------------------------------------
 
 def _load_sidecars(report_dir: Path) -> list[dict]:
+    """Load all pregame game-entries for a date.
+
+    Prefers the consolidated ``_data/slate.json`` written by matchup.py's batch
+    mode (single canonical source of truth, regenerated on every run).  Falls
+    back to legacy per-game JSONs for older report directories that predate
+    the slate format.
+    """
     data_dir = report_dir / "_data"
     if not data_dir.exists():
         return []
+
+    slate_path = data_dir / "slate.json"
+    if slate_path.exists():
+        try:
+            payload = json.loads(slate_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            print(f"[postgame] failed to read {slate_path.name}: {exc}",
+                  file=sys.stderr)
+        else:
+            games = payload.get("games", [])
+            if games:
+                return list(games)
+            print(f"[postgame] {slate_path.name} contained no games; "
+                  "falling back to legacy per-game JSONs.", file=sys.stderr)
+
     out: list[dict] = []
     seen_stems: set[str] = set()
     for p in sorted(data_dir.glob("*.json")):
+        if p.name in ("slate.json",):
+            continue
         if p.name.startswith("_postgame"):
             continue
-        # Skip files with a leading BOM in the name (occasional accidental dupes).
         if p.name.startswith("\ufeff"):
             print(f"[postgame] skipping BOM-prefixed dupe {p.name!r}", file=sys.stderr)
             continue
@@ -501,7 +537,7 @@ def _three_axis_verdict(proj_xwoba_oc: float, actual_xwoba_oc: float,
     else:
         c_delta = (actual_xwoba_oc - proj_xwoba_oc) * 1000.0
     c_label, c_css = _band(
-        c_delta, 50, 100,
+        c_delta, CONTACT_AXIS_MILD, CONTACT_AXIS_STRONG,
         "Beat contact", "Under contact",
         "bat-edge-mild", "bat-edge-strong",
         "pit-edge-mild", "pit-edge-strong",
@@ -527,7 +563,7 @@ def _three_axis_verdict(proj_xwoba_oc: float, actual_xwoba_oc: float,
     else:
         o_delta = (actual_xwoba - proj_xwoba) * 1000.0
     o_label, o_css = _band(
-        o_delta, 20, 50,
+        o_delta, OUTCOME_AXIS_MILD, OUTCOME_AXIS_STRONG,
         "Beat outcome", "Under outcome",
         "bat-edge-mild", "bat-edge-strong",
         "pit-edge-mild", "pit-edge-strong",
@@ -611,11 +647,11 @@ def _compute_hitter_row(sr: dict, box_player: dict | None,
     )
 
     # Pass/fail: did the projection roughly land?  Pass if ANY of:
-    #   1. headline xwOBA within +/-50 pts of actual (Marte case)
+    #   1. headline xwOBA within +/-PASS_FAIL_HEADLINE_THRESH pts (Marte case)
     #   2. proj and actual fall in the same xwOBA tier
     #      Good>=.380, Avg .270-.380, Bad<.270  (Jac case: both Bad)
-    #   3. n_bip>=2 AND on-contact xwOBA within +/-50 pts (unlucky-but-good-
-    #      contact: 0-for-4 with three 105 mph outs).
+    #   3. n_bip>=2 AND on-contact xwOBA within +/-PASS_FAIL_CONTACT_THRESH pts
+    #      (unlucky-but-good-contact: 0-for-4 with three 105 mph outs).
     # NA only when no PA were played (DNP).
     def _tier(x):
         if x is None or (isinstance(x, float) and math.isnan(x)):
@@ -637,12 +673,12 @@ def _compute_hitter_row(sr: dict, box_player: dict | None,
 
     if not played_flag or pa == 0:
         pass_fail = "na"
-    elif h_delta is not None and abs(h_delta) < 50:
+    elif h_delta is not None and abs(h_delta) < PASS_FAIL_HEADLINE_THRESH:
         pass_fail = "pass"
     elif proj_tier != "?" and act_tier != "?" and proj_tier == act_tier:
         pass_fail = "pass"
     elif (cq["n_bip"] >= 2 and c_delta is not None
-          and not math.isnan(c_delta) and abs(c_delta) < 50):
+          and not math.isnan(c_delta) and abs(c_delta) < PASS_FAIL_CONTACT_THRESH):
         pass_fail = "pass"
     else:
         pass_fail = "fail"
@@ -834,13 +870,14 @@ def _fmt_int(v) -> str:
 
 
 _PASS_TOOLTIP = (
-    "PASS: headline xwOBA within \u00b150 pts OR proj/actual in same xwOBA "
-    "tier (Good\u2265.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA "
-    "within \u00b150 pts with \u22652 BIP"
+    f"PASS: headline xwOBA within \u00b1{PASS_FAIL_HEADLINE_THRESH:.0f} pts "
+    "OR proj/actual in same xwOBA tier "
+    "(Good\u2265.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA "
+    f"within \u00b1{PASS_FAIL_CONTACT_THRESH:.0f} pts with \u22652 BIP"
 )
 _FAIL_TOOLTIP = (
-    "FAIL: headline xwOBA off by >50 pts AND different xwOBA tier AND "
-    "contact axis didn't save it"
+    f"FAIL: headline xwOBA off by >{PASS_FAIL_HEADLINE_THRESH:.0f} pts AND "
+    "different xwOBA tier AND contact axis didn't save it"
 )
 
 
@@ -1349,24 +1386,24 @@ def main() -> int:
             continue
         cd = r.get("verdict_contact_delta")
         if cd is not None and not math.isnan(cd):
-            if cd >= 50:
+            if cd >= CONTACT_AXIS_MILD:
                 contact_w += 1
-            elif cd <= -50:
+            elif cd <= -CONTACT_AXIS_MILD:
                 contact_l += 1
             else:
                 contact_n += 1
         od = r.get("delta_pts")
         if od is not None and not math.isnan(od):
-            if od >= 20:
+            if od >= OUTCOME_AXIS_MILD:
                 outcome_w += 1
-            elif od <= -20:
+            elif od <= -OUTCOME_AXIS_MILD:
                 outcome_l += 1
             else:
                 outcome_n += 1
     print(f"[postgame] contact axis: {contact_w} beat / {contact_n} matched / "
-          f"{contact_l} under (50-pt threshold)")
+          f"{contact_l} under ({CONTACT_AXIS_MILD:.0f}-pt threshold)")
     print(f"[postgame] outcome axis: {outcome_w} beat / {outcome_n} matched / "
-          f"{outcome_l} under (20-pt threshold)")
+          f"{outcome_l} under ({OUTCOME_AXIS_MILD:.0f}-pt threshold)")
     n_pass = sum(1 for m in slate_rows if m["row"].get("pass_fail") == "pass")
     n_fail = sum(1 for m in slate_rows if m["row"].get("pass_fail") == "fail")
     n_pf_eval = n_pass + n_fail

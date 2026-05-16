@@ -208,6 +208,122 @@ def _hitter_accuracy(df: pd.DataFrame, proj_col: str, actual_col: str,
     }
 
 
+def _pa_bucket_rmse(df: pd.DataFrame, proj_col: str, actual_col: str) -> list[dict]:
+    """RMSE/MAE/bias of headline xwOBA broken out by PA count buckets.
+
+    Single-PA games are 80% of single-game variance; bucketing exposes how much
+    of the headline RMSE is genuine model miss vs sample-size noise. Buckets
+    drop from `>=4` once a hitter has had a full game's worth of PAs.
+    """
+    sub = df.dropna(subset=[proj_col, actual_col, "pa"]).copy()
+    if sub.empty:
+        return []
+    def _bucket(pa: float) -> str:
+        if pa <= 1: return "1 PA"
+        if pa == 2: return "2 PA"
+        if pa == 3: return "3 PA"
+        return ">=4 PA"
+    sub["__bucket"] = sub["pa"].map(_bucket)
+    out: list[dict] = []
+    for label in ("1 PA", "2 PA", "3 PA", ">=4 PA"):
+        grp = sub[sub["__bucket"] == label]
+        if grp.empty:
+            continue
+        err = grp[actual_col] - grp[proj_col]
+        out.append({
+            "label": label,
+            "n": int(len(grp)),
+            "rmse": float((err ** 2).mean() ** 0.5),
+            "mae": float(err.abs().mean()),
+            "bias": float(err.mean()),
+            "actual_std": float(grp[actual_col].std()),
+        })
+    return out
+
+
+# Per-event outcome variance for each metric, used to bias-correct the
+# observed actual variance for sample-size noise.  Without this correction the
+# ratio diagnostic is unreliable on short windows where per-game sampling noise
+# dwarfs the true between-hitter variance.  Each entry is (per-event variance,
+# sample-size column).  For rates that condition on BIP (hard-hit, on-contact
+# xwOBA) we divide by n_bip rather than n_pa.  Per-event variances:
+#   xwOBA per PA: outcomes 0 (K/Out) to ~2.0 (HR), Var ~ 0.25
+#   xwOBA per BIP: no zeros from K/BB, slightly wider, Var ~ 0.30
+#   binomial rates: p*(1-p) at the league baseline
+_METRIC_PER_EVENT_VAR = {
+    "proj_xwoba":            (0.25,        "pa"),
+    "proj_xwoba_on_contact": (0.30,        "n_bip"),
+    "proj_hardhit_pct":      (0.40 * 0.60, "n_bip"),
+    "proj_k_pct":            (0.225 * 0.775, "pa"),
+    "proj_bb_pct":           (0.085 * 0.915, "pa"),
+}
+
+
+def _spread_table(df: pd.DataFrame, metrics: list[tuple[str, str, str]],
+                  min_pa: int = 3) -> list[dict]:
+    """Bias-corrected variance comparison: proj_std vs implied-true actual_std.
+
+    A single-game actual rate of a hitter has TWO sources of variance:
+        Var(actual) = Var(true rate across hitters) + per-PA variance / n
+    The first term is what the model is trying to estimate; the second is just
+    sample-size noise from a finite-PA game.  Subtracting an estimate of the
+    second term gives the implied "true" between-hitter variance, which is
+    directly comparable to the model's projection variance.
+
+    Ratio = proj_std / sqrt(max(observed_var - noise_var, eps))
+        <  0.85  : projections too narrow -- model is hedging toward league mean
+        >= 0.85 and <= 1.15 : calibrated spread
+        >  1.15  : projections too wide -- model overconfident at the tails
+
+    The raw (uncorrected) actual std is also reported so the reader can see how
+    much of the observed variance is per-PA noise vs real between-hitter
+    variance.  When the corrected estimate would be negative (very short
+    windows, very small samples), the row reports "n/a" rather than a number.
+    """
+    sub = df[df["pa"].fillna(0) >= min_pa]
+    out: list[dict] = []
+    for label, proj_col, actual_col in metrics:
+        if proj_col not in sub.columns or actual_col not in sub.columns:
+            continue
+        per_event = _METRIC_PER_EVENT_VAR.get(proj_col)
+        if per_event is None:
+            continue
+        per_event_var, n_col = per_event
+        if n_col not in sub.columns:
+            continue
+        g = sub.dropna(subset=[proj_col, actual_col, n_col])
+        # For BIP-conditioned rates, drop rows with no BIP at all.
+        g = g[g[n_col] >= 1]
+        if len(g) < 5:
+            continue
+        proj_std = float(g[proj_col].std())
+        act_std = float(g[actual_col].std())
+        mean_n = float(g[n_col].mean())
+        # Bias correction: average per-hitter sampling variance is
+        # E[per_event_var / n_i], where n_i is that hitter's sample size.
+        noise_var = float((per_event_var / g[n_col]).mean())
+        corrected_var = act_std ** 2 - noise_var
+        if corrected_var <= 0:
+            corrected_std = float("nan")
+            ratio = float("nan")
+        else:
+            corrected_std = corrected_var ** 0.5
+            ratio = proj_std / corrected_std if corrected_std > 0 else float("nan")
+        out.append({
+            "label": label,
+            "n": int(len(g)),
+            "mean_n": mean_n,
+            "n_col": n_col,
+            "proj_mean": float(g[proj_col].mean()),
+            "actual_mean": float(g[actual_col].mean()),
+            "proj_std": proj_std,
+            "actual_std_raw": act_std,
+            "actual_std_corrected": corrected_std,
+            "ratio": ratio,
+        })
+    return out
+
+
 def _spearman_per_slate(df: pd.DataFrame, proj_col: str, actual_col: str,
                         min_hitters: int = 30) -> dict:
     """Spearman rho between proj and actual for each date with enough hitters."""
@@ -288,7 +404,9 @@ def _render_calibration_table(title: str, rows: list[CalibrationRow],
                               note: str = "") -> str:
     parts = [f'<div class="acc-section"><h2>{_h(title)}</h2>']
     if note:
-        parts.append(f'<div class="acc-note">{_h(note)}</div>')
+        # Notes may embed HTML entities (e.g. &ge;) or <span> formatting -- do
+        # not escape them again here; callers control the markup.
+        parts.append(f'<div class="acc-note">{note}</div>')
     if not rows:
         parts.append('<div class="acc-note">No data in window.</div></div>')
         return "\n".join(parts)
@@ -376,6 +494,100 @@ def _render_rmse_table(blocks: list[tuple[str, dict]]) -> str:
     return "\n".join(parts)
 
 
+def _render_pa_bucket_rmse(rows: list[dict]) -> str:
+    parts = ['<div class="acc-section">'
+             '<h2>Headline xwOBA RMSE by PA count</h2>',
+             '<div class="acc-note">Single-PA games carry ~80% of the per-hitter '
+             'xwOBA variance (a HR vs a K is a 2.0 wOBA point gap on one PA). '
+             'Splitting RMSE by PA count separates real model miss from sample-size '
+             'noise. A model with skill should show RMSE shrinking with PA count.</div>']
+    if not rows:
+        parts.append('<div class="acc-note">No data in window.</div></div>')
+        return "\n".join(parts)
+    parts.append('<table class="acc-table"><thead><tr>'
+                 '<th class="label">PA bucket</th><th>n</th>'
+                 '<th>actual std</th><th>RMSE</th><th>MAE</th><th>bias</th>'
+                 '</tr></thead><tbody>')
+    for r in rows:
+        bias_cls = _delta_cls(r["bias"]) if abs(r["bias"] or 0) > 0.01 else "delta-zero"
+        parts.append(
+            "<tr>"
+            f'<td class="label">{_h(r["label"])}</td>'
+            f'<td>{r["n"]}</td>'
+            f'<td>{_fmt_float(r["actual_std"])}</td>'
+            f'<td>{_fmt_float(r["rmse"])}</td>'
+            f'<td>{_fmt_float(r["mae"])}</td>'
+            f'<td class="{bias_cls}">{_fmt_float(r["bias"])}</td>'
+            "</tr>"
+        )
+    parts.append("</tbody></table></div>")
+    return "\n".join(parts)
+
+
+def _render_spread(rows: list[dict], min_pa: int) -> str:
+    parts = ['<div class="acc-section">'
+             '<h2>Distribution spread: projection variance vs implied true variance</h2>',
+             '<div class="acc-note">For each metric, compares projected std '
+             f'(across hitter-games with PA &ge; {min_pa}) to the implied true '
+             'between-hitter std after subtracting per-PA sampling noise. Raw '
+             'actual std also shown so you can see how much of it is genuine '
+             'between-hitter spread vs single-game noise. '
+             '<b>Ratio = proj std / corrected actual std.</b> '
+             '<span class="skill-neg">&lt; 0.85</span> = projections too '
+             'narrow (hedging toward league); '
+             '<span class="skill-pos">&gt; 1.15</span> = projections too wide '
+             '(overconfident at tails); 0.85-1.15 = calibrated spread. '
+             'On short windows (few days) the bias correction can fail '
+             '(corrected std non-finite) — gather more data.</div>']
+    if not rows:
+        parts.append('<div class="acc-note">No data in window.</div></div>')
+        return "\n".join(parts)
+    parts.append('<table class="acc-table"><thead><tr>'
+                 '<th class="label">Metric</th><th>n</th>'
+                 '<th title="Mean sample-size denominator: PA for headline / K / BB; '
+                 'n_bip for hard-hit and on-contact xwOBA">mean n</th>'
+                 '<th>mean proj</th><th>mean actual</th>'
+                 '<th>proj std</th><th>actual std (raw)</th>'
+                 '<th>actual std (corrected)</th>'
+                 '<th>ratio</th><th>read</th>'
+                 '</tr></thead><tbody>')
+    for r in rows:
+        ratio = r["ratio"]
+        if not isinstance(ratio, float) or math.isnan(ratio):
+            ratio_cls = ""
+            verdict = "n/a (noisy)"
+            ratio_str = "—"
+            corr_str = "—"
+        else:
+            if ratio < 0.85:
+                ratio_cls = "skill-neg"
+                verdict = "hedging"
+            elif ratio > 1.15:
+                ratio_cls = "skill-pos"
+                verdict = "overconfident"
+            else:
+                ratio_cls = ""
+                verdict = "calibrated"
+            ratio_str = _fmt_float(ratio, 2)
+            corr_str = _fmt_float(r["actual_std_corrected"])
+        parts.append(
+            "<tr>"
+            f'<td class="label">{_h(r["label"])}</td>'
+            f'<td>{r["n"]}</td>'
+            f'<td>{_fmt_float(r["mean_n"], 1)}</td>'
+            f'<td>{_fmt_float(r["proj_mean"])}</td>'
+            f'<td>{_fmt_float(r["actual_mean"])}</td>'
+            f'<td>{_fmt_float(r["proj_std"])}</td>'
+            f'<td>{_fmt_float(r["actual_std_raw"])}</td>'
+            f'<td>{_h(corr_str)}</td>'
+            f'<td class="{ratio_cls}">{_h(ratio_str)}</td>'
+            f'<td class="{ratio_cls}">{verdict}</td>'
+            "</tr>"
+        )
+    parts.append("</tbody></table></div>")
+    return "\n".join(parts)
+
+
 def _render_spearman(blocks: list[tuple[str, dict]]) -> str:
     parts = ['<div class="acc-section"><h2>Discrimination: Spearman rho per slate</h2>',
              '<div class="acc-note">For each date with at least 30 played '
@@ -419,7 +631,7 @@ def _render_spearman(blocks: list[tuple[str, dict]]) -> str:
 
 
 def _render_html(hitter: pd.DataFrame, pa: pd.DataFrame,
-                 window_label: str) -> str:
+                 window_label: str, min_pa: int = 3) -> str:
     title = f"Projection accuracy — {window_label}"
     parts = [
         "<!doctype html>",
@@ -438,34 +650,57 @@ def _render_html(hitter: pd.DataFrame, pa: pd.DataFrame,
 
     parts.append('<section class="card">')
 
-    # A. Calibration tables (5).
+    # Phase 5: calibration filters out short games (1-2 PA) so single-PA noise
+    # doesn't dominate the bin means.  Per-block min_pa overrides for the rare
+    # HR% case (already starved for data).
+    pa_default = min_pa
     calib_blocks = [
-        ("proj_xwoba", "actual_xwoba", _bin_xwoba, False, LG_XWOBA,
-         "Rolled-up xwOBA. Highest variance per hitter-game; converges slowly.",
+        ("proj_xwoba", "actual_xwoba", _bin_xwoba, False, LG_XWOBA, pa_default,
+         f"Rolled-up xwOBA, hitters with PA &ge; {pa_default}. "
+         "Highest variance per hitter-game; converges slowly.",
          "Calibration: proj xwOBA → actual xwOBA"),
-        ("proj_xwoba_on_contact", "actual_xwoba_on_contact", _bin_xwoba, False, None,
-         "On-contact xwOBA strips BABIP noise; converges 2-3x faster than rolled-up xwOBA.",
+        ("proj_xwoba_on_contact", "actual_xwoba_on_contact", _bin_xwoba, False, None, pa_default,
+         f"On-contact xwOBA strips BABIP noise; converges 2-3x faster than "
+         f"rolled-up xwOBA. PA &ge; {pa_default}.",
          "Calibration: proj on-contact xwOBA → actual on-contact xwOBA"),
         ("proj_hardhit_pct", "actual_hardhit_pct",
          lambda v: _bin_pct(v, (0.30, 0.35, 0.40, 0.45, 0.50, 0.55)), True, LG_HARD_HIT,
-         "Hard-hit % converges fastest of any contact-quality metric.",
+         pa_default,
+         f"Hard-hit % converges fastest of any contact-quality metric. PA &ge; {pa_default}.",
          "Calibration: proj hard-hit% → actual hard-hit%"),
         ("proj_k_pct", "actual_k_pct",
          lambda v: _bin_pct(v, (0.15, 0.20, 0.25, 0.30, 0.35)), True, LG_K_PCT,
-         "Strikeout rate. Discrete event, low-variance baseline.",
+         pa_default,
+         f"Strikeout rate. Discrete event, low-variance baseline. PA &ge; {pa_default}.",
          "Calibration: proj K% → actual K%"),
         ("proj_hr_pct", "actual_hr_pct",
          lambda v: _bin_pct(v, (0.02, 0.04, 0.06, 0.08, 0.12)), True, None,
+         1,  # HR is rare; don't starve the bins further
          "HR rate — rare event, needs hundreds of hitter-games per bin to converge.",
          "Calibration: proj HR% → actual HR%"),
     ]
-    for proj_col, actual_col, bin_fn, is_rate, baseline, note, title_c in calib_blocks:
+    for (proj_col, actual_col, bin_fn, is_rate,
+         baseline, blk_min_pa, note, title_c) in calib_blocks:
         if proj_col not in hitter.columns or actual_col not in hitter.columns:
             continue
         rows = _calibration_rows(hitter, proj_col, actual_col, bin_fn,
-                                 is_rate=is_rate)
+                                 is_rate=is_rate, min_n_pa=blk_min_pa)
         parts.append(_render_calibration_table(title_c, rows, is_rate=is_rate,
                                                 baseline=baseline, note=note))
+
+    # A2. Distribution spread diagnostic (hedging-detector).
+    spread_rows = _spread_table(hitter, [
+        ("xwOBA",             "proj_xwoba",             "actual_xwoba"),
+        ("on-contact xwOBA",  "proj_xwoba_on_contact",  "actual_xwoba_on_contact"),
+        ("hard-hit %",        "proj_hardhit_pct",       "actual_hardhit_pct"),
+        ("K %",               "proj_k_pct",             "actual_k_pct"),
+        ("BB %",              "proj_bb_pct",            "actual_bb_pct"),
+    ], min_pa=min_pa)
+    parts.append(_render_spread(spread_rows, min_pa))
+
+    # A3. Headline xwOBA RMSE split by PA count.
+    parts.append(_render_pa_bucket_rmse(_pa_bucket_rmse(
+        hitter, "proj_xwoba", "actual_xwoba")))
 
     # B. Per-PA log-loss vs baselines.
     parts.append(_render_logloss_table(_logloss_table(pa)))
@@ -509,6 +744,11 @@ def main() -> int:
                     help="Override --window with an explicit YYYY-MM-DD cutoff.")
     ap.add_argument("--out", default=str(OUT_DIR),
                     help=f"Output directory (default: {OUT_DIR})")
+    ap.add_argument("--min-pa", type=int, default=3,
+                    help="Filter calibration + spread tables to hitters with "
+                         "at least N PA in their game (default: 3). Drops "
+                         "1-2 PA games whose single-PA variance otherwise "
+                         "drowns out real signal in the bin means.")
     args = ap.parse_args()
 
     log_path = setup_logging("accuracy")
@@ -535,7 +775,7 @@ def main() -> int:
         window_label = (f"trailing {window} days "
                         f"({hitter['date'].min()} to {hitter['date'].max()})")
 
-    html = _render_html(hitter, pa, window_label)
+    html = _render_html(hitter, pa, window_label, min_pa=args.min_pa)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)

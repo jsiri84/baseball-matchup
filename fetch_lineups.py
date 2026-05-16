@@ -513,20 +513,34 @@ def main(argv=None):
         print("✗ No lineup data collected")
         return 1
     
-    # Write CSV file
+    # Write CSV file.  If the target already exists (i.e. fetch_lineups was
+    # re-run later the same day), back the old copy up to a timestamped .bak
+    # rather than silently overwriting.  This makes accidental clobbering of
+    # a prior day's lineup file (which has burned us in the past) recoverable.
     output_filename = f"matchups_{today}.csv"
     output_path = Path(output_filename)
-    
+
+    if output_path.exists():
+        stamp = datetime.now().strftime("%H%M%S")
+        backup_path = output_path.with_suffix(f".csv.{stamp}.bak")
+        try:
+            output_path.replace(backup_path)
+            print(f"ℹ {output_filename} already existed; backed up to "
+                  f"{backup_path.name} before rewriting")
+        except OSError as exc:
+            print(f"✗ Could not back up existing {output_filename}: {exc}")
+            return 1
+
     try:
         with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(all_rows)
-        
+
         print(f"✓ CSV written to {output_filename}")
         print(f"  - Games: {len(games)}")
         print(f"  - Rows written: {len(all_rows)}")
         return 0
-    
+
     except IOError as e:
         print(f"✗ Error writing CSV file: {e}")
         return 1

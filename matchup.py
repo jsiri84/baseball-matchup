@@ -33,7 +33,7 @@ import subprocess
 import sys
 import threading
 import warnings
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -102,6 +102,31 @@ LG_BB_PCT = 0.085
 LG_HBP_PCT = 0.012
 LG_WHIFF = 0.245
 LG_HARD_HIT = 0.40
+
+# Empirical-Bayes shrinkage strengths (in units of the relevant denominator:
+# BBE for HardHit, PA for K%/BB%, PA for per-pitch xwOBA) toward the league
+# baseline before the log5 / additive batter-vs-pitcher combination.  These
+# solve the right-tail misses documented in the accuracy dashboard, where
+# the log5 odds-ratio was amplifying noisy single-season rates into
+# implausible extremes.  Each k is roughly the prior strength implied by the
+# across-MLB variance of the TRUE rate (sigma estimated empirically), so a
+# player with k weighted observations gets a 50/50 blend, established players
+# with several-times-k samples are barely shrunk, and rookies/small samples
+# collapse toward league average.  Pitcher OVERALL K%/BB% are NOT shrunk: the
+# residual log5 tail amplification (proj K% top bin still misses by ~160 pts)
+# is not closable via shrinkage without over-hedging the bulk of the
+# distribution -- making the pitcher shrinkage aggressive enough to fix the
+# tail collapses the spread diagnostic to 0.40 ratio.  Pitcher per-pitch
+# xwOBA IS shrunk because per-pitch xwOBA from low-PA pitch types is the
+# noisiest input and most amenable to a prior.
+HARD_HIT_SHRINK_K = 75.0          # batter BBE; sigma ~ 0.06 around mu = 0.40
+K_PCT_SHRINK_K = 100.0            # batter PA;  sigma ~ 0.06 around mu = 0.225
+BB_PCT_SHRINK_K = 75.0            # batter PA;  sigma ~ 0.03 around mu = 0.085
+XWOBA_SHRINK_K = 100.0            # batter PA;  sigma ~ 0.05 around mu = 0.315
+PITCHER_XWOBA_SHRINK_K = 75.0     # pitcher PA; targets per-pitch xwOBA noise
+                                  # (k=200 over-compressed proj_xwoba std from
+                                  # 0.082 to 0.034; k=75 keeps the right-tail
+                                  # fix without flattening the bulk)
 
 # Per-PA outcome distribution baseline (sums to 1.00; sourced from 2025 MLB).
 LG_OUTCOMES = {
@@ -379,6 +404,21 @@ def log5(b: float, p: float, lg: float) -> float:
 def additive(b: float, p: float, lg: float) -> float:
     """Additive combination for continuous stats: clipped to [0, 1]."""
     return float(np.clip(b + p - lg, 0.0, 1.0))
+
+
+def shrunk_rate(rate: float, n: float, lg: float, k: float) -> float:
+    """Empirical-Bayes shrinkage of an observed rate toward a league baseline.
+
+    Equivalent to a Beta(k*lg, k*(1-lg)) prior plus (n*rate) observed
+    successes: shrunk = (n*rate + k*lg) / (n + k).  When n is small the
+    output is pulled toward `lg`; when n >> k the observed rate dominates.
+    NaN/non-positive sample sizes collapse to the league baseline.
+    """
+    if n is None or not np.isfinite(n) or n <= 0:
+        return lg
+    if rate is None or (isinstance(rate, float) and math.isnan(rate)):
+        return lg
+    return float((n * rate + k * lg) / (n + k))
 
 
 def american_odds(p: float) -> str:
@@ -872,9 +912,18 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
     what feeds downstream layers; the raw value + delta are surfaced so the
     GB-mix discount is auditable in the report.
     """
-    # Per-PA rates: log5 on overall numbers, not per-pitch.
-    proj_k = log5(batter_overall["K_pct"], pitcher_overall["K_pct"], LG_K_PCT)
-    proj_bb = log5(batter_overall["BB_pct"], pitcher_overall["BB_pct"], LG_BB_PCT)
+    # Per-PA rates: log5 on overall numbers, not per-pitch.  Batter rates are
+    # empirical-Bayes shrunk toward league baselines before log5 to tame the
+    # right-tail overshoot (e.g. proj K% >=35% bin came in at -165 pts
+    # pre-fix).  Pitcher OVERALL rates are NOT shrunk -- experimentally this
+    # tightens the spread further (proj K% std collapsed to 0.40 ratio) without
+    # closing the residual tail miss, which is an inherent log5 amplification
+    # property at the extremes, not a sample-noise problem.
+    b_pa_overall = float(batter_overall.get("n_pa_w", 0.0) or 0.0)
+    b_k_shrunk  = shrunk_rate(batter_overall["K_pct"],  b_pa_overall, LG_K_PCT,   K_PCT_SHRINK_K)
+    b_bb_shrunk = shrunk_rate(batter_overall["BB_pct"], b_pa_overall, LG_BB_PCT,  BB_PCT_SHRINK_K)
+    proj_k   = log5(b_k_shrunk,  pitcher_overall["K_pct"],   LG_K_PCT)
+    proj_bb  = log5(b_bb_shrunk, pitcher_overall["BB_pct"],  LG_BB_PCT)
     proj_hbp = log5(batter_overall["HBP_pct"], pitcher_overall["HBP_pct"], LG_HBP_PCT)
 
     # Guard against an empty / all-zero marginal: previously the per-pitch loop
@@ -926,16 +975,52 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
         bat_row = bat_idx.loc[pitch_name].to_dict() if pitch_name in bat_idx.index else None
         pit_row = pit_idx.loc[pitch_name].to_dict() if pitch_name in pit_idx.index else None
 
-        b_x = _row_or_overall(bat_row, "xwOBA", batter_overall)
-        p_x = _row_or_overall(pit_row, "xwOBA", pitcher_overall)
-        b_a = _row_or_overall(bat_row, "xBA",   batter_overall)
-        p_a = _row_or_overall(pit_row, "xBA",   pitcher_overall)
-        b_s = _row_or_overall(bat_row, "xSLG",  batter_overall)
-        p_s = _row_or_overall(pit_row, "xSLG",  pitcher_overall)
+        b_x_raw = _row_or_overall(bat_row, "xwOBA", batter_overall)
+        p_x_raw = _row_or_overall(pit_row, "xwOBA", pitcher_overall)
+        b_a_raw = _row_or_overall(bat_row, "xBA",   batter_overall)
+        p_a_raw = _row_or_overall(pit_row, "xBA",   pitcher_overall)
+        b_s_raw = _row_or_overall(bat_row, "xSLG",  batter_overall)
+        p_s_raw = _row_or_overall(pit_row, "xSLG",  pitcher_overall)
+
+        # Empirical-Bayes shrink per-pitch xwOBA/xBA/xSLG toward league for
+        # both batter and pitcher.  Sample size = per-pitch PA count when the
+        # per-pitch row is present, else the player's overall PA count.
+        # Targets the on-contact xwOBA right-tail miss (proj >=.400 bin came
+        # in 74 pts low: additive() was amplifying noisy per-pitch xwOBA from
+        # low-PA pitch types).
+        if bat_row is not None and "pa_w" in bat_row:
+            _n_pa_b = float(bat_row.get("pa_w", 0.0) or 0.0)
+        else:
+            _n_pa_b = float(batter_overall.get("n_pa_w", 0.0) or 0.0)
+        if pit_row is not None and "pa_w" in pit_row:
+            _n_pa_p = float(pit_row.get("pa_w", 0.0) or 0.0)
+        else:
+            _n_pa_p = float(pitcher_overall.get("n_pa_w", 0.0) or 0.0)
+        b_x = shrunk_rate(b_x_raw, _n_pa_b, LG_XWOBA, XWOBA_SHRINK_K)
+        b_a = shrunk_rate(b_a_raw, _n_pa_b, LG_XBA,   XWOBA_SHRINK_K)
+        b_s = shrunk_rate(b_s_raw, _n_pa_b, LG_XSLG,  XWOBA_SHRINK_K)
+        p_x = shrunk_rate(p_x_raw, _n_pa_p, LG_XWOBA, PITCHER_XWOBA_SHRINK_K)
+        p_a = shrunk_rate(p_a_raw, _n_pa_p, LG_XBA,   PITCHER_XWOBA_SHRINK_K)
+        p_s = shrunk_rate(p_s_raw, _n_pa_p, LG_XSLG,  PITCHER_XWOBA_SHRINK_K)
         b_w = _row_or_overall(bat_row, "Whiff_pct",   batter_overall)
         p_w = _row_or_overall(pit_row, "Whiff_pct",   pitcher_overall)
-        b_h = _row_or_overall(bat_row, "HardHit_pct", batter_overall)
+        b_h_raw = _row_or_overall(bat_row, "HardHit_pct", batter_overall)
         p_h = _row_or_overall(pit_row, "HardHit_pct", pitcher_overall)
+
+        # Shrink batter HardHit% toward league using HARD_HIT_SHRINK_K BBE of
+        # prior weight. n_bbe is the per-pitch weighted BBE count when the
+        # per-pitch row exists; otherwise the batter's overall BBE total.
+        if bat_row is not None and not (
+            isinstance(bat_row.get("HardHit_pct"), float)
+            and math.isnan(bat_row.get("HardHit_pct"))
+        ):
+            n_bbe_b = float(bat_row.get("bbe_w", 0.0) or 0.0)
+        else:
+            n_bbe_b = sum(
+                float(batter_overall.get(f"bbe_{bt}_w", 0.0) or 0.0)
+                for bt in BB_TYPES
+            )
+        b_h = shrunk_rate(b_h_raw, n_bbe_b, LG_HARD_HIT, HARD_HIT_SHRINK_K)
 
         # bb_type mix adjustment: shift batter's BBE contribution by the
         # difference between the pitcher's induced bb_type mix and the
@@ -1006,6 +1091,7 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
     # double-count what the per-pitch numbers already capture. The shift is
     # added on top of the bb_type-adjusted projection.
     proj_xwoba_bbtype = proj_xwoba
+
     count_shift = 0.0
     count_breakdown: list[dict] = []
     if batter_count_xwoba and pitcher_count_dist:
@@ -1030,11 +1116,23 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
                 ) * COUNT_XWOBA_BLEND_ALPHA
     proj_xwoba_final = proj_xwoba_bbtype + count_shift
 
+    # On-contact xwOBA: back out K/BB/HBP contributions from the per-PA number
+    # so postgame can compare against actual on-contact xwOBA (per-BIP).
+    # xwOBA_per_PA = K*0 + BB*wOBA_BB + HBP*wOBA_HBP + BIP_share * xwOBA_on_contact
+    # Use proj_xwoba_final (post-count-shift) to stay consistent with the
+    # sidecar's headline xwOBA, so on-contact is always >= per-PA for hitters
+    # with positive K-rate (the count-shift gets propagated to on-contact).
+    _bip_share = max(1e-9, 1.0 - proj_k - proj_bb - proj_hbp)
+    proj_xwoba_on_contact = (
+        proj_xwoba_final - WOBA_BB * proj_bb - WOBA_HBP * proj_hbp
+    ) / _bip_share
+
     return {
         "K_pct": proj_k, "BB_pct": proj_bb, "HBP_pct": proj_hbp,
         "xwOBA": proj_xwoba_final, "xBA": proj_xba, "xSLG": proj_xslg,
         "xwOBA_raw": proj_xwoba_raw, "xBA_raw": proj_xba_raw, "xSLG_raw": proj_xslg_raw,
         "xwOBA_bbtype": proj_xwoba_bbtype,
+        "xwOBA_on_contact": proj_xwoba_on_contact,
         "xwOBA_adj_pts": (proj_xwoba_bbtype - proj_xwoba_raw) * 1000,
         "xwOBA_count_pts": count_shift * 1000,
         "count_blend": count_breakdown,
@@ -4151,7 +4249,7 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         # Contact-quality + discipline projections (BABIP-independent eval).
         "proj_hardhit_pct": _f(proj.get("HardHit_pct")),
         "proj_whiff_pct": _f(proj.get("Whiff_pct")),
-        "proj_xwoba_on_contact": _f(proj.get("xwOBA_bbtype", proj.get("xwOBA"))),
+        "proj_xwoba_on_contact": _f(proj.get("xwOBA_on_contact")),
         "best_pitch": best_pitch,
         "worst_pitch": worst_pitch,
         "verdict_label": label,
@@ -4771,19 +4869,24 @@ def _derive_report_date(batch_path: Path | None, override: str | None) -> date:
 def _roundup_data_dir() -> Path:
     """Return (and create) today's sidecar data directory: reports/<date>/_data/.
 
-    Each lineup batch run drops one JSON per (matchup, pitcher) into this folder
-    so the day-level roundup script (`roundup.py`) can build the top-50 /
-    bottom-50 reports without re-running the matchup compute.
+    The current batch run writes ONE canonical ``slate.json`` here at the end
+    of the run that holds every game for the date.  Downstream consumers
+    (postgame, roundup, accuracy) read this single file so they never see
+    stale per-game JSON from a previous CSV.
     """
     d = _report_dir() / "_data"
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
-def _write_roundup_sidecar(out_stem: str, matchup_key: str, hitter_team: str,
-                           pitcher_name: str, data: dict) -> None:
-    """Persist one lineup's summary rows + per-batter HTML body to JSON."""
-    payload = {
+# Lock for the shared accumulator below, since worker threads append concurrently.
+_SLATE_LOCK = threading.Lock()
+
+
+def _make_sidecar_entry(out_stem: str, matchup_key: str, hitter_team: str,
+                       pitcher_name: str, data: dict) -> dict:
+    """Build the per-game sidecar payload (one entry in the slate's games list)."""
+    return {
         "out_stem": out_stem,
         "matchup_key": matchup_key,
         "hitter_team": hitter_team,
@@ -4795,8 +4898,54 @@ def _write_roundup_sidecar(out_stem: str, matchup_key: str, hitter_team: str,
         "summary_rows": data.get("summary_rows", []),
         "per_batter_html": data.get("per_batter_html", []),
     }
-    path = _roundup_data_dir() / f"{out_stem}.json"
-    path.write_text(json.dumps(payload, default=str), encoding="utf-8")
+
+
+def _clean_legacy_sidecars(data_dir: Path) -> int:
+    """Delete any pre-slate per-game JSONs to prevent stale data leaking into
+    downstream tooling.  Preserves ``slate.json`` (the new canonical file) and
+    any ``_postgame*.json`` written by postgame.py.  Returns the number of
+    files removed.
+    """
+    if not data_dir.exists():
+        return 0
+    removed = 0
+    for p in data_dir.glob("*.json"):
+        if p.name == "slate.json":
+            continue
+        if p.name.startswith("_postgame"):
+            continue
+        try:
+            p.unlink()
+            removed += 1
+        except OSError:
+            pass
+    return removed
+
+
+def _write_slate_sidecar(data_dir: Path, date_str: str, entries: list[dict]) -> Path:
+    """Write the consolidated per-date slate sidecar atomically.
+
+    Format::
+
+        {
+            "date":  "YYYY-MM-DD",
+            "generated_at": ISO-8601 UTC timestamp,
+            "games": [<entry>, <entry>, ...]
+        }
+
+    Each entry has the same fields as the legacy per-game sidecar payload.
+    """
+    data_dir.mkdir(parents=True, exist_ok=True)
+    path = data_dir / "slate.json"
+    payload = {
+        "date": date_str,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "games": entries,
+    }
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, default=str), encoding="utf-8")
+    tmp.replace(path)
+    return path
 
 
 def _slugify(text: str) -> str:
@@ -4898,6 +5047,15 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
         n_workers = _resolve_workers(workers)
         print(f"  generating reports across {n_workers} worker thread(s)")
 
+        # Clean any stale per-game sidecars from previous runs so a slimmer CSV
+        # can't leave orphans behind that downstream tools would pick up.
+        data_dir = _roundup_data_dir()
+        removed = _clean_legacy_sidecars(data_dir)
+        if removed:
+            print(f"  removed {removed} stale sidecar(s) from {data_dir.relative_to(ROOT)}")
+
+        slate_entries: list[dict] = []
+
         def _process_lineup(item) -> None:
             (matchup_key, pitcher_name), batters = item
             
@@ -4935,8 +5093,10 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
             html_path.write_text(html_doc, encoding="utf-8")
             print(f"  wrote {html_path.relative_to(ROOT)}")
 
-            _write_roundup_sidecar(out_stem, matchup_key, hitter_team,
-                                   pitcher_name, roundup_data)
+            entry = _make_sidecar_entry(out_stem, matchup_key, hitter_team,
+                                        pitcher_name, roundup_data)
+            with _SLATE_LOCK:
+                slate_entries.append(entry)
 
         items = list(lineup_groups.items())
         if n_workers <= 1 or len(items) <= 1:
@@ -4954,6 +5114,14 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
                     except Exception as exc:  # noqa: BLE001
                         print(f"  worker for {key} crashed: "
                               f"{exc.__class__.__name__}: {exc}", file=sys.stderr)
+
+        # Write the consolidated slate sidecar.  Sort entries for deterministic
+        # output regardless of thread-completion order.
+        slate_entries.sort(key=lambda e: e.get("out_stem", ""))
+        date_str = _REPORT_DATE.isoformat()
+        path = _write_slate_sidecar(data_dir, date_str, slate_entries)
+        print(f"  wrote slate sidecar: {path.relative_to(ROOT)} "
+              f"({len(slate_entries)} game(s))")
         return
 
     # ----- legacy per-row mode ------------------------------------------------
