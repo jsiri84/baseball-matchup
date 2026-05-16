@@ -1,0 +1,2183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lineup vs Tyler Mahle - matchup report</title>
+<style>
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --ink: #1f2937;
+  --muted: #64748b;
+  --line: #e5e7eb;
+  --accent: #2563eb;
+  --bat-strong-bg: #d1fae5;
+  --bat-strong-fg: #065f46;
+  --bat-mild-bg: #ecfdf5;
+  --bat-mild-fg: #047857;
+  --pit-strong-bg: #fee2e2;
+  --pit-strong-fg: #991b1b;
+  --pit-mild-bg: #fef2f2;
+  --pit-mild-fg: #b91c1c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                          Helvetica, Arial, sans-serif;
+             font-size: 14px; line-height: 1.45; }
+.container { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+.page-head { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+.page-head h1 { margin: 0 0 6px 0; font-size: 26px; font-weight: 700; }
+.page-head .meta { color: var(--muted); font-size: 13px; }
+.badge { display: inline-block; padding: 2px 8px; margin-left: 8px;
+         font-size: 11px; font-weight: 600; border-radius: 999px;
+         background: #e0e7ff; color: #1e3a8a; vertical-align: middle; letter-spacing: 0.5px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.card h2 { margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: var(--ink);
+           letter-spacing: 0.2px; text-transform: uppercase; }
+.narrative { font-size: 15px; line-height: 1.55; padding: 12px 14px;
+             background: #f1f5f9; border-left: 4px solid var(--accent);
+             border-radius: 4px; margin: 0 0 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+table thead th { text-align: right; font-weight: 600; padding: 8px 10px;
+                 color: var(--muted); border-bottom: 1px solid var(--line);
+                 background: #fafbfc; }
+table thead th:first-child, table tbody td:first-child { text-align: left; }
+table tbody td { padding: 7px 10px; text-align: right; border-bottom: 1px solid #f1f5f9;
+                 font-variant-numeric: tabular-nums; }
+table tbody tr:last-child td { border-bottom: none; }
+.bat-edge-strong { background: var(--bat-strong-bg); color: var(--bat-strong-fg); font-weight: 700; }
+.bat-edge-mild { background: var(--bat-mild-bg); color: var(--bat-mild-fg); }
+.pit-edge-strong { background: var(--pit-strong-bg); color: var(--pit-strong-fg); font-weight: 700; }
+.pit-edge-mild { background: var(--pit-mild-bg); color: var(--pit-mild-fg); }
+.note { color: var(--muted); font-size: 12px; margin: 6px 0 0 0; }
+.note-list { margin: 6px 0 0 0; padding-left: 20px; color: #334155; }
+.note-list li { margin-bottom: 4px; font-size: 13px; }
+.subtitle { font-size: 13px; color: var(--muted); margin: 0 0 10px 0; }
+.divider-row td { background: #f8fafc; color: var(--muted); font-style: italic; }
+
+/* ----- Multi-PA outlook ----- */
+table.multi-pa thead tr:first-child th.pa-group {
+  text-align: center; text-transform: uppercase; font-size: 11px;
+  letter-spacing: 0.4px; color: var(--ink); background: #eef2f7;
+  border-bottom: 1px solid var(--line);
+}
+table.multi-pa thead tr:first-child th.pa-group + th.pa-group {
+  border-left: 1px solid var(--line);
+}
+table.multi-pa thead tr:nth-child(2) th { font-size: 11px; }
+table.multi-pa th.outcome-col { text-align: left; vertical-align: bottom; }
+table.multi-pa tbody td { white-space: nowrap; }
+table.multi-pa tbody td.odds { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody td.avg { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody tr td:nth-child(5),
+table.multi-pa tbody tr td:nth-child(8) { border-left: 1px solid #f1f5f9; }
+table.multi-pa thead tr:nth-child(2) th:nth-child(4),
+table.multi-pa thead tr:nth-child(2) th:nth-child(7) { border-left: 1px solid var(--line); }
+.kv { display: flex; flex-wrap: wrap; gap: 14px 24px; padding: 4px 0 8px 0; font-size: 13px; }
+.kv > div { color: var(--muted); }
+.kv > div b { color: var(--ink); font-weight: 600; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px;
+        background: #f1f5f9; color: #334155; font-size: 11px; }
+footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+
+/* ----- Lineup view ----- */
+.lineup-hero { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: baseline;
+               padding: 14px 18px; background: #eff6ff; border-left: 4px solid var(--accent);
+               border-radius: 6px; margin-bottom: 16px; }
+.lineup-hero .stat { font-size: 13px; color: var(--muted); }
+.lineup-hero .stat b { display: block; font-size: 18px; color: var(--ink);
+                       font-variant-numeric: tabular-nums; font-weight: 700; margin-top: 2px; }
+table.pitcher-bf tbody td { font-variant-numeric: tabular-nums; }
+table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
+                                        background: #fff7ed; }
+.lineup-grid td.spot { text-align: center; font-weight: 700; color: var(--muted); width: 32px; }
+.lineup-grid td.name { font-weight: 600; text-align: left; }
+.lineup-grid td.handpill { text-align: center; }
+.lineup-grid td.handpill .pill { font-weight: 600; }
+.lineup-grid td.pitch-cell { text-align: left; font-size: 12px; color: var(--muted); }
+.lineup-grid td.verdict { text-align: center; font-weight: 600; border-radius: 4px; }
+.lineup-grid .neutral { background: #f1f5f9; color: #334155; }
+.batter-block { margin-top: 14px; border: 1px solid var(--line); border-radius: 10px;
+                background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.batter-block > summary { list-style: none; cursor: pointer; padding: 14px 20px;
+                          font-size: 15px; display: flex; align-items: center;
+                          gap: 10px 16px; flex-wrap: wrap; }
+.batter-block > summary::-webkit-details-marker { display: none; }
+.batter-block > summary::before { content: '\25B8'; font-size: 11px; color: var(--muted);
+                                  transition: transform 0.15s ease; display: inline-block; }
+.batter-block[open] > summary::before { transform: rotate(90deg); }
+.batter-block > summary .spot { font-weight: 700; color: var(--muted); width: 22px; text-align: right; }
+.batter-block > summary .name { font-weight: 700; color: var(--ink); }
+.batter-block > summary .summary-stat { color: var(--muted); font-size: 12px;
+                                        font-variant-numeric: tabular-nums; }
+.batter-block > summary .summary-stat b { color: var(--ink); font-weight: 700; }
+.batter-block > summary .verdict-pill { margin-left: auto; padding: 3px 10px; border-radius: 999px;
+                                        font-size: 11px; font-weight: 700; letter-spacing: 0.4px; }
+.batter-block .batter-body { padding: 0 20px 18px 20px; border-top: 1px solid var(--line); }
+.batter-block .batter-body section.card { border: none; padding: 14px 0; margin-bottom: 0;
+                                          box-shadow: none; border-bottom: 1px dashed var(--line); }
+.batter-block .batter-body section.card:last-child { border-bottom: none; }
+.batter-block .batter-body .page-head { display: none; }
+</style>
+</head>
+<body>
+<main class="container">
+<header class="page-head">
+<h1>Lineup vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div style="margin:8px 0;padding:8px 12px;background:#fff8dc;border-left:4px solid #d4a017;color:#5a4500;font-weight:600;">Projected lineup &mdash; actual lineup not yet posted; this is the team's most recent batting order vs a same-handed starter.</div>
+<div class="meta">9 batters &times; 3 PA each = 27 projected PAs &middot; window blends 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25</div>
+</header>
+<section class="card">
+<h2>Lineup outlook</h2>
+<div class="lineup-hero">
+<div class="stat">Lineup avg xwOBA<b class="">0.331</b></div>
+<div class="stat">vs league<b class="">+16 pts</b></div>
+<div class="stat">Expected K<b>5.8</b></div>
+<div class="stat">Expected BB<b>2.6</b></div>
+<div class="stat">Expected hits<b>5.7</b></div>
+<div class="stat">Expected HR<b>1.41</b></div>
+<div class="stat">Expected on-base<b>8.3</b></div>
+<div class="stat">P(&ge;1 HR in lineup)<b>76.7%</b></div>
+</div>
+</section>
+<section class="card">
+<h2>Projected pitcher line by BF (20&ndash;30)</h2>
+<p class="subtitle">Cycles through the order, blending Tyler Mahle's <b>3.98</b> P/PA with the lineup's <b>3.82</b> P/PA average (long PAs winsorized at 10). Each row shows the cumulative line at that BF.</p>
+<table class="pitcher-bf"><thead><tr><th>BF</th><th>Pitches</th><th>K</th><th>BB</th><th>Hits</th><th>HR</th><th>Outs</th></tr></thead><tbody>
+<tr><td><b>20</b></td><td>78</td><td>4.4</td><td>2.0</td><td>4.3</td><td>1.08</td><td>13.7</td></tr>
+<tr><td><b>21</b></td><td>82</td><td>4.6</td><td>2.1</td><td>4.5</td><td>1.12</td><td>14.4</td></tr>
+<tr><td><b>22</b></td><td>86</td><td>4.8</td><td>2.2</td><td>4.8</td><td>1.19</td><td>15.1</td></tr>
+<tr><td><b>23</b></td><td>90</td><td>4.9</td><td>2.3</td><td>5.0</td><td>1.26</td><td>15.7</td></tr>
+<tr><td><b>24</b></td><td>94</td><td>5.2</td><td>2.3</td><td>5.2</td><td>1.34</td><td>16.4</td></tr>
+<tr><td><b>25</b></td><td>98</td><td>5.5</td><td>2.4</td><td>5.4</td><td>1.36</td><td>17.1</td></tr>
+<tr><td><b>26</b></td><td>101</td><td>5.7</td><td>2.5</td><td>5.6</td><td>1.39</td><td>17.9</td></tr>
+<tr><td><b>27</b></td><td>105</td><td>5.8</td><td>2.6</td><td>5.7</td><td>1.41</td><td>18.7</td></tr>
+<tr><td><b>28</b></td><td>109</td><td>6.2</td><td>2.7</td><td>5.9</td><td>1.46</td><td>19.3</td></tr>
+<tr><td><b>29</b></td><td>113</td><td>6.3</td><td>2.8</td><td>6.2</td><td>1.55</td><td>20.0</td></tr>
+<tr><td><b>30</b></td><td>117</td><td>6.5</td><td>2.9</td><td>6.4</td><td>1.59</td><td>20.6</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Lineup grid</h2>
+<table class="lineup-grid"><thead><tr><th>#</th><th style="text-align:left">Batter</th><th>Hand</th><th>Proj xwOBA</th><th>&Delta; (pts)</th><th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th><th>OB%</th><th style="text-align:left">Best pitch</th><th style="text-align:left">Worst pitch</th><th>Verdict</th></tr></thead><tbody>
+<tr><td class="spot">1</td><td class="name"><a href="#batter-1">Nick Kurtz</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-mild">0.343</td><td class="bat-edge-mild">+28</td><td class="pit-edge-strong">31.2%</td><td class="bat-edge-strong">15.5%</td><td class="bat-edge-strong">5.2%</td><td class="pit-edge-strong">18.5%</td><td class="bat-edge-mild">34.1%</td><td class="pitch-cell">4-Seam Fastball (0.508)</td><td class="pitch-cell">Split-Finger (0.240)</td><td class="verdict bat-edge-mild">Slight Hitter</td></tr>
+<tr><td class="spot">2</td><td class="name"><a href="#batter-2">Shea Langeliers</a></td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.436</td><td class="bat-edge-strong">+121</td><td class="bat-edge-strong">16.0%</td><td class="bat-edge-mild">10.8%</td><td class="bat-edge-strong">8.4%</td><td class="bat-edge-strong">27.3%</td><td class="bat-edge-strong">38.2%</td><td class="pitch-cell">4-Seam Fastball (0.391)</td><td class="pitch-cell">Slider (0.302)</td><td class="verdict bat-edge-strong">Strong Hitter</td></tr>
+<tr><td class="spot">3</td><td class="name"><a href="#batter-3">Tyler Soderstrom</a></td><td class="handpill"><span class="pill">LHB</span></td><td>0.327</td><td>+12</td><td>23.7%</td><td>9.0%</td><td class="bat-edge-mild">4.0%</td><td>22.1%</td><td>31.1%</td><td class="pitch-cell">4-Seam Fastball (0.406)</td><td class="pitch-cell">Split-Finger (0.283)</td><td class="verdict neutral">Even</td></tr>
+<tr><td class="spot">4</td><td class="name"><a href="#batter-4">Brent Rooker</a></td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.408</td><td class="bat-edge-strong">+93</td><td class="bat-edge-mild">19.5%</td><td class="bat-edge-strong">12.7%</td><td class="bat-edge-strong">7.7%</td><td class="bat-edge-mild">24.0%</td><td class="bat-edge-strong">36.8%</td><td class="pitch-cell">4-Seam Fastball (0.389)</td><td class="pitch-cell">Split-Finger (0.243)</td><td class="verdict bat-edge-mild">Edge Hitter</td></tr>
+<tr><td class="spot">5</td><td class="name"><a href="#batter-5">Carlos Cortes</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-mild">0.351</td><td class="bat-edge-mild">+36</td><td class="bat-edge-strong">12.9%</td><td class="pit-edge-mild">6.5%</td><td class="bat-edge-strong">6.6%</td><td class="bat-edge-mild">24.2%</td><td>30.7%</td><td class="pitch-cell">4-Seam Fastball (0.443)</td><td class="pitch-cell">Slider (0.414)</td><td class="verdict bat-edge-mild">Slight Hitter</td></tr>
+<tr><td class="spot">6</td><td class="name"><a href="#batter-6">Zack Gelof</a></td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.375</td><td class="bat-edge-strong">+60</td><td class="pit-edge-mild">25.6%</td><td>9.2%</td><td class="bat-edge-strong">7.9%</td><td class="bat-edge-mild">23.1%</td><td>32.3%</td><td class="pitch-cell">4-Seam Fastball (0.347)</td><td class="pitch-cell">Slider (0.226)</td><td class="verdict bat-edge-mild">Edge Hitter</td></tr>
+<tr><td class="spot">7</td><td class="name"><a href="#batter-7">Lawrence Butler</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.263</td><td class="pit-edge-strong">-52</td><td class="pit-edge-strong">29.0%</td><td>9.2%</td><td class="pit-edge-mild">2.2%</td><td class="pit-edge-strong">18.2%</td><td class="pit-edge-strong">27.4%</td><td class="pitch-cell">4-Seam Fastball (0.334)</td><td class="pitch-cell">Split-Finger (0.284)</td><td class="verdict pit-edge-mild">Edge Pitcher</td></tr>
+<tr><td class="spot">8</td><td class="name"><a href="#batter-8">Jonah Heim</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.229</td><td class="pit-edge-strong">-86</td><td>21.5%</td><td class="pit-edge-mild">5.9%</td><td>2.7%</td><td class="pit-edge-strong">16.9%</td><td class="pit-edge-strong">22.7%</td><td class="pitch-cell">Cutter (0.371)</td><td class="pitch-cell">4-Seam Fastball (0.268)</td><td class="verdict pit-edge-mild">Edge Pitcher</td></tr>
+<tr><td class="spot">9</td><td class="name"><a href="#batter-9">Jeff McNeil</a></td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.244</td><td class="pit-edge-strong">-71</td><td class="bat-edge-strong">15.2%</td><td class="pit-edge-mild">6.5%</td><td class="pit-edge-mild">2.4%</td><td class="pit-edge-strong">17.4%</td><td class="pit-edge-strong">23.9%</td><td class="pitch-cell">4-Seam Fastball (0.340)</td><td class="pitch-cell">Split-Finger (0.268)</td><td class="verdict pit-edge-mild">Edge Pitcher</td></tr>
+</tbody></table>
+<p class="note">Click a batter's name (or the row below) to expand the full per-batter matchup report. Cells are colored vs the league baseline for that metric.</p>
+</section>
+<section class="card">
+<h2>Per-batter detail</h2>
+<details class="batter-block" id="batter-1">
+<summary><span class="spot">1.</span><span class="name">Nick Kurtz</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.343</b> (+28 pts)</span><span class="summary-stat">K <b>31.2%</b></span><span class="summary-stat">BB <b>15.5%</b></span><span class="summary-stat">HR <b>5.2%</b></span><span class="summary-stat">Hit <b>18.5%</b></span><span class="verdict-pill bat-edge-mild">Slight Hitter</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Nick Kurtz <span class="badge">LHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 825+1965+0, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s split-finger is the projected matchup advantage, while Nick Kurtz should look to drive the 4-seam fastball. Projection: 0.343 xwOBA (+28 pts vs league, Hitter). GB-mix adjustment: -6 pts (raw 0.348 -&gt; adj 0.343); pitcher&#x27;s induced bb_type mix skews toward weaker contact than the batter&#x27;s career mix would suggest. LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.343</td><td>0.315</td><td class="bat-edge-strong">+28</td><td class="bat-edge-strong">Edge: Hitter</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.343</td><td>0.263</td><td class="bat-edge-mild">+80</td><td class="bat-edge-mild">Edge: Hitter (vs Pitcher norm)</td></tr>
+<tr><td>vs Kurtz&#x27;s baseline</td><td>0.343</td><td>0.428</td><td class="pit-edge-mild">-85</td><td class="pit-edge-mild">Edge: Pitcher (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="pit-edge-strong">31.2%</td><td>+220</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td class="bat-edge-strong">15.5%</td><td>+544</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+710525605</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">10.4%</td><td>+857</td><td>14.0%</td></tr>
+<tr><td>Double</td><td class="pit-edge-strong">2.6%</td><td>+3769</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td>0.3%</td><td>+34760</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">5.2%</td><td>+1812</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td class="bat-edge-strong">34.7%</td><td>+188</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-mild">18.5%</td><td>+439</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td class="bat-edge-mild">34.1%</td><td>+194</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="pit-edge-strong">52.7%</td><td class="odds">-111</td><td class="avg">0.62</td><td class="pit-edge-strong">67.5%</td><td class="odds">-207</td><td class="avg">0.94</td><td class="pit-edge-mild">77.6%</td><td class="odds">-347</td><td class="avg">1.25</td></tr>
+<tr><td>Walk</td><td class="bat-edge-strong">28.6%</td><td class="odds">+249</td><td class="avg">0.31</td><td class="bat-edge-strong">39.7%</td><td class="odds">+152</td><td class="avg">0.47</td><td class="bat-edge-strong">49.1%</td><td class="odds">+104</td><td class="avg">0.62</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+355262778</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+236841835</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+177631364</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-strong">19.8%</td><td class="odds">+405</td><td class="avg">0.21</td><td class="pit-edge-strong">28.2%</td><td class="odds">+255</td><td class="avg">0.31</td><td class="pit-edge-mild">35.7%</td><td class="odds">+180</td><td class="avg">0.42</td></tr>
+<tr><td>Double</td><td class="pit-edge-strong">5.1%</td><td class="odds">+1860</td><td class="avg">0.05</td><td class="pit-edge-strong">7.6%</td><td class="odds">+1223</td><td class="avg">0.08</td><td class="pit-edge-strong">9.9%</td><td class="odds">+905</td><td class="avg">0.10</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.6%</td><td class="odds">+17355</td><td class="avg">0.01</td><td class="pit-edge-mild">0.9%</td><td class="odds">+11553</td><td class="avg">0.01</td><td class="pit-edge-mild">1.1%</td><td class="odds">+8653</td><td class="avg">0.01</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">10.2%</td><td class="odds">+882</td><td class="avg">0.10</td><td class="bat-edge-strong">14.9%</td><td class="odds">+572</td><td class="avg">0.16</td><td class="bat-edge-strong">19.3%</td><td class="odds">+417</td><td class="avg">0.21</td></tr>
+<tr><td>In-play out</td><td class="bat-edge-strong">57.4%</td><td class="odds">-135</td><td class="avg">0.69</td><td class="bat-edge-mild">72.2%</td><td class="odds">-259</td><td class="avg">1.04</td><td class="bat-edge-mild">81.8%</td><td class="odds">-450</td><td class="avg">1.39</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-mild">33.7%</td><td class="odds">+197</td><td class="avg">0.37</td><td class="pit-edge-mild">46.0%</td><td class="odds">+118</td><td class="avg">0.56</td><td class="pit-edge-mild">56.0%</td><td class="odds">-127</td><td class="avg">0.74</td></tr>
+<tr><td>On-base</td><td class="bat-edge-mild">56.5%</td><td class="odds">-130</td><td class="avg">0.68</td><td>71.3%</td><td class="odds">-249</td><td class="avg">1.02</td><td>81.1%</td><td class="odds">-429</td><td class="avg">1.36</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td>0.319</td><td>31.2%</td><td>33.9%</td><td>57.0%</td><td>72.2</td></tr>
+<tr><td>2</td><td>0.327</td><td>31.2%</td><td>33.9%</td><td>57.0%</td><td>68.2</td></tr>
+<tr><td>3</td><td class="bat-edge-strong">0.422</td><td>31.2%</td><td>33.9%</td><td>57.0%</td><td>35.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td class="bat-edge-strong">20.0%</td><td class="pit-edge-mild">32.6%</td></tr>
+<tr><td>Whiff %</td><td class="pit-edge-strong">32.2%</td><td class="bat-edge-mild">21.5%</td></tr>
+<tr><td>K %</td><td class="pit-edge-mild">27.5%</td><td class="pit-edge-mild">25.8%</td></tr>
+<tr><td>BB %</td><td class="bat-edge-strong">17.1%</td><td>7.7%</td></tr>
+<tr><td>Hard Hit %</td><td class="bat-edge-strong">60.6%</td><td class="pit-edge-strong">32.5%</td></tr>
+<tr><td>Barrel %</td><td class="bat-edge-strong">21.2%</td><td class="pit-edge-mild">6.9%</td></tr>
+<tr><td>GB %</td><td class="bat-edge-mild">38.8%</td><td>40.1%</td></tr>
+<tr><td>Air %</td><td class="bat-edge-mild">61.2%</td><td>59.9%</td></tr>
+<tr><td>xwOBA</td><td class="bat-edge-strong">0.428</td><td class="pit-edge-strong">0.263</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.8</td><td class="bat-edge-strong">0.508</td><td class="pit-edge-mild">0.286</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 26% / LD 18% / FB 47% / PU 9%</td><td class="bat-edge-strong">0.513</td><td>+5</td><td class="bat-edge-strong">0.484</td><td>23.0</td></tr>
+<tr><td>Split-Finger</td><td>34.5</td><td class="pit-edge-strong">0.240</td><td class="pit-edge-strong">0.257</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 47% / LD 20% / FB 26% / PU 7%</td><td class="pit-edge-strong">0.215</td><td class="pit-edge-mild">-25</td><td class="pit-edge-strong">0.158</td><td>52.9</td></tr>
+<tr><td>Cutter</td><td>13.3</td><td class="bat-edge-strong">0.386</td><td class="pit-edge-strong">0.230</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 39% / LD 32% / FB 29% / PU 0%</td><td class="bat-edge-strong">0.391</td><td>+6</td><td>0.306</td><td>23.9</td></tr>
+<tr><td>Slider</td><td>2.3</td><td class="bat-edge-strong">0.398</td><td class="pit-edge-strong">0.216</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 40% / LD 21% / FB 32% / PU 7%</td><td class="bat-edge-strong">0.384</td><td class="pit-edge-mild">-14</td><td class="pit-edge-mild">0.285</td><td>42.3</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-2</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>50.1</td>
+<td>45.5</td>
+<td>53.2</td>
+<td>46.1</td>
+<td>44.5</td>
+<td>53.4</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>25.1</td>
+<td>50.3</td>
+<td>30.1</td>
+<td>45.3</td>
+<td>45.2</td>
+<td>30.8</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>21.8</td>
+<td>3.2</td>
+<td>15.4</td>
+<td>6.9</td>
+<td>4.9</td>
+<td>15.1</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>3.0</td>
+<td>1.1</td>
+<td>1.3</td>
+<td>1.7</td>
+<td>5.3</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.4 / +1.2 / -1.0</td><td>241.5</td><td>24.5%</td><td class="bat-edge-strong">0.462</td><td>59.0%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>84.8 / +2.7 / -1.2</td><td>91.5</td><td class="pit-edge-strong">39.2%</td><td class="bat-edge-mild">0.336</td><td>52.6%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.6 / +2.1 / -0.2</td><td>37.5</td><td>25.0%</td><td class="bat-edge-strong">0.594</td><td>41.7%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Slider</td><td>83.7 / +2.9 / +0.4</td><td>115.5</td><td class="pit-edge-strong">35.5%</td><td class="bat-edge-strong">0.414</td><td>71.9%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.0</td><td>z12=21%, z11=18%, z4=12%</td><td class="bat-edge-strong">0.419</td></tr>
+<tr><td>Split-Finger</td><td>39.9</td><td>z13=41%, z7=16%, z11=10%</td><td class="bat-edge-strong">0.389</td></tr>
+<tr><td>Cutter</td><td>56.4</td><td>z13=18%, z11=18%, z4=11%</td><td class="bat-edge-strong">0.413</td></tr>
+<tr><td>Slider</td><td>57.6</td><td>z14=20%, z4=18%, z8=12%</td><td class="bat-edge-strong">0.435</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>76.0</b> mph</div>
+<div>swing length <b>7.7</b> ft</div>
+<div>attack angle <b>12.7&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+8.2</td><td>157</td><td class="pit-edge-mild">+3.8</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Split-Finger</td><td>-7.1</td><td>+21.5</td><td>31</td><td class="pit-edge-strong">+14.4</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-5.7</td><td>+10.5</td><td>53</td><td class="pit-edge-mild">+4.8</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Slider</td><td>-7.1</td><td>+15.8</td><td>52</td><td class="pit-edge-strong">+8.7</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>60.4%</b></div>
+<div>batter first-pitch swing% <b>30.2%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.593</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>78.5%</b></div>
+<div>batter K% in 2-strike counts <b>51.8%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.314</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 48.0%</span> <span class="pill">Split-Finger 42.9%</span> <span class="pill">Cutter 5.8%</span> <span class="pill">Slider 3.2%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.8</td><td class="bat-edge-strong">0.508</td><td>0.286</td></tr>
+<tr><td>Cutter</td><td>13.3</td><td class="bat-edge-strong">0.386</td><td>0.230</td></tr>
+<tr><td>Slider</td><td>2.3</td><td class="bat-edge-strong">0.398</td><td>0.216</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>34.5</td><td>0.240</td><td class="pit-edge-strong">0.257</td></tr>
+<tr><td>Slider</td><td>2.3</td><td>0.398</td><td class="pit-edge-strong">0.216</td></tr>
+<tr><td>Cutter</td><td>13.3</td><td>0.386</td><td class="pit-edge-strong">0.230</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.48</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.32</td><td>230</td></tr>
+<tr><td>Slider</td><td>1.04</td><td>145</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.42</td><td>217</td></tr>
+<tr><td>Cutter</td><td>2.35</td><td>197</td></tr>
+</tbody></table>
+<p class="note">LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Strategic</td><td class="bat-edge-strong">0.381</td><td>10.5</td></tr>
+<tr><td>Infield shade</td><td class="bat-edge-strong">0.338</td><td>34.0</td></tr>
+<tr><td>Standard</td><td class="bat-edge-strong">0.312</td><td>16.0</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Infield shade 72.5%</span> <span class="pill">Standard 22.6%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-2">
+<summary><span class="spot">2.</span><span class="name">Shea Langeliers</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.436</b> (+121 pts)</span><span class="summary-stat">K <b>16.0%</b></span><span class="summary-stat">BB <b>10.8%</b></span><span class="summary-stat">HR <b>8.4%</b></span><span class="summary-stat">Hit <b>27.3%</b></span><span class="verdict-pill bat-edge-strong">Strong Hitter</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Shea Langeliers <span class="badge">RHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 637+1930+2003, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s slider is the projected matchup advantage, while Shea Langeliers should look to drive the 4-seam fastball. Projection: 0.436 xwOBA (+121 pts vs league, Hitter). GB-mix adjustment: +10 pts (raw 0.426 -&gt; adj 0.436); pitcher&#x27;s induced bb_type mix skews toward stronger contact than the batter&#x27;s career mix would suggest. RHB vs RHP — same-side platoon disadvantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.436</td><td>0.315</td><td class="bat-edge-strong">+121</td><td class="bat-edge-strong">Edge: Hitter</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.436</td><td>0.375</td><td class="bat-edge-mild">+61</td><td class="bat-edge-mild">Edge: Hitter (vs Pitcher norm)</td></tr>
+<tr><td>vs Langeliers&#x27; baseline</td><td>0.436</td><td>0.351</td><td class="bat-edge-strong">+85</td><td class="bat-edge-strong">Edge: Hitter (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-strong">16.0%</td><td>+524</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td class="bat-edge-mild">10.8%</td><td>+822</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.1%</td><td>+157994</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">12.7%</td><td>+688</td><td>14.0%</td></tr>
+<tr><td>Double</td><td class="bat-edge-mild">6.1%</td><td>+1532</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td>+1583624</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">8.4%</td><td>+1085</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td>45.8%</td><td>+118</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td class="bat-edge-mild">27.3%</td><td>+267</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td class="bat-edge-strong">38.2%</td><td>+162</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-strong">29.5%</td><td class="odds">+239</td><td class="avg">0.32</td><td class="bat-edge-strong">40.8%</td><td class="odds">+145</td><td class="avg">0.48</td><td class="bat-edge-mild">50.3%</td><td class="odds">-101</td><td class="avg">0.64</td></tr>
+<tr><td>Walk</td><td class="bat-edge-mild">20.5%</td><td class="odds">+388</td><td class="avg">0.22</td><td class="bat-edge-mild">29.1%</td><td class="odds">+243</td><td class="avg">0.33</td><td class="bat-edge-mild">36.8%</td><td class="odds">+172</td><td class="avg">0.43</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.1%</td><td class="odds">+78972</td><td class="avg">0.00</td><td class="pit-edge-strong">0.2%</td><td class="odds">+52631</td><td class="avg">0.00</td><td class="pit-edge-strong">0.3%</td><td class="odds">+39461</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">23.8%</td><td class="odds">+321</td><td class="avg">0.25</td><td class="pit-edge-mild">33.4%</td><td class="odds">+199</td><td class="avg">0.38</td><td class="pit-edge-mild">41.9%</td><td class="odds">+139</td><td class="avg">0.51</td></tr>
+<tr><td>Double</td><td class="bat-edge-strong">11.9%</td><td class="odds">+742</td><td class="avg">0.12</td><td class="bat-edge-strong">17.3%</td><td class="odds">+479</td><td class="avg">0.18</td><td class="bat-edge-strong">22.3%</td><td class="odds">+347</td><td class="avg">0.25</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td class="odds">+791787</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">+527841</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">+395868</td><td class="avg">0.00</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">16.2%</td><td class="odds">+518</td><td class="avg">0.17</td><td class="bat-edge-strong">23.2%</td><td class="odds">+330</td><td class="avg">0.25</td><td class="bat-edge-strong">29.7%</td><td class="odds">+236</td><td class="avg">0.34</td></tr>
+<tr><td>In-play out</td><td>70.6%</td><td class="odds">-240</td><td class="avg">0.92</td><td>84.1%</td><td class="odds">-528</td><td class="avg">1.37</td><td>91.4%</td><td class="odds">-1059</td><td class="avg">1.83</td></tr>
+<tr><td>Hit (any)</td><td class="bat-edge-mild">47.1%</td><td class="odds">+112</td><td class="avg">0.55</td><td class="bat-edge-mild">61.5%</td><td class="odds">-160</td><td class="avg">0.82</td><td class="bat-edge-mild">72.0%</td><td class="odds">-257</td><td class="avg">1.09</td></tr>
+<tr><td>On-base</td><td class="bat-edge-strong">61.8%</td><td class="odds">-162</td><td class="avg">0.76</td><td class="bat-edge-mild">76.4%</td><td class="odds">-323</td><td class="avg">1.14</td><td class="bat-edge-mild">85.4%</td><td class="odds">-584</td><td class="avg">1.53</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td class="bat-edge-strong">0.431</td><td>16.0%</td><td>20.7%</td><td>58.9%</td><td>78.5</td></tr>
+<tr><td>2</td><td class="bat-edge-strong">0.482</td><td>16.0%</td><td>20.7%</td><td>58.9%</td><td>77.0</td></tr>
+<tr><td>3</td><td class="bat-edge-mild">0.353</td><td>16.0%</td><td>20.7%</td><td>58.9%</td><td>37.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td class="pit-edge-mild">31.2%</td><td class="bat-edge-mild">22.7%</td></tr>
+<tr><td>Whiff %</td><td>24.5%</td><td class="bat-edge-mild">19.8%</td></tr>
+<tr><td>K %</td><td>21.8%</td><td class="bat-edge-mild">16.6%</td></tr>
+<tr><td>BB %</td><td>8.1%</td><td class="bat-edge-mild">11.4%</td></tr>
+<tr><td>Hard Hit %</td><td class="bat-edge-mild">46.8%</td><td>41.7%</td></tr>
+<tr><td>Barrel %</td><td class="bat-edge-strong">13.4%</td><td class="bat-edge-mild">10.6%</td></tr>
+<tr><td>GB %</td><td class="bat-edge-mild">35.8%</td><td>45.5%</td></tr>
+<tr><td>Air %</td><td class="bat-edge-mild">64.2%</td><td>54.5%</td></tr>
+<tr><td>xwOBA</td><td class="bat-edge-mild">0.351</td><td class="bat-edge-strong">0.375</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>48.0</td><td class="bat-edge-strong">0.391</td><td class="bat-edge-strong">0.409</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 43% / LD 31% / FB 23% / PU 3%</td><td class="bat-edge-strong">0.391</td><td>+0</td><td class="bat-edge-strong">0.485</td><td>14.6</td></tr>
+<tr><td>Split-Finger</td><td>18.2</td><td class="bat-edge-mild">0.348</td><td class="bat-edge-mild">0.349</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 53% / LD 24% / FB 18% / PU 4%</td><td class="bat-edge-mild">0.341</td><td>-7</td><td class="bat-edge-strong">0.374</td><td>39.9</td></tr>
+<tr><td>Slider</td><td>16.4</td><td>0.302</td><td class="bat-edge-strong">0.396</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 48% / LD 33% / FB 14% / PU 4%</td><td class="bat-edge-mild">0.331</td><td class="bat-edge-strong">+29</td><td class="bat-edge-strong">0.412</td><td>25.4</td></tr>
+<tr><td>Cutter</td><td>15.2</td><td class="bat-edge-strong">0.371</td><td class="pit-edge-mild">0.295</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 41% / LD 25% / FB 30% / PU 3%</td><td class="bat-edge-strong">0.408</td><td class="bat-edge-strong">+37</td><td class="bat-edge-strong">0.387</td><td>14.3</td></tr>
+<tr><td>Sinker</td><td>2.2</td><td class="bat-edge-strong">0.413</td><td class="pit-edge-strong">0.259</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 45% / LD 29% / FB 22% / PU 4%</td><td class="bat-edge-strong">0.448</td><td class="bat-edge-strong">+35</td><td class="bat-edge-strong">0.392</td><td>6.2</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-1</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>52.0</td>
+<td>40.3</td>
+<td>56.4</td>
+<td>38.2</td>
+<td>41.0</td>
+<td>45.7</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>10.9</td>
+<td>34.7</td>
+<td>19.2</td>
+<td>17.9</td>
+<td>23.7</td>
+<td>9.8</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>19.5</td>
+<td>13.7</td>
+<td>15.1</td>
+<td>18.1</td>
+<td>18.8</td>
+<td>17.1</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>15.0</td>
+<td>11.3</td>
+<td>9.3</td>
+<td>22.5</td>
+<td>12.8</td>
+<td>22.6</td>
+</tr>
+<tr>
+<td>Sinker</td>
+<td>2.6</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>3.3</td>
+<td>3.6</td>
+<td>4.9</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.5 / +1.2 / +0.9</td><td>358.0</td><td class="bat-edge-strong">14.5%</td><td class="bat-edge-strong">0.440</td><td>52.4%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>85.5 / +2.6 / +1.1</td><td>51.5</td><td class="pit-edge-strong">31.1%</td><td class="bat-edge-strong">0.363</td><td>64.1%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Slider</td><td>84.2 / +3.1 / -0.3</td><td>227.2</td><td class="pit-edge-strong">36.7%</td><td class="pit-edge-mild">0.275</td><td>37.4%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.4 / +2.2 / -0.1</td><td>63.2</td><td class="bat-edge-strong">16.9%</td><td class="bat-edge-mild">0.348</td><td>38.6%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Sinker</td><td>92.8 / +1.5 / +1.0</td><td>373.5</td><td class="bat-edge-strong">14.9%</td><td class="bat-edge-strong">0.432</td><td>52.1%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.3</td><td>z12=19%, z14=16%, z11=13%</td><td class="bat-edge-mild">0.334</td></tr>
+<tr><td>Split-Finger</td><td>55.3</td><td>z14=26%, z13=17%, z8=14%</td><td class="bat-edge-mild">0.330</td></tr>
+<tr><td>Slider</td><td>36.0</td><td>z14=57%, z9=12%, z6=8%</td><td class="pit-edge-strong">0.265</td></tr>
+<tr><td>Cutter</td><td>56.3</td><td>z14=34%, z6=16%, z9=14%</td><td class="pit-edge-mild">0.286</td></tr>
+<tr><td>Sinker</td><td>52.9</td><td>z11=35%, z5=24%, z2=12%</td><td class="bat-edge-strong">0.422</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>73.0</b> mph</div>
+<div>swing length <b>7.2</b> ft</div>
+<div>attack angle <b>11.1&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+7.1</td><td>212</td><td class="bat-edge-mild">+2.8</td><td>on plane</td></tr>
+<tr><td>Split-Finger</td><td>-7.2</td><td>+16.6</td><td>25</td><td class="pit-edge-strong">+9.4</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Slider</td><td>-7.9</td><td>+15.2</td><td>151</td><td class="pit-edge-strong">+7.3</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-6.3</td><td>+13.4</td><td>64</td><td class="pit-edge-strong">+7.1</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Sinker</td><td>-4.3</td><td>+5.3</td><td>142</td><td class="bat-edge-mild">+1.0</td><td>on plane</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>57.1%</b></div>
+<div>batter first-pitch swing% <b>36.9%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.393</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>93.7%</b></div>
+<div>batter K% in 2-strike counts <b>44.4%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.260</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 46.6%</span> <span class="pill">Split-Finger 28.7%</span> <span class="pill">Slider 15.6%</span> <span class="pill">Cutter 8.3%</span> <span class="pill">Sinker 0.9%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>48.0</td><td class="bat-edge-strong">0.391</td><td>0.409</td></tr>
+<tr><td>Cutter</td><td>15.2</td><td class="bat-edge-strong">0.371</td><td>0.295</td></tr>
+<tr><td>Split-Finger</td><td>18.2</td><td class="bat-edge-strong">0.348</td><td>0.349</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Slider</td><td>16.4</td><td>0.302</td><td class="pit-edge-strong">0.396</td></tr>
+<tr><td>Sinker</td><td>2.2</td><td>0.413</td><td class="pit-edge-strong">0.259</td></tr>
+<tr><td>Split-Finger</td><td>18.2</td><td>0.348</td><td class="pit-edge-strong">0.349</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.17</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.26</td><td>227</td></tr>
+<tr><td>Cutter</td><td>1.06</td><td>185</td></tr>
+<tr><td>Sinker</td><td>1.18</td><td>216</td></tr>
+<tr><td>Slider</td><td>1.43</td><td>100</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.51</td><td>215</td></tr>
+</tbody></table>
+<p class="note">RHB vs RHP — same-side platoon disadvantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Standard</td><td class="bat-edge-strong">0.331</td><td>71.0</td></tr>
+<tr><td>Infield shade</td><td class="bat-edge-mild">0.286</td><td>17.5</td></tr>
+<tr><td>Strategic</td><td class="pit-edge-strong">0.062</td><td>16.0</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Standard 77.4%</span> <span class="pill">Infield shade 17.7%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-3">
+<summary><span class="spot">3.</span><span class="name">Tyler Soderstrom</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.327</b> (+12 pts)</span><span class="summary-stat">K <b>23.7%</b></span><span class="summary-stat">BB <b>9.0%</b></span><span class="summary-stat">HR <b>4.0%</b></span><span class="summary-stat">Hit <b>22.1%</b></span><span class="verdict-pill neutral">Even</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Tyler Soderstrom <span class="badge">LHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 629+2238+773, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s split-finger is the projected matchup advantage, while Tyler Soderstrom should look to drive the 4-seam fastball. Projection: 0.327 xwOBA (+12 pts vs league, Hitter). GB-mix adjustment: +8 pts (raw 0.318 -&gt; adj 0.327); pitcher&#x27;s induced bb_type mix skews toward stronger contact than the batter&#x27;s career mix would suggest. LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.327</td><td>0.315</td><td class="bat-edge-strong">+12</td><td class="bat-edge-strong">Edge: Hitter</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.327</td><td>0.263</td><td class="bat-edge-mild">+64</td><td class="bat-edge-mild">Edge: Hitter (vs Pitcher norm)</td></tr>
+<tr><td>vs Soderstrom&#x27;s baseline</td><td>0.327</td><td>0.345</td><td class="pit-edge-mild">-18</td><td class="pit-edge-mild">Edge: Pitcher (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td>23.7%</td><td>+322</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td>9.0%</td><td>+1007</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+150887423</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">11.8%</td><td>+751</td><td>14.0%</td></tr>
+<tr><td>Double</td><td class="bat-edge-strong">6.3%</td><td>+1481</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td>—</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-mild">4.0%</td><td>+2398</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td>45.2%</td><td>+121</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td>22.1%</td><td>+353</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td>31.1%</td><td>+221</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td>41.8%</td><td class="odds">+139</td><td class="avg">0.47</td><td>55.6%</td><td class="odds">-125</td><td class="avg">0.71</td><td>66.1%</td><td class="odds">-195</td><td class="avg">0.95</td></tr>
+<tr><td>Walk</td><td>17.3%</td><td class="odds">+479</td><td class="avg">0.18</td><td>24.7%</td><td class="odds">+304</td><td class="avg">0.27</td><td>31.5%</td><td class="odds">+217</td><td class="avg">0.36</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+75443687</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+50295774</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+37721818</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">22.1%</td><td class="odds">+352</td><td class="avg">0.24</td><td class="pit-edge-mild">31.3%</td><td class="odds">+220</td><td class="avg">0.35</td><td class="pit-edge-mild">39.4%</td><td class="odds">+154</td><td class="avg">0.47</td></tr>
+<tr><td>Double</td><td class="bat-edge-strong">12.2%</td><td class="odds">+717</td><td class="avg">0.13</td><td class="bat-edge-strong">17.8%</td><td class="odds">+462</td><td class="avg">0.19</td><td class="bat-edge-strong">23.0%</td><td class="odds">+335</td><td class="avg">0.25</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-mild">7.8%</td><td class="odds">+1175</td><td class="avg">0.08</td><td class="bat-edge-mild">11.5%</td><td class="odds">+767</td><td class="avg">0.12</td><td class="bat-edge-mild">15.1%</td><td class="odds">+563</td><td class="avg">0.16</td></tr>
+<tr><td>In-play out</td><td>70.0%</td><td class="odds">-233</td><td class="avg">0.90</td><td>83.5%</td><td class="odds">-507</td><td class="avg">1.36</td><td>91.0%</td><td class="odds">-1008</td><td class="avg">1.81</td></tr>
+<tr><td>Hit (any)</td><td>39.3%</td><td class="odds">+155</td><td class="avg">0.44</td><td>52.7%</td><td class="odds">-111</td><td class="avg">0.66</td><td>63.1%</td><td class="odds">-171</td><td class="avg">0.88</td></tr>
+<tr><td>On-base</td><td>52.6%</td><td class="odds">-111</td><td class="avg">0.62</td><td>67.3%</td><td class="odds">-206</td><td class="avg">0.93</td><td>77.5%</td><td class="odds">-344</td><td class="avg">1.24</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td>0.303</td><td>23.7%</td><td>18.7%</td><td>46.4%</td><td>72.2</td></tr>
+<tr><td>2</td><td>0.311</td><td>23.7%</td><td>18.7%</td><td>46.4%</td><td>68.2</td></tr>
+<tr><td>3</td><td class="bat-edge-strong">0.406</td><td>23.7%</td><td>18.7%</td><td>46.4%</td><td>35.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td>27.0%</td><td class="pit-edge-mild">32.6%</td></tr>
+<tr><td>Whiff %</td><td class="bat-edge-mild">21.7%</td><td class="bat-edge-mild">21.5%</td></tr>
+<tr><td>K %</td><td>20.6%</td><td class="pit-edge-mild">25.8%</td></tr>
+<tr><td>BB %</td><td class="bat-edge-mild">10.0%</td><td>7.7%</td></tr>
+<tr><td>Hard Hit %</td><td class="bat-edge-strong">51.0%</td><td class="pit-edge-strong">32.5%</td></tr>
+<tr><td>Barrel %</td><td class="bat-edge-strong">12.8%</td><td class="pit-edge-mild">6.9%</td></tr>
+<tr><td>GB %</td><td class="pit-edge-mild">47.5%</td><td>40.1%</td></tr>
+<tr><td>Air %</td><td class="pit-edge-mild">52.5%</td><td>59.9%</td></tr>
+<tr><td>xwOBA</td><td class="bat-edge-mild">0.345</td><td class="pit-edge-strong">0.263</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.6</td><td class="bat-edge-strong">0.406</td><td class="pit-edge-mild">0.286</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 26% / LD 18% / FB 47% / PU 9%</td><td class="bat-edge-strong">0.408</td><td>+2</td><td class="bat-edge-strong">0.379</td><td>13.3</td></tr>
+<tr><td>Split-Finger</td><td>34.6</td><td class="pit-edge-mild">0.283</td><td class="pit-edge-strong">0.257</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 47% / LD 20% / FB 26% / PU 7%</td><td>0.309</td><td class="bat-edge-strong">+26</td><td class="pit-edge-strong">0.251</td><td>28.4</td></tr>
+<tr><td>Cutter</td><td>13.5</td><td class="bat-edge-strong">0.442</td><td class="pit-edge-strong">0.230</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 39% / LD 32% / FB 29% / PU 0%</td><td class="bat-edge-strong">0.433</td><td>-9</td><td class="bat-edge-mild">0.348</td><td>11.3</td></tr>
+<tr><td>Slider</td><td>2.3</td><td class="bat-edge-mild">0.350</td><td class="pit-edge-strong">0.216</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 40% / LD 21% / FB 32% / PU 7%</td><td>0.322</td><td class="pit-edge-strong">-27</td><td class="pit-edge-strong">0.224</td><td>33.1</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-2</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>50.1</td>
+<td>45.5</td>
+<td>53.2</td>
+<td>46.1</td>
+<td>44.5</td>
+<td>53.4</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>25.1</td>
+<td>50.3</td>
+<td>30.1</td>
+<td>45.3</td>
+<td>45.2</td>
+<td>30.8</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>21.8</td>
+<td>3.2</td>
+<td>15.4</td>
+<td>6.9</td>
+<td>4.9</td>
+<td>15.1</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>3.0</td>
+<td>1.1</td>
+<td>1.3</td>
+<td>1.7</td>
+<td>5.3</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.4 / +1.2 / -1.0</td><td>265.8</td><td class="bat-edge-strong">15.2%</td><td class="bat-edge-strong">0.363</td><td>61.4%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>84.8 / +2.7 / -1.2</td><td>119.5</td><td class="bat-edge-mild">21.5%</td><td class="pit-edge-mild">0.299</td><td>27.6%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.6 / +2.1 / -0.2</td><td>54.8</td><td class="bat-edge-mild">18.9%</td><td class="bat-edge-strong">0.673</td><td>56.1%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Slider</td><td>83.7 / +2.9 / +0.4</td><td>137.5</td><td class="pit-edge-strong">43.5%</td><td class="pit-edge-strong">0.234</td><td>51.4%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.0</td><td>z12=21%, z11=18%, z4=12%</td><td class="bat-edge-mild">0.334</td></tr>
+<tr><td>Split-Finger</td><td>39.9</td><td>z13=41%, z7=16%, z11=10%</td><td class="pit-edge-mild">0.274</td></tr>
+<tr><td>Cutter</td><td>56.4</td><td>z13=18%, z11=18%, z4=11%</td><td class="bat-edge-mild">0.332</td></tr>
+<tr><td>Slider</td><td>57.6</td><td>z14=20%, z4=18%, z8=12%</td><td>0.317</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>72.6</b> mph</div>
+<div>swing length <b>7.4</b> ft</div>
+<div>attack angle <b>9.6&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+2.9</td><td>174</td><td class="bat-edge-mild">-1.5</td><td>on plane</td></tr>
+<tr><td>Split-Finger</td><td>-7.1</td><td>+14.0</td><td>52</td><td class="pit-edge-strong">+6.9</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-5.7</td><td>+8.0</td><td>66</td><td class="bat-edge-mild">+2.3</td><td>on plane</td></tr>
+<tr><td>Slider</td><td>-7.1</td><td>+14.9</td><td>77</td><td class="pit-edge-strong">+7.8</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>60.4%</b></div>
+<div>batter first-pitch swing% <b>38.8%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.445</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>81.7%</b></div>
+<div>batter K% in 2-strike counts <b>45.6%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.225</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 48.0%</span> <span class="pill">Split-Finger 42.9%</span> <span class="pill">Cutter 5.8%</span> <span class="pill">Slider 3.2%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.6</td><td class="bat-edge-strong">0.406</td><td>0.286</td></tr>
+<tr><td>Cutter</td><td>13.5</td><td class="bat-edge-strong">0.442</td><td>0.230</td></tr>
+<tr><td>Slider</td><td>2.3</td><td class="bat-edge-strong">0.350</td><td>0.216</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>34.6</td><td>0.283</td><td class="pit-edge-strong">0.257</td></tr>
+<tr><td>Slider</td><td>2.3</td><td>0.350</td><td class="pit-edge-strong">0.216</td></tr>
+<tr><td>Cutter</td><td>13.5</td><td>0.442</td><td class="pit-edge-strong">0.230</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.48</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.32</td><td>230</td></tr>
+<tr><td>Slider</td><td>1.04</td><td>145</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.42</td><td>217</td></tr>
+<tr><td>Cutter</td><td>2.35</td><td>197</td></tr>
+</tbody></table>
+<p class="note">LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Infield shade</td><td>0.233</td><td>60.0</td></tr>
+<tr><td>Standard</td><td class="pit-edge-strong">0.180</td><td>61.2</td></tr>
+<tr><td>Strategic</td><td class="pit-edge-strong">0.098</td><td>10.2</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Infield shade 72.5%</span> <span class="pill">Standard 22.6%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-4">
+<summary><span class="spot">4.</span><span class="name">Brent Rooker</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.408</b> (+93 pts)</span><span class="summary-stat">K <b>19.5%</b></span><span class="summary-stat">BB <b>12.7%</b></span><span class="summary-stat">HR <b>7.7%</b></span><span class="summary-stat">Hit <b>24.0%</b></span><span class="verdict-pill bat-edge-mild">Edge Hitter</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Brent Rooker <span class="badge">RHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 379+2590+2391, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s split-finger is the projected matchup advantage, while Brent Rooker should look to drive the 4-seam fastball. Projection: 0.408 xwOBA (+93 pts vs league, Hitter). GB-mix adjustment: -24 pts (raw 0.432 -&gt; adj 0.408); pitcher&#x27;s induced bb_type mix skews toward weaker contact than the batter&#x27;s career mix would suggest. RHB vs RHP — same-side platoon disadvantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.408</td><td>0.315</td><td class="bat-edge-strong">+93</td><td class="bat-edge-strong">Edge: Hitter</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.408</td><td>0.375</td><td class="bat-edge-mild">+33</td><td class="bat-edge-mild">Edge: Hitter (vs Pitcher norm)</td></tr>
+<tr><td>vs Rooker&#x27;s baseline</td><td>0.408</td><td>0.351</td><td class="bat-edge-strong">+57</td><td class="bat-edge-strong">Edge: Hitter (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-mild">19.5%</td><td>+413</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td class="bat-edge-strong">12.7%</td><td>+684</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.1%</td><td>+116144</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">11.8%</td><td>+747</td><td>14.0%</td></tr>
+<tr><td>Double</td><td class="pit-edge-mild">3.9%</td><td>+2480</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td>0.7%</td><td>+15106</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">7.7%</td><td>+1205</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td class="bat-edge-mild">43.7%</td><td>+129</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td>24.0%</td><td>+317</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td class="bat-edge-mild">36.8%</td><td>+171</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-mild">35.2%</td><td class="odds">+184</td><td class="avg">0.39</td><td class="bat-edge-mild">47.8%</td><td class="odds">+109</td><td class="avg">0.58</td><td class="bat-edge-mild">58.0%</td><td class="odds">-138</td><td class="avg">0.78</td></tr>
+<tr><td>Walk</td><td class="bat-edge-strong">23.9%</td><td class="odds">+319</td><td class="avg">0.25</td><td class="bat-edge-strong">33.6%</td><td class="odds">+198</td><td class="avg">0.38</td><td class="bat-edge-strong">42.0%</td><td class="odds">+138</td><td class="avg">0.51</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.2%</td><td class="odds">+58047</td><td class="avg">0.00</td><td class="pit-edge-strong">0.3%</td><td class="odds">+38681</td><td class="avg">0.00</td><td class="pit-edge-strong">0.3%</td><td class="odds">+28998</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">22.2%</td><td class="odds">+350</td><td class="avg">0.24</td><td class="pit-edge-mild">31.4%</td><td class="odds">+219</td><td class="avg">0.35</td><td class="pit-edge-mild">39.5%</td><td class="odds">+153</td><td class="avg">0.47</td></tr>
+<tr><td>Double</td><td class="pit-edge-mild">7.6%</td><td class="odds">+1215</td><td class="avg">0.08</td><td class="pit-edge-mild">11.2%</td><td class="odds">+794</td><td class="avg">0.12</td><td class="pit-edge-mild">14.6%</td><td class="odds">+584</td><td class="avg">0.16</td></tr>
+<tr><td>Triple</td><td>1.3%</td><td class="odds">+7528</td><td class="avg">0.01</td><td>2.0%</td><td class="odds">+5002</td><td class="avg">0.02</td><td>2.6%</td><td class="odds">+3739</td><td class="avg">0.03</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">14.7%</td><td class="odds">+579</td><td class="avg">0.15</td><td class="bat-edge-strong">21.3%</td><td class="odds">+370</td><td class="avg">0.23</td><td class="bat-edge-strong">27.3%</td><td class="odds">+266</td><td class="avg">0.31</td></tr>
+<tr><td>In-play out</td><td>68.3%</td><td class="odds">-215</td><td class="avg">0.87</td><td>82.1%</td><td class="odds">-459</td><td class="avg">1.31</td><td>89.9%</td><td class="odds">-893</td><td class="avg">1.75</td></tr>
+<tr><td>Hit (any)</td><td class="bat-edge-mild">42.2%</td><td class="odds">+137</td><td class="avg">0.48</td><td>56.1%</td><td class="odds">-128</td><td class="avg">0.72</td><td>66.6%</td><td class="odds">-200</td><td class="avg">0.96</td></tr>
+<tr><td>On-base</td><td class="bat-edge-mild">60.1%</td><td class="odds">-151</td><td class="avg">0.74</td><td class="bat-edge-mild">74.8%</td><td class="odds">-297</td><td class="avg">1.11</td><td class="bat-edge-mild">84.1%</td><td class="odds">-528</td><td class="avg">1.47</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td class="bat-edge-strong">0.403</td><td>19.5%</td><td>27.0%</td><td>54.5%</td><td>78.5</td></tr>
+<tr><td>2</td><td class="bat-edge-strong">0.453</td><td>19.5%</td><td>27.0%</td><td>54.5%</td><td>77.0</td></tr>
+<tr><td>3</td><td>0.325</td><td>19.5%</td><td>27.0%</td><td>54.5%</td><td>37.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td>28.2%</td><td class="bat-edge-mild">22.7%</td></tr>
+<tr><td>Whiff %</td><td class="pit-edge-strong">31.1%</td><td class="bat-edge-mild">19.8%</td></tr>
+<tr><td>K %</td><td class="pit-edge-mild">26.2%</td><td class="bat-edge-mild">16.6%</td></tr>
+<tr><td>BB %</td><td>9.6%</td><td class="bat-edge-mild">11.4%</td></tr>
+<tr><td>Hard Hit %</td><td class="bat-edge-mild">46.6%</td><td>41.7%</td></tr>
+<tr><td>Barrel %</td><td class="bat-edge-strong">15.6%</td><td class="bat-edge-mild">10.6%</td></tr>
+<tr><td>GB %</td><td class="bat-edge-mild">37.0%</td><td>45.5%</td></tr>
+<tr><td>Air %</td><td class="bat-edge-mild">63.0%</td><td>54.5%</td></tr>
+<tr><td>xwOBA</td><td class="bat-edge-mild">0.351</td><td class="bat-edge-strong">0.375</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>48.2</td><td class="bat-edge-strong">0.389</td><td class="bat-edge-strong">0.409</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 43% / LD 31% / FB 23% / PU 3%</td><td class="bat-edge-strong">0.374</td><td class="pit-edge-mild">-15</td><td class="bat-edge-strong">0.468</td><td>17.6</td></tr>
+<tr><td>Split-Finger</td><td>18.1</td><td class="pit-edge-strong">0.243</td><td class="bat-edge-mild">0.349</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 53% / LD 24% / FB 18% / PU 4%</td><td class="pit-edge-strong">0.228</td><td class="pit-edge-mild">-15</td><td class="pit-edge-strong">0.262</td><td>55.6</td></tr>
+<tr><td>Slider</td><td>16.3</td><td class="bat-edge-mild">0.337</td><td class="bat-edge-strong">0.396</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 48% / LD 33% / FB 14% / PU 4%</td><td class="pit-edge-mild">0.296</td><td class="pit-edge-strong">-41</td><td class="bat-edge-strong">0.377</td><td>37.1</td></tr>
+<tr><td>Cutter</td><td>15.2</td><td class="bat-edge-strong">0.507</td><td class="pit-edge-mild">0.295</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 41% / LD 25% / FB 30% / PU 3%</td><td class="bat-edge-strong">0.454</td><td class="pit-edge-strong">-53</td><td class="bat-edge-strong">0.434</td><td>15.1</td></tr>
+<tr><td>Sinker</td><td>2.2</td><td class="bat-edge-strong">0.362</td><td class="pit-edge-strong">0.259</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 45% / LD 29% / FB 22% / PU 4%</td><td class="bat-edge-strong">0.394</td><td class="bat-edge-strong">+32</td><td class="bat-edge-mild">0.338</td><td>5.2</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-1</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>52.0</td>
+<td>40.3</td>
+<td>56.4</td>
+<td>38.2</td>
+<td>41.0</td>
+<td>45.7</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>10.9</td>
+<td>34.7</td>
+<td>19.2</td>
+<td>17.9</td>
+<td>23.7</td>
+<td>9.8</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>19.5</td>
+<td>13.7</td>
+<td>15.1</td>
+<td>18.1</td>
+<td>18.8</td>
+<td>17.1</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>15.0</td>
+<td>11.3</td>
+<td>9.3</td>
+<td>22.5</td>
+<td>12.8</td>
+<td>22.6</td>
+</tr>
+<tr>
+<td>Sinker</td>
+<td>2.6</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>3.3</td>
+<td>3.6</td>
+<td>4.9</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.5 / +1.2 / +0.9</td><td>379.5</td><td class="bat-edge-strong">17.3%</td><td class="bat-edge-strong">0.379</td><td>47.0%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>85.5 / +2.6 / +1.1</td><td>75.0</td><td class="pit-edge-strong">47.2%</td><td class="pit-edge-strong">0.242</td><td>41.2%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Slider</td><td>84.2 / +3.1 / -0.3</td><td>224.2</td><td class="pit-edge-strong">47.7%</td><td class="pit-edge-mild">0.272</td><td>41.2%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.4 / +2.2 / -0.1</td><td>62.5</td><td>23.4%</td><td class="bat-edge-strong">0.517</td><td>49.0%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Sinker</td><td>92.8 / +1.5 / +1.0</td><td>400.5</td><td class="bat-edge-strong">17.2%</td><td class="bat-edge-strong">0.384</td><td>47.6%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.3</td><td>z12=19%, z14=16%, z11=13%</td><td>0.319</td></tr>
+<tr><td>Split-Finger</td><td>55.3</td><td>z14=26%, z13=17%, z8=14%</td><td class="bat-edge-mild">0.342</td></tr>
+<tr><td>Slider</td><td>36.0</td><td>z14=57%, z9=12%, z6=8%</td><td class="pit-edge-mild">0.280</td></tr>
+<tr><td>Cutter</td><td>56.3</td><td>z14=34%, z6=16%, z9=14%</td><td>0.307</td></tr>
+<tr><td>Sinker</td><td>52.9</td><td>z11=35%, z5=24%, z2=12%</td><td class="bat-edge-strong">0.376</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>71.6</b> mph</div>
+<div>swing length <b>7.0</b> ft</div>
+<div>attack angle <b>11.6&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+3.9</td><td>229</td><td class="bat-edge-mild">-0.4</td><td>on plane</td></tr>
+<tr><td>Split-Finger</td><td>-7.2</td><td>+23.9</td><td>35</td><td class="pit-edge-strong">+16.6</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Slider</td><td>-7.9</td><td>+16.8</td><td>148</td><td class="pit-edge-strong">+8.8</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-6.3</td><td>+11.0</td><td>48</td><td class="pit-edge-mild">+4.7</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Sinker</td><td>-4.3</td><td>+6.5</td><td>163</td><td class="bat-edge-mild">+2.2</td><td>on plane</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>57.1%</b></div>
+<div>batter first-pitch swing% <b>43.7%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.398</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>124.1%</b></div>
+<div>batter K% in 2-strike counts <b>52.5%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.232</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 46.6%</span> <span class="pill">Split-Finger 28.7%</span> <span class="pill">Slider 15.6%</span> <span class="pill">Cutter 8.3%</span> <span class="pill">Sinker 0.9%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>48.2</td><td class="bat-edge-strong">0.389</td><td>0.409</td></tr>
+<tr><td>Cutter</td><td>15.2</td><td class="bat-edge-strong">0.507</td><td>0.295</td></tr>
+<tr><td>Slider</td><td>16.3</td><td class="bat-edge-strong">0.337</td><td>0.396</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>18.1</td><td>0.243</td><td class="pit-edge-strong">0.349</td></tr>
+<tr><td>Sinker</td><td>2.2</td><td>0.362</td><td class="pit-edge-strong">0.259</td></tr>
+<tr><td>Slider</td><td>16.3</td><td>0.337</td><td class="pit-edge-strong">0.396</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.17</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.26</td><td>227</td></tr>
+<tr><td>Cutter</td><td>1.06</td><td>185</td></tr>
+<tr><td>Sinker</td><td>1.18</td><td>216</td></tr>
+<tr><td>Slider</td><td>1.43</td><td>100</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.51</td><td>215</td></tr>
+</tbody></table>
+<p class="note">RHB vs RHP — same-side platoon disadvantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Standard</td><td class="bat-edge-mild">0.272</td><td>79.0</td></tr>
+<tr><td>Strategic</td><td>0.242</td><td>15.5</td></tr>
+<tr><td>Infield shade</td><td class="pit-edge-mild">0.200</td><td>15.0</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Standard 77.4%</span> <span class="pill">Infield shade 17.7%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-5">
+<summary><span class="spot">5.</span><span class="name">Carlos Cortes</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.351</b> (+36 pts)</span><span class="summary-stat">K <b>12.9%</b></span><span class="summary-stat">BB <b>6.5%</b></span><span class="summary-stat">HR <b>6.6%</b></span><span class="summary-stat">Hit <b>24.2%</b></span><span class="verdict-pill bat-edge-mild">Slight Hitter</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Carlos Cortes <span class="badge">LHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 436+375+0, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s slider is the projected matchup advantage, while Carlos Cortes should look to drive the 4-seam fastball. Projection: 0.351 xwOBA (+36 pts vs league, Hitter). GB-mix adjustment: -27 pts (raw 0.377 -&gt; adj 0.351); pitcher&#x27;s induced bb_type mix skews toward weaker contact than the batter&#x27;s career mix would suggest. LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.351</td><td>0.315</td><td class="bat-edge-strong">+36</td><td class="bat-edge-strong">Edge: Hitter</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.351</td><td>0.263</td><td class="bat-edge-mild">+87</td><td class="bat-edge-mild">Edge: Hitter (vs Pitcher norm)</td></tr>
+<tr><td>vs Cortes&#x27; baseline</td><td>0.351</td><td>0.369</td><td class="pit-edge-mild">-18</td><td class="pit-edge-mild">Edge: Pitcher (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-strong">12.9%</td><td>+673</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td class="pit-edge-mild">6.5%</td><td>+1435</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+1214572469637</td><td>1.2%</td></tr>
+<tr><td>Single</td><td>14.6%</td><td>+585</td><td>14.0%</td></tr>
+<tr><td>Double</td><td class="pit-edge-strong">2.6%</td><td>+3782</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td>0.4%</td><td>+23190</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">6.6%</td><td>+1415</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">56.3%</td><td>-129</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td class="bat-edge-mild">24.2%</td><td>+313</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td>30.7%</td><td>+226</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-strong">24.2%</td><td class="odds">+313</td><td class="avg">0.26</td><td class="bat-edge-strong">34.0%</td><td class="odds">+194</td><td class="avg">0.39</td><td class="bat-edge-strong">42.6%</td><td class="odds">+135</td><td class="avg">0.52</td></tr>
+<tr><td>Walk</td><td class="pit-edge-mild">12.6%</td><td class="odds">+693</td><td class="avg">0.13</td><td class="pit-edge-mild">18.3%</td><td class="odds">+446</td><td class="avg">0.20</td><td class="pit-edge-mild">23.6%</td><td class="odds">+323</td><td class="avg">0.26</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+607286416372</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+404857610881</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+303643208136</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td>27.1%</td><td class="odds">+270</td><td class="avg">0.29</td><td>37.7%</td><td class="odds">+165</td><td class="avg">0.44</td><td>46.8%</td><td class="odds">+114</td><td class="avg">0.58</td></tr>
+<tr><td>Double</td><td class="pit-edge-strong">5.1%</td><td class="odds">+1866</td><td class="avg">0.05</td><td class="pit-edge-strong">7.5%</td><td class="odds">+1228</td><td class="avg">0.08</td><td class="pit-edge-strong">9.9%</td><td class="odds">+909</td><td class="avg">0.10</td></tr>
+<tr><td>Triple</td><td>0.9%</td><td class="odds">+11570</td><td class="avg">0.01</td><td>1.3%</td><td class="odds">+7697</td><td class="avg">0.01</td><td>1.7%</td><td class="odds">+5760</td><td class="avg">0.02</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">12.8%</td><td class="odds">+683</td><td class="avg">0.13</td><td class="bat-edge-strong">18.5%</td><td class="odds">+440</td><td class="avg">0.20</td><td class="bat-edge-strong">23.9%</td><td class="odds">+318</td><td class="avg">0.26</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">80.9%</td><td class="odds">-425</td><td class="avg">1.13</td><td class="pit-edge-mild">91.7%</td><td class="odds">-1101</td><td class="avg">1.69</td><td>96.4%</td><td class="odds">-2651</td><td class="avg">2.25</td></tr>
+<tr><td>Hit (any)</td><td class="bat-edge-mild">42.6%</td><td class="odds">+135</td><td class="avg">0.48</td><td>56.5%</td><td class="odds">-130</td><td class="avg">0.73</td><td>67.0%</td><td class="odds">-203</td><td class="avg">0.97</td></tr>
+<tr><td>On-base</td><td>52.0%</td><td class="odds">-108</td><td class="avg">0.61</td><td>66.7%</td><td class="odds">-201</td><td class="avg">0.92</td><td>77.0%</td><td class="odds">-334</td><td class="avg">1.23</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td>0.326</td><td>12.9%</td><td>14.7%</td><td>49.7%</td><td>72.2</td></tr>
+<tr><td>2</td><td class="bat-edge-mild">0.335</td><td>12.9%</td><td>14.7%</td><td>49.7%</td><td>68.2</td></tr>
+<tr><td>3</td><td class="bat-edge-strong">0.430</td><td>12.9%</td><td>14.7%</td><td>49.7%</td><td>35.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td class="bat-edge-mild">24.7%</td><td class="pit-edge-mild">32.6%</td></tr>
+<tr><td>Whiff %</td><td class="bat-edge-strong">17.3%</td><td class="bat-edge-mild">21.5%</td></tr>
+<tr><td>K %</td><td class="bat-edge-strong">11.0%</td><td class="pit-edge-mild">25.8%</td></tr>
+<tr><td>BB %</td><td class="pit-edge-mild">7.2%</td><td>7.7%</td></tr>
+<tr><td>Hard Hit %</td><td class="bat-edge-mild">46.4%</td><td class="pit-edge-strong">32.5%</td></tr>
+<tr><td>Barrel %</td><td class="bat-edge-mild">10.7%</td><td class="pit-edge-mild">6.9%</td></tr>
+<tr><td>GB %</td><td class="pit-edge-mild">46.8%</td><td>40.1%</td></tr>
+<tr><td>Air %</td><td class="pit-edge-mild">53.2%</td><td>59.9%</td></tr>
+<tr><td>xwOBA</td><td class="bat-edge-strong">0.369</td><td class="pit-edge-strong">0.263</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.7</td><td class="bat-edge-strong">0.443</td><td class="pit-edge-mild">0.286</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 26% / LD 18% / FB 47% / PU 9%</td><td class="bat-edge-strong">0.392</td><td class="pit-edge-strong">-52</td><td class="bat-edge-strong">0.362</td><td>8.5</td></tr>
+<tr><td>Split-Finger</td><td>34.5</td><td class="bat-edge-strong">0.380</td><td class="pit-edge-strong">0.257</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 47% / LD 20% / FB 26% / PU 7%</td><td class="bat-edge-mild">0.358</td><td class="pit-edge-mild">-22</td><td class="pit-edge-mild">0.300</td><td>23.4</td></tr>
+<tr><td>Cutter</td><td>13.5</td><td class="bat-edge-strong">0.479</td><td class="pit-edge-strong">0.230</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 39% / LD 32% / FB 29% / PU 0%</td><td class="bat-edge-strong">0.523</td><td class="bat-edge-strong">+44</td><td class="bat-edge-strong">0.438</td><td>13.2</td></tr>
+<tr><td>Slider</td><td>2.3</td><td class="bat-edge-strong">0.414</td><td class="pit-edge-strong">0.216</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 40% / LD 21% / FB 32% / PU 7%</td><td class="bat-edge-strong">0.446</td><td class="bat-edge-strong">+31</td><td class="bat-edge-mild">0.347</td><td>25.9</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-2</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>50.1</td>
+<td>45.5</td>
+<td>53.2</td>
+<td>46.1</td>
+<td>44.5</td>
+<td>53.4</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>25.1</td>
+<td>50.3</td>
+<td>30.1</td>
+<td>45.3</td>
+<td>45.2</td>
+<td>30.8</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>21.8</td>
+<td>3.2</td>
+<td>15.4</td>
+<td>6.9</td>
+<td>4.9</td>
+<td>15.1</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>3.0</td>
+<td>1.1</td>
+<td>1.3</td>
+<td>1.7</td>
+<td>5.3</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.4 / +1.2 / -1.0</td><td>140.5</td><td class="bat-edge-strong">10.4%</td><td class="bat-edge-strong">0.456</td><td>49.2%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>84.8 / +2.7 / -1.2</td><td>27.0</td><td class="pit-edge-mild">29.2%</td><td class="pit-edge-mild">0.296</td><td>57.1%</td><td><span class="pill">medium</span></td></tr>
+<tr><td>Cutter</td><td>87.6 / +2.1 / -0.2</td><td>22.0</td><td class="bat-edge-strong">7.7%</td><td class="pit-edge-mild">0.289</td><td>100.0%</td><td><span class="pill">medium</span></td></tr>
+<tr><td>Slider</td><td>83.7 / +2.9 / +0.4</td><td>61.5</td><td class="pit-edge-strong">30.6%</td><td class="pit-edge-strong">0.228</td><td>41.2%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.0</td><td>z12=21%, z11=18%, z4=12%</td><td class="bat-edge-strong">0.420</td></tr>
+<tr><td>Split-Finger</td><td>39.9</td><td>z13=41%, z7=16%, z11=10%</td><td class="bat-edge-mild">0.337</td></tr>
+<tr><td>Cutter</td><td>56.4</td><td>z13=18%, z11=18%, z4=11%</td><td class="bat-edge-mild">0.355</td></tr>
+<tr><td>Slider</td><td>57.6</td><td>z14=20%, z4=18%, z8=12%</td><td class="bat-edge-mild">0.346</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>68.6</b> mph</div>
+<div>swing length <b>6.9</b> ft</div>
+<div>attack angle <b>6.6&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+0.6</td><td>85</td><td class="pit-edge-mild">-3.7</td><td>swing flatter than pitch — topped / grounder risk</td></tr>
+<tr><td>Split-Finger</td><td>-7.1</td><td>+8.6</td><td>15</td><td class="bat-edge-mild">+1.5</td><td>on plane</td></tr>
+<tr><td>Cutter</td><td>-5.7</td><td>+2.8</td><td>20</td><td class="bat-edge-mild">-2.9</td><td>on plane</td></tr>
+<tr><td>Slider</td><td>-7.1</td><td>+13.4</td><td>34</td><td class="pit-edge-strong">+6.3</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>60.4%</b></div>
+<div>batter first-pitch swing% <b>23.4%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.251</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>15.6%</b></div>
+<div>batter K% in 2-strike counts <b>23.9%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.318</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 48.0%</span> <span class="pill">Split-Finger 42.9%</span> <span class="pill">Cutter 5.8%</span> <span class="pill">Slider 3.2%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.7</td><td class="bat-edge-strong">0.443</td><td>0.286</td></tr>
+<tr><td>Split-Finger</td><td>34.5</td><td class="bat-edge-strong">0.380</td><td>0.257</td></tr>
+<tr><td>Cutter</td><td>13.5</td><td class="bat-edge-strong">0.479</td><td>0.230</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Slider</td><td>2.3</td><td>0.414</td><td class="pit-edge-strong">0.216</td></tr>
+<tr><td>Cutter</td><td>13.5</td><td>0.479</td><td class="pit-edge-strong">0.230</td></tr>
+<tr><td>Split-Finger</td><td>34.5</td><td>0.380</td><td class="pit-edge-strong">0.257</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.48</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.32</td><td>230</td></tr>
+<tr><td>Slider</td><td>1.04</td><td>145</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.42</td><td>217</td></tr>
+<tr><td>Cutter</td><td>2.35</td><td>197</td></tr>
+</tbody></table>
+<p class="note">LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Strategic</td><td class="bat-edge-strong">0.308</td><td>6.5</td></tr>
+<tr><td>Standard</td><td>0.240</td><td>25.0</td></tr>
+<tr><td>Infield shade</td><td class="pit-edge-mild">0.208</td><td>24.0</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Infield shade 72.5%</span> <span class="pill">Standard 22.6%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-6">
+<summary><span class="spot">6.</span><span class="name">Zack Gelof</span><span class="badge">RHB</span><span class="summary-stat">proj xwOBA <b>0.375</b> (+60 pts)</span><span class="summary-stat">K <b>25.6%</b></span><span class="summary-stat">BB <b>9.2%</b></span><span class="summary-stat">HR <b>7.9%</b></span><span class="summary-stat">Hit <b>23.1%</b></span><span class="verdict-pill bat-edge-mild">Edge Hitter</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Zack Gelof <span class="badge">RHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 274+416+2056, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s slider is the projected matchup advantage, while Zack Gelof should look to drive the 4-seam fastball. Projection: 0.375 xwOBA (+60 pts vs league, Hitter). RHB vs RHP — same-side platoon disadvantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.375</td><td>0.315</td><td class="bat-edge-strong">+60</td><td class="bat-edge-strong">Edge: Hitter</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.375</td><td>0.375</td><td>+0</td><td>Pitcher norm</td></tr>
+<tr><td>vs Gelof&#x27;s baseline</td><td>0.375</td><td>0.276</td><td class="bat-edge-strong">+99</td><td class="bat-edge-strong">Edge: Hitter (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="pit-edge-mild">25.6%</td><td>+290</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td>9.2%</td><td>+986</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+236913</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">11.0%</td><td>+812</td><td>14.0%</td></tr>
+<tr><td>Double</td><td>4.0%</td><td>+2409</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td>0.3%</td><td>+37171</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">7.9%</td><td>+1171</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td class="bat-edge-mild">42.0%</td><td>+138</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td>23.1%</td><td>+333</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td>32.3%</td><td>+209</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="pit-edge-mild">44.7%</td><td class="odds">+124</td><td class="avg">0.51</td><td class="pit-edge-mild">58.9%</td><td class="odds">-143</td><td class="avg">0.77</td><td class="pit-edge-mild">69.4%</td><td class="odds">-227</td><td class="avg">1.02</td></tr>
+<tr><td>Walk</td><td>17.6%</td><td class="odds">+469</td><td class="avg">0.18</td><td>25.2%</td><td class="odds">+297</td><td class="avg">0.28</td><td>32.1%</td><td class="odds">+212</td><td class="avg">0.37</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.1%</td><td class="odds">+118432</td><td class="avg">0.00</td><td class="pit-edge-strong">0.1%</td><td class="odds">+78938</td><td class="avg">0.00</td><td class="pit-edge-strong">0.2%</td><td class="odds">+59191</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-strong">20.7%</td><td class="odds">+382</td><td class="avg">0.22</td><td class="pit-edge-mild">29.4%</td><td class="odds">+240</td><td class="avg">0.33</td><td class="pit-edge-mild">37.2%</td><td class="odds">+169</td><td class="avg">0.44</td></tr>
+<tr><td>Double</td><td class="pit-edge-mild">7.8%</td><td class="odds">+1180</td><td class="avg">0.08</td><td class="pit-edge-mild">11.5%</td><td class="odds">+771</td><td class="avg">0.12</td><td class="pit-edge-mild">15.0%</td><td class="odds">+566</td><td class="avg">0.16</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.5%</td><td class="odds">+18560</td><td class="avg">0.01</td><td class="pit-edge-mild">0.8%</td><td class="odds">+12357</td><td class="avg">0.01</td><td class="pit-edge-mild">1.1%</td><td class="odds">+9255</td><td class="avg">0.01</td></tr>
+<tr><td>Home Run</td><td class="bat-edge-strong">15.1%</td><td class="odds">+562</td><td class="avg">0.16</td><td class="bat-edge-strong">21.8%</td><td class="odds">+359</td><td class="avg">0.24</td><td class="bat-edge-strong">27.9%</td><td class="odds">+258</td><td class="avg">0.31</td></tr>
+<tr><td>In-play out</td><td class="bat-edge-mild">66.4%</td><td class="odds">-198</td><td class="avg">0.84</td><td>80.5%</td><td class="odds">-414</td><td class="avg">1.26</td><td>88.7%</td><td class="odds">-786</td><td class="avg">1.68</td></tr>
+<tr><td>Hit (any)</td><td>40.8%</td><td class="odds">+145</td><td class="avg">0.46</td><td>54.5%</td><td class="odds">-120</td><td class="avg">0.69</td><td>65.0%</td><td class="odds">-186</td><td class="avg">0.92</td></tr>
+<tr><td>On-base</td><td>54.2%</td><td class="odds">-118</td><td class="avg">0.65</td><td>69.0%</td><td class="odds">-223</td><td class="avg">0.97</td><td>79.0%</td><td class="odds">-377</td><td class="avg">1.29</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td class="bat-edge-strong">0.370</td><td>25.6%</td><td>27.0%</td><td>54.5%</td><td>78.5</td></tr>
+<tr><td>2</td><td class="bat-edge-strong">0.421</td><td>25.6%</td><td>27.0%</td><td>54.5%</td><td>77.0</td></tr>
+<tr><td>3</td><td class="pit-edge-mild">0.292</td><td>25.6%</td><td>27.0%</td><td>54.5%</td><td>37.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td>27.8%</td><td class="bat-edge-mild">22.7%</td></tr>
+<tr><td>Whiff %</td><td class="pit-edge-strong">31.8%</td><td class="bat-edge-mild">19.8%</td></tr>
+<tr><td>K %</td><td class="pit-edge-strong">33.5%</td><td class="bat-edge-mild">16.6%</td></tr>
+<tr><td>BB %</td><td class="pit-edge-mild">6.8%</td><td class="bat-edge-mild">11.4%</td></tr>
+<tr><td>Hard Hit %</td><td>40.3%</td><td>41.7%</td></tr>
+<tr><td>Barrel %</td><td class="bat-edge-mild">9.4%</td><td class="bat-edge-mild">10.6%</td></tr>
+<tr><td>GB %</td><td>44.4%</td><td>45.5%</td></tr>
+<tr><td>Air %</td><td>55.6%</td><td>54.5%</td></tr>
+<tr><td>xwOBA</td><td class="pit-edge-mild">0.276</td><td class="bat-edge-strong">0.375</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>47.9</td><td class="bat-edge-mild">0.347</td><td class="bat-edge-strong">0.409</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 43% / LD 31% / FB 23% / PU 3%</td><td class="bat-edge-mild">0.341</td><td>-7</td><td class="bat-edge-strong">0.435</td><td>19.7</td></tr>
+<tr><td>Split-Finger</td><td>18.3</td><td class="pit-edge-mild">0.275</td><td class="bat-edge-mild">0.349</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 53% / LD 24% / FB 18% / PU 4%</td><td class="pit-edge-mild">0.272</td><td>-3</td><td>0.306</td><td>55.5</td></tr>
+<tr><td>Slider</td><td>16.4</td><td class="pit-edge-strong">0.226</td><td class="bat-edge-strong">0.396</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 48% / LD 33% / FB 14% / PU 4%</td><td class="pit-edge-strong">0.236</td><td class="bat-edge-mild">+11</td><td>0.317</td><td>29.9</td></tr>
+<tr><td>Cutter</td><td>15.2</td><td class="bat-edge-mild">0.354</td><td class="pit-edge-mild">0.295</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 41% / LD 25% / FB 30% / PU 3%</td><td class="bat-edge-strong">0.370</td><td class="bat-edge-mild">+16</td><td class="bat-edge-mild">0.349</td><td>14.2</td></tr>
+<tr><td>Sinker</td><td>2.2</td><td class="pit-edge-strong">0.266</td><td class="pit-edge-strong">0.259</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 45% / LD 29% / FB 22% / PU 4%</td><td>0.316</td><td class="bat-edge-strong">+50</td><td class="pit-edge-strong">0.260</td><td>14.1</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-1</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>52.0</td>
+<td>40.3</td>
+<td>56.4</td>
+<td>38.2</td>
+<td>41.0</td>
+<td>45.7</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>10.9</td>
+<td>34.7</td>
+<td>19.2</td>
+<td>17.9</td>
+<td>23.7</td>
+<td>9.8</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>19.5</td>
+<td>13.7</td>
+<td>15.1</td>
+<td>18.1</td>
+<td>18.8</td>
+<td>17.1</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>15.0</td>
+<td>11.3</td>
+<td>9.3</td>
+<td>22.5</td>
+<td>12.8</td>
+<td>22.6</td>
+</tr>
+<tr>
+<td>Sinker</td>
+<td>2.6</td>
+<td>0.0</td>
+<td>0.0</td>
+<td>3.3</td>
+<td>3.6</td>
+<td>4.9</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.5 / +1.2 / +0.9</td><td>154.5</td><td class="pit-edge-mild">26.6%</td><td>0.302</td><td>33.6%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>85.5 / +2.6 / +1.1</td><td>28.0</td><td class="pit-edge-strong">51.9%</td><td class="pit-edge-strong">0.180</td><td>30.0%</td><td><span class="pill">medium</span></td></tr>
+<tr><td>Slider</td><td>84.2 / +3.1 / -0.3</td><td>90.8</td><td class="pit-edge-strong">42.1%</td><td class="pit-edge-strong">0.222</td><td>29.1%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.4 / +2.2 / -0.1</td><td>28.8</td><td>23.9%</td><td class="bat-edge-mild">0.334</td><td>52.4%</td><td><span class="pill">medium</span></td></tr>
+<tr><td>Sinker</td><td>92.8 / +1.5 / +1.0</td><td>161.2</td><td>24.4%</td><td>0.301</td><td>36.7%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.3</td><td>z12=19%, z14=16%, z11=13%</td><td class="pit-edge-mild">0.293</td></tr>
+<tr><td>Split-Finger</td><td>55.3</td><td>z14=26%, z13=17%, z8=14%</td><td class="pit-edge-strong">0.250</td></tr>
+<tr><td>Slider</td><td>36.0</td><td>z14=57%, z9=12%, z6=8%</td><td class="pit-edge-strong">0.212</td></tr>
+<tr><td>Cutter</td><td>56.3</td><td>z14=34%, z6=16%, z9=14%</td><td class="pit-edge-strong">0.258</td></tr>
+<tr><td>Sinker</td><td>52.9</td><td>z11=35%, z5=24%, z2=12%</td><td>0.315</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>70.1</b> mph</div>
+<div>swing length <b>7.3</b> ft</div>
+<div>attack angle <b>16.9&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+13.4</td><td>78</td><td class="pit-edge-strong">+9.1</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Split-Finger</td><td>-7.2</td><td>+21.7</td><td>12</td><td class="pit-edge-strong">+14.5</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Slider</td><td>-7.9</td><td>+19.1</td><td>58</td><td class="pit-edge-strong">+11.2</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-6.3</td><td>+18.5</td><td>26</td><td class="pit-edge-strong">+12.2</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Sinker</td><td>-4.3</td><td>+13.1</td><td>80</td><td class="pit-edge-strong">+8.8</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>57.1%</b></div>
+<div>batter first-pitch swing% <b>36.0%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.267</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>64.6%</b></div>
+<div>batter K% in 2-strike counts <b>60.6%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.181</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 46.6%</span> <span class="pill">Split-Finger 28.7%</span> <span class="pill">Slider 15.6%</span> <span class="pill">Cutter 8.3%</span> <span class="pill">Sinker 0.9%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>47.9</td><td class="bat-edge-strong">0.347</td><td>0.409</td></tr>
+<tr><td>Cutter</td><td>15.2</td><td class="bat-edge-strong">0.354</td><td>0.295</td></tr>
+<tr><td>Sinker</td><td>2.2</td><td class="bat-edge-strong">0.266</td><td>0.259</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Slider</td><td>16.4</td><td>0.226</td><td class="pit-edge-strong">0.396</td></tr>
+<tr><td>Split-Finger</td><td>18.3</td><td>0.275</td><td class="pit-edge-strong">0.349</td></tr>
+<tr><td>Sinker</td><td>2.2</td><td>0.266</td><td class="pit-edge-strong">0.259</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.17</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.26</td><td>227</td></tr>
+<tr><td>Cutter</td><td>1.06</td><td>185</td></tr>
+<tr><td>Sinker</td><td>1.18</td><td>216</td></tr>
+<tr><td>Slider</td><td>1.43</td><td>100</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.51</td><td>215</td></tr>
+</tbody></table>
+<p class="note">RHB vs RHP — same-side platoon disadvantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Infield shade</td><td class="bat-edge-strong">0.417</td><td>6.0</td></tr>
+<tr><td>Strategic</td><td class="bat-edge-strong">0.357</td><td>3.5</td></tr>
+<tr><td>Standard</td><td class="bat-edge-strong">0.309</td><td>40.5</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Standard 77.4%</span> <span class="pill">Infield shade 17.7%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-7">
+<summary><span class="spot">7.</span><span class="name">Lawrence Butler</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.263</b> (-52 pts)</span><span class="summary-stat">K <b>29.0%</b></span><span class="summary-stat">BB <b>9.2%</b></span><span class="summary-stat">HR <b>2.2%</b></span><span class="summary-stat">Hit <b>18.2%</b></span><span class="verdict-pill pit-edge-mild">Edge Pitcher</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Lawrence Butler <span class="badge">LHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 564+2521+1816, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s split-finger is the projected matchup advantage, while Lawrence Butler should look to drive the 4-seam fastball. Projection: 0.263 xwOBA (-52 pts vs league, Pitcher). GB-mix adjustment: -10 pts (raw 0.273 -&gt; adj 0.263); pitcher&#x27;s induced bb_type mix skews toward weaker contact than the batter&#x27;s career mix would suggest. LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.263</td><td>0.315</td><td class="pit-edge-strong">-52</td><td class="pit-edge-strong">Edge: Pitcher</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.263</td><td>0.263</td><td>-0</td><td>Pitcher norm</td></tr>
+<tr><td>vs Butler&#x27;s baseline</td><td>0.263</td><td>0.322</td><td class="pit-edge-mild">-59</td><td class="pit-edge-mild">Edge: Pitcher (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="pit-edge-strong">29.0%</td><td>+245</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td>9.2%</td><td>+981</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+1214572469637</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">12.4%</td><td>+706</td><td>14.0%</td></tr>
+<tr><td>Double</td><td class="pit-edge-mild">3.5%</td><td>+2755</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.1%</td><td>+109087</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="pit-edge-mild">2.2%</td><td>+4478</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td class="bat-edge-mild">43.6%</td><td>+129</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-mild">18.2%</td><td>+450</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td class="pit-edge-mild">27.4%</td><td>+265</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="pit-edge-strong">49.5%</td><td class="odds">+102</td><td class="avg">0.58</td><td class="pit-edge-mild">64.2%</td><td class="odds">-179</td><td class="avg">0.87</td><td class="pit-edge-mild">74.5%</td><td class="odds">-293</td><td class="avg">1.16</td></tr>
+<tr><td>Walk</td><td>17.6%</td><td class="odds">+467</td><td class="avg">0.18</td><td>25.3%</td><td class="odds">+296</td><td class="avg">0.28</td><td>32.2%</td><td class="odds">+211</td><td class="avg">0.37</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+607286416372</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+404857610881</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+303643208136</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">23.3%</td><td class="odds">+330</td><td class="avg">0.25</td><td class="pit-edge-mild">32.8%</td><td class="odds">+205</td><td class="avg">0.37</td><td class="pit-edge-mild">41.1%</td><td class="odds">+143</td><td class="avg">0.50</td></tr>
+<tr><td>Double</td><td class="pit-edge-mild">6.9%</td><td class="odds">+1353</td><td class="avg">0.07</td><td class="pit-edge-mild">10.1%</td><td class="odds">+886</td><td class="avg">0.11</td><td class="pit-edge-mild">13.3%</td><td class="odds">+652</td><td class="avg">0.14</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.2%</td><td class="odds">+54518</td><td class="avg">0.00</td><td class="pit-edge-mild">0.3%</td><td class="odds">+36329</td><td class="avg">0.00</td><td class="pit-edge-mild">0.4%</td><td class="odds">+27234</td><td class="avg">0.00</td></tr>
+<tr><td>Home Run</td><td class="pit-edge-mild">4.3%</td><td class="odds">+2214</td><td class="avg">0.04</td><td class="pit-edge-mild">6.4%</td><td class="odds">+1460</td><td class="avg">0.07</td><td class="pit-edge-mild">8.5%</td><td class="odds">+1083</td><td class="avg">0.09</td></tr>
+<tr><td>In-play out</td><td>68.2%</td><td class="odds">-214</td><td class="avg">0.87</td><td>82.1%</td><td class="odds">-457</td><td class="avg">1.31</td><td>89.9%</td><td class="odds">-888</td><td class="avg">1.74</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-mild">33.1%</td><td class="odds">+202</td><td class="avg">0.36</td><td class="pit-edge-mild">45.2%</td><td class="odds">+121</td><td class="avg">0.55</td><td class="pit-edge-mild">55.2%</td><td class="odds">-123</td><td class="avg">0.73</td></tr>
+<tr><td>On-base</td><td class="pit-edge-mild">47.3%</td><td class="odds">+111</td><td class="avg">0.55</td><td class="pit-edge-mild">61.8%</td><td class="odds">-162</td><td class="avg">0.82</td><td class="pit-edge-mild">72.3%</td><td class="odds">-261</td><td class="avg">1.10</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td class="pit-edge-strong">0.239</td><td>29.0%</td><td>25.3%</td><td>44.5%</td><td>72.2</td></tr>
+<tr><td>2</td><td class="pit-edge-strong">0.247</td><td>29.0%</td><td>25.3%</td><td>44.5%</td><td>68.2</td></tr>
+<tr><td>3</td><td class="bat-edge-mild">0.342</td><td>29.0%</td><td>25.3%</td><td>44.5%</td><td>35.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td class="bat-edge-mild">25.9%</td><td class="pit-edge-mild">32.6%</td></tr>
+<tr><td>Whiff %</td><td class="pit-edge-mild">27.8%</td><td class="bat-edge-mild">21.5%</td></tr>
+<tr><td>K %</td><td class="pit-edge-mild">25.4%</td><td class="pit-edge-mild">25.8%</td></tr>
+<tr><td>BB %</td><td class="bat-edge-mild">10.2%</td><td>7.7%</td></tr>
+<tr><td>Hard Hit %</td><td class="bat-edge-mild">46.8%</td><td class="pit-edge-strong">32.5%</td></tr>
+<tr><td>Barrel %</td><td class="bat-edge-mild">9.8%</td><td class="pit-edge-mild">6.9%</td></tr>
+<tr><td>GB %</td><td>44.3%</td><td>40.1%</td></tr>
+<tr><td>Air %</td><td>55.7%</td><td>59.9%</td></tr>
+<tr><td>xwOBA</td><td>0.322</td><td class="pit-edge-strong">0.263</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.4</td><td class="bat-edge-mild">0.334</td><td class="pit-edge-mild">0.286</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 26% / LD 18% / FB 47% / PU 9%</td><td>0.310</td><td class="pit-edge-mild">-24</td><td class="pit-edge-mild">0.280</td><td>20.7</td></tr>
+<tr><td>Split-Finger</td><td>35.3</td><td class="pit-edge-mild">0.284</td><td class="pit-edge-strong">0.257</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 47% / LD 20% / FB 26% / PU 7%</td><td class="pit-edge-strong">0.267</td><td class="pit-edge-mild">-17</td><td class="pit-edge-strong">0.209</td><td>35.3</td></tr>
+<tr><td>Cutter</td><td>13.0</td><td class="bat-edge-mild">0.356</td><td class="pit-edge-strong">0.230</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 39% / LD 32% / FB 29% / PU 0%</td><td class="bat-edge-strong">0.416</td><td class="bat-edge-strong">+60</td><td class="bat-edge-mild">0.331</td><td>14.9</td></tr>
+<tr><td>Slider</td><td>2.4</td><td class="bat-edge-strong">0.433</td><td class="pit-edge-strong">0.216</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 40% / LD 21% / FB 32% / PU 7%</td><td class="bat-edge-strong">0.437</td><td>+4</td><td class="bat-edge-mild">0.338</td><td>29.3</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-2</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>50.1</td>
+<td>45.5</td>
+<td>53.2</td>
+<td>46.1</td>
+<td>44.5</td>
+<td>53.4</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>25.1</td>
+<td>50.3</td>
+<td>30.1</td>
+<td>45.3</td>
+<td>45.2</td>
+<td>30.8</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>21.8</td>
+<td>3.2</td>
+<td>15.4</td>
+<td>6.9</td>
+<td>4.9</td>
+<td>15.1</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>3.0</td>
+<td>1.1</td>
+<td>1.3</td>
+<td>1.7</td>
+<td>5.3</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.4 / +1.2 / -1.0</td><td>405.2</td><td class="bat-edge-strong">17.6%</td><td class="bat-edge-mild">0.351</td><td>52.9%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>84.8 / +2.7 / -1.2</td><td>143.8</td><td class="pit-edge-strong">33.7%</td><td class="pit-edge-strong">0.221</td><td>18.1%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.6 / +2.1 / -0.2</td><td>62.2</td><td class="bat-edge-strong">17.5%</td><td class="bat-edge-mild">0.331</td><td>65.2%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Slider</td><td>83.7 / +2.9 / +0.4</td><td>137.2</td><td class="pit-edge-strong">35.4%</td><td class="pit-edge-strong">0.227</td><td>55.1%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.0</td><td>z12=21%, z11=18%, z4=12%</td><td class="pit-edge-mild">0.292</td></tr>
+<tr><td>Split-Finger</td><td>39.9</td><td>z13=41%, z7=16%, z11=10%</td><td class="pit-edge-mild">0.292</td></tr>
+<tr><td>Cutter</td><td>56.4</td><td>z13=18%, z11=18%, z4=11%</td><td>0.316</td></tr>
+<tr><td>Slider</td><td>57.6</td><td>z14=20%, z4=18%, z8=12%</td><td>0.326</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>72.3</b> mph</div>
+<div>swing length <b>7.1</b> ft</div>
+<div>attack angle <b>5.8&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+0.5</td><td>329</td><td class="pit-edge-mild">-3.8</td><td>swing flatter than pitch — topped / grounder risk</td></tr>
+<tr><td>Split-Finger</td><td>-7.1</td><td>+11.4</td><td>51</td><td class="pit-edge-mild">+4.3</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-5.7</td><td>+4.4</td><td>67</td><td class="bat-edge-mild">-1.3</td><td>on plane</td></tr>
+<tr><td>Slider</td><td>-7.1</td><td>+10.1</td><td>74</td><td class="bat-edge-mild">+3.0</td><td>on plane</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>60.4%</b></div>
+<div>batter first-pitch swing% <b>36.9%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.437</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>112.4%</b></div>
+<div>batter K% in 2-strike counts <b>46.5%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.250</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 48.0%</span> <span class="pill">Split-Finger 42.9%</span> <span class="pill">Cutter 5.8%</span> <span class="pill">Slider 3.2%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.4</td><td class="bat-edge-strong">0.334</td><td>0.286</td></tr>
+<tr><td>Cutter</td><td>13.0</td><td class="bat-edge-strong">0.356</td><td>0.230</td></tr>
+<tr><td>Slider</td><td>2.4</td><td class="bat-edge-strong">0.433</td><td>0.216</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>35.3</td><td>0.284</td><td class="pit-edge-strong">0.257</td></tr>
+<tr><td>Slider</td><td>2.4</td><td>0.433</td><td class="pit-edge-strong">0.216</td></tr>
+<tr><td>Cutter</td><td>13.0</td><td>0.356</td><td class="pit-edge-strong">0.230</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.48</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.32</td><td>230</td></tr>
+<tr><td>Slider</td><td>1.04</td><td>145</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.42</td><td>217</td></tr>
+<tr><td>Cutter</td><td>2.35</td><td>197</td></tr>
+</tbody></table>
+<p class="note">LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Strategic</td><td class="bat-edge-strong">0.328</td><td>15.2</td></tr>
+<tr><td>Standard</td><td class="pit-edge-mild">0.198</td><td>63.2</td></tr>
+<tr><td>Infield shade</td><td class="pit-edge-mild">0.192</td><td>49.5</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Infield shade 72.5%</span> <span class="pill">Standard 22.6%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-8">
+<summary><span class="spot">8.</span><span class="name">Jonah Heim</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.229</b> (-86 pts)</span><span class="summary-stat">K <b>21.5%</b></span><span class="summary-stat">BB <b>5.9%</b></span><span class="summary-stat">HR <b>2.7%</b></span><span class="summary-stat">Hit <b>16.9%</b></span><span class="verdict-pill pit-edge-mild">Edge Pitcher</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Jonah Heim <span class="badge">LHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 186+1704+1783, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s 4-seam fastball is the projected matchup advantage, while Jonah Heim should look to drive the cutter. Projection: 0.229 xwOBA (-86 pts vs league, Pitcher). LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.229</td><td>0.315</td><td class="pit-edge-strong">-86</td><td class="pit-edge-strong">Edge: Pitcher</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.229</td><td>0.263</td><td class="pit-edge-strong">-34</td><td class="pit-edge-strong">Edge: Pitcher (vs Pitcher norm)</td></tr>
+<tr><td>vs Heim&#x27;s baseline</td><td>0.229</td><td>0.264</td><td class="pit-edge-mild">-35</td><td class="pit-edge-mild">Edge: Pitcher (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td>21.5%</td><td>+365</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td class="pit-edge-mild">5.9%</td><td>+1606</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+216194116</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">11.7%</td><td>+751</td><td>14.0%</td></tr>
+<tr><td>Double</td><td class="pit-edge-strong">2.4%</td><td>+3988</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td>—</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td>2.7%</td><td>+3653</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">55.8%</td><td>-126</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-mild">16.9%</td><td>+493</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td class="pit-edge-strong">22.7%</td><td>+340</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td>38.4%</td><td class="odds">+160</td><td class="avg">0.43</td><td>51.7%</td><td class="odds">-107</td><td class="avg">0.65</td><td>62.1%</td><td class="odds">-164</td><td class="avg">0.86</td></tr>
+<tr><td>Walk</td><td class="pit-edge-mild">11.4%</td><td class="odds">+779</td><td class="avg">0.12</td><td class="pit-edge-mild">16.6%</td><td class="odds">+503</td><td class="avg">0.18</td><td class="pit-edge-mild">21.5%</td><td class="odds">+366</td><td class="avg">0.23</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+108097033</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+72064672</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+54048491</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-mild">22.1%</td><td class="odds">+352</td><td class="avg">0.23</td><td class="pit-edge-mild">31.3%</td><td class="odds">+220</td><td class="avg">0.35</td><td class="pit-edge-mild">39.3%</td><td class="odds">+154</td><td class="avg">0.47</td></tr>
+<tr><td>Double</td><td class="pit-edge-strong">4.8%</td><td class="odds">+1969</td><td class="avg">0.05</td><td class="pit-edge-strong">7.2%</td><td class="odds">+1296</td><td class="avg">0.07</td><td class="pit-edge-strong">9.4%</td><td class="odds">+960</td><td class="avg">0.10</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td><td class="pit-edge-mild">0.0%</td><td class="odds">—</td><td class="avg">0.00</td></tr>
+<tr><td>Home Run</td><td>5.3%</td><td class="odds">+1802</td><td class="avg">0.05</td><td>7.8%</td><td class="odds">+1185</td><td class="avg">0.08</td><td>10.2%</td><td class="odds">+877</td><td class="avg">0.11</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">80.4%</td><td class="odds">-411</td><td class="avg">1.12</td><td class="pit-edge-mild">91.3%</td><td class="odds">-1055</td><td class="avg">1.67</td><td>96.2%</td><td class="odds">-2510</td><td class="avg">2.23</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-strong">30.9%</td><td class="odds">+224</td><td class="avg">0.34</td><td class="pit-edge-mild">42.5%</td><td class="odds">+135</td><td class="avg">0.51</td><td class="pit-edge-mild">52.2%</td><td class="odds">-109</td><td class="avg">0.67</td></tr>
+<tr><td>On-base</td><td class="pit-edge-strong">40.3%</td><td class="odds">+148</td><td class="avg">0.45</td><td class="pit-edge-strong">53.8%</td><td class="odds">-117</td><td class="avg">0.68</td><td class="pit-edge-mild">64.3%</td><td class="odds">-180</td><td class="avg">0.91</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td class="pit-edge-strong">0.205</td><td>21.5%</td><td>22.1%</td><td>25.6%</td><td>72.2</td></tr>
+<tr><td>2</td><td class="pit-edge-strong">0.213</td><td>21.5%</td><td>22.1%</td><td>25.6%</td><td>68.2</td></tr>
+<tr><td>3</td><td>0.308</td><td>21.5%</td><td>22.1%</td><td>25.6%</td><td>35.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td class="pit-edge-mild">30.5%</td><td class="pit-edge-mild">32.6%</td></tr>
+<tr><td>Whiff %</td><td class="bat-edge-mild">20.7%</td><td class="bat-edge-mild">21.5%</td></tr>
+<tr><td>K %</td><td class="bat-edge-mild">18.6%</td><td class="pit-edge-mild">25.8%</td></tr>
+<tr><td>BB %</td><td class="pit-edge-mild">6.5%</td><td>7.7%</td></tr>
+<tr><td>Hard Hit %</td><td class="pit-edge-strong">30.8%</td><td class="pit-edge-strong">32.5%</td></tr>
+<tr><td>Barrel %</td><td class="pit-edge-strong">4.9%</td><td class="pit-edge-mild">6.9%</td></tr>
+<tr><td>GB %</td><td>40.2%</td><td>40.1%</td></tr>
+<tr><td>Air %</td><td>59.8%</td><td>59.9%</td></tr>
+<tr><td>xwOBA</td><td class="pit-edge-strong">0.264</td><td class="pit-edge-strong">0.263</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.3</td><td class="pit-edge-strong">0.268</td><td class="pit-edge-mild">0.286</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 26% / LD 18% / FB 47% / PU 9%</td><td class="pit-edge-strong">0.249</td><td class="pit-edge-mild">-19</td><td class="pit-edge-strong">0.219</td><td>20.2</td></tr>
+<tr><td>Split-Finger</td><td>35.2</td><td class="pit-edge-strong">0.259</td><td class="pit-edge-strong">0.257</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 47% / LD 20% / FB 26% / PU 7%</td><td class="pit-edge-mild">0.271</td><td class="bat-edge-mild">+12</td><td class="pit-edge-strong">0.213</td><td>29.8</td></tr>
+<tr><td>Cutter</td><td>13.1</td><td class="bat-edge-strong">0.371</td><td class="pit-edge-strong">0.230</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 39% / LD 32% / FB 29% / PU 0%</td><td class="bat-edge-strong">0.408</td><td class="bat-edge-strong">+37</td><td>0.323</td><td>9.3</td></tr>
+<tr><td>Slider</td><td>2.3</td><td class="pit-edge-strong">0.244</td><td class="pit-edge-strong">0.216</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 40% / LD 21% / FB 32% / PU 7%</td><td class="pit-edge-strong">0.252</td><td>+8</td><td class="pit-edge-strong">0.153</td><td>19.7</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-2</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>50.1</td>
+<td>45.5</td>
+<td>53.2</td>
+<td>46.1</td>
+<td>44.5</td>
+<td>53.4</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>25.1</td>
+<td>50.3</td>
+<td>30.1</td>
+<td>45.3</td>
+<td>45.2</td>
+<td>30.8</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>21.8</td>
+<td>3.2</td>
+<td>15.4</td>
+<td>6.9</td>
+<td>4.9</td>
+<td>15.1</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>3.0</td>
+<td>1.1</td>
+<td>1.3</td>
+<td>1.7</td>
+<td>5.3</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.4 / +1.2 / -1.0</td><td>245.5</td><td class="bat-edge-strong">17.9%</td><td>0.306</td><td>25.8%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>84.8 / +2.7 / -1.2</td><td>71.0</td><td class="pit-edge-strong">30.9%</td><td class="pit-edge-strong">0.187</td><td>24.6%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.6 / +2.1 / -0.2</td><td>29.5</td><td class="bat-edge-mild">18.9%</td><td class="bat-edge-strong">0.521</td><td>45.5%</td><td><span class="pill">medium</span></td></tr>
+<tr><td>Slider</td><td>83.7 / +2.9 / +0.4</td><td>77.5</td><td class="bat-edge-strong">17.4%</td><td class="pit-edge-strong">0.266</td><td>23.5%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.0</td><td>z12=21%, z11=18%, z4=12%</td><td class="pit-edge-strong">0.245</td></tr>
+<tr><td>Split-Finger</td><td>39.9</td><td>z13=41%, z7=16%, z11=10%</td><td class="pit-edge-strong">0.258</td></tr>
+<tr><td>Cutter</td><td>56.4</td><td>z13=18%, z11=18%, z4=11%</td><td class="pit-edge-strong">0.255</td></tr>
+<tr><td>Slider</td><td>57.6</td><td>z14=20%, z4=18%, z8=12%</td><td class="pit-edge-strong">0.268</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>67.7</b> mph</div>
+<div>swing length <b>7.3</b> ft</div>
+<div>attack angle <b>10.7&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+7.0</td><td>220</td><td class="bat-edge-mild">+2.6</td><td>on plane</td></tr>
+<tr><td>Split-Finger</td><td>-7.1</td><td>+16.4</td><td>26</td><td class="pit-edge-strong">+9.3</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-5.7</td><td>+11.0</td><td>33</td><td class="pit-edge-mild">+5.3</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Slider</td><td>-7.1</td><td>+16.8</td><td>56</td><td class="pit-edge-strong">+9.7</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>60.4%</b></div>
+<div>batter first-pitch swing% <b>32.9%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.350</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>48.8%</b></div>
+<div>batter K% in 2-strike counts <b>35.2%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.199</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 48.0%</span> <span class="pill">Split-Finger 42.9%</span> <span class="pill">Cutter 5.8%</span> <span class="pill">Slider 3.2%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Cutter</td><td>13.1</td><td class="bat-edge-strong">0.371</td><td>0.230</td></tr>
+<tr><td>Slider</td><td>2.3</td><td class="bat-edge-strong">0.244</td><td>0.216</td></tr>
+<tr><td>Split-Finger</td><td>35.2</td><td class="bat-edge-strong">0.259</td><td>0.257</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.3</td><td>0.268</td><td class="pit-edge-strong">0.286</td></tr>
+<tr><td>Split-Finger</td><td>35.2</td><td>0.259</td><td class="pit-edge-strong">0.257</td></tr>
+<tr><td>Slider</td><td>2.3</td><td>0.244</td><td class="pit-edge-strong">0.216</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.48</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.32</td><td>230</td></tr>
+<tr><td>Slider</td><td>1.04</td><td>145</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.42</td><td>217</td></tr>
+<tr><td>Cutter</td><td>2.35</td><td>197</td></tr>
+</tbody></table>
+<p class="note">LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Standard</td><td>0.222</td><td>22.5</td></tr>
+<tr><td>Strategic</td><td class="pit-edge-strong">0.158</td><td>4.8</td></tr>
+<tr><td>Infield shade</td><td class="pit-edge-strong">0.129</td><td>52.5</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Infield shade 72.5%</span> <span class="pill">Standard 22.6%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+<details class="batter-block" id="batter-9">
+<summary><span class="spot">9.</span><span class="name">Jeff McNeil</span><span class="badge">LHB</span><span class="summary-stat">proj xwOBA <b>0.244</b> (-71 pts)</span><span class="summary-stat">K <b>15.2%</b></span><span class="summary-stat">BB <b>6.5%</b></span><span class="summary-stat">HR <b>2.4%</b></span><span class="summary-stat">Hit <b>17.4%</b></span><span class="verdict-pill pit-edge-mild">Edge Pitcher</span></summary>
+<div class="batter-body">
+<header class="page-head">
+<h1>Jeff McNeil <span class="badge">LHB</span> vs Tyler Mahle <span class="badge">RHP</span></h1>
+<div class="meta">window: 2026 &times;1, 2025 &times;0.5, 2024 &times;0.25 &middot; batter rows 522+1733+1755, pitcher rows 716+1381+229</div>
+</header>
+<section class="card">
+<h2>Verdict</h2>
+<p class="narrative">Mahle&#x27;s split-finger is the projected matchup advantage, while Jeff McNeil should look to drive the 4-seam fastball. Projection: 0.244 xwOBA (-71 pts vs league, Pitcher). GB-mix adjustment: -17 pts (raw 0.261 -&gt; adj 0.244); pitcher&#x27;s induced bb_type mix skews toward weaker contact than the batter&#x27;s career mix would suggest. LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+<table>
+<thead><tr><th>Frame</th><th>Projected xwOBA</th><th>Baseline</th><th>&Delta; (wOBA pts)</th><th>Read</th></tr></thead>
+<tbody>
+<tr><td>vs league avg</td><td>0.244</td><td>0.315</td><td class="pit-edge-strong">-71</td><td class="pit-edge-strong">Edge: Pitcher</td></tr>
+<tr><td>vs Mahle&#x27;s baseline</td><td>0.244</td><td>0.263</td><td class="pit-edge-strong">-19</td><td class="pit-edge-strong">Edge: Pitcher (vs Pitcher norm)</td></tr>
+<tr><td>vs McNeil&#x27;s baseline</td><td>0.244</td><td>0.312</td><td class="pit-edge-mild">-67</td><td class="pit-edge-mild">Edge: Pitcher (vs Batter norm)</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Per-PA outcome distribution</h2>
+<table><thead><tr><th>Outcome</th><th>Prob</th><th>American</th><th>League</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-strong">15.2%</td><td>+559</td><td>22.5%</td></tr>
+<tr><td>Walk</td><td class="pit-edge-mild">6.5%</td><td>+1441</td><td>8.5%</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td>+58534616</td><td>1.2%</td></tr>
+<tr><td>Single</td><td class="pit-edge-strong">10.2%</td><td>+884</td><td>14.0%</td></tr>
+<tr><td>Double</td><td>4.6%</td><td>+2080</td><td>4.5%</td></tr>
+<tr><td>Triple</td><td>0.3%</td><td>+36109</td><td>0.5%</td></tr>
+<tr><td>Home Run</td><td class="pit-edge-mild">2.4%</td><td>+4139</td><td>3.0%</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">61.0%</td><td>-156</td><td>45.8%</td></tr>
+<tr class="divider-row"><td colspan="4">rollups</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-mild">17.4%</td><td>+475</td><td>22.0%</td></tr>
+<tr><td>On-base</td><td class="pit-edge-strong">23.9%</td><td>+319</td><td>31.7%</td></tr>
+</tbody></table></section>
+<section class="card">
+<h2>Multi-PA outlook (2 / 3 / 4 PAs)</h2>
+<p class="subtitle">Chance the outcome happens at least once across N PAs (with American odds), and expected count across N PAs (assumes independent PAs).</p>
+<table class="multi-pa">
+<thead><tr><th rowspan="2" class="outcome-col">Outcome</th><th colspan="3" class="pa-group">Over 2 PAs</th><th colspan="3" class="pa-group">Over 3 PAs</th><th colspan="3" class="pa-group">Over 4 PAs</th></tr><tr><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th><th>Chance &ge;1</th><th>Odds</th><th>Avg #</th></tr></thead><tbody>
+<tr><td>Strikeout</td><td class="bat-edge-strong">28.0%</td><td class="odds">+257</td><td class="avg">0.30</td><td class="bat-edge-strong">39.0%</td><td class="odds">+157</td><td class="avg">0.46</td><td class="bat-edge-mild">48.2%</td><td class="odds">+107</td><td class="avg">0.61</td></tr>
+<tr><td>Walk</td><td class="pit-edge-mild">12.6%</td><td class="odds">+696</td><td class="avg">0.13</td><td class="pit-edge-mild">18.2%</td><td class="odds">+448</td><td class="avg">0.19</td><td class="pit-edge-mild">23.5%</td><td class="odds">+325</td><td class="avg">0.26</td></tr>
+<tr><td>HBP</td><td class="pit-edge-strong">0.0%</td><td class="odds">+29267283</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+19511505</td><td class="avg">0.00</td><td class="pit-edge-strong">0.0%</td><td class="odds">+14633616</td><td class="avg">0.00</td></tr>
+<tr><td>Single</td><td class="pit-edge-strong">19.3%</td><td class="odds">+418</td><td class="avg">0.20</td><td class="pit-edge-strong">27.5%</td><td class="odds">+264</td><td class="avg">0.30</td><td class="pit-edge-strong">34.9%</td><td class="odds">+187</td><td class="avg">0.41</td></tr>
+<tr><td>Double</td><td>9.0%</td><td class="odds">+1015</td><td class="avg">0.09</td><td>13.1%</td><td class="odds">+661</td><td class="avg">0.14</td><td>17.1%</td><td class="odds">+484</td><td class="avg">0.18</td></tr>
+<tr><td>Triple</td><td class="pit-edge-mild">0.6%</td><td class="odds">+18029</td><td class="avg">0.01</td><td class="pit-edge-mild">0.8%</td><td class="odds">+12003</td><td class="avg">0.01</td><td class="pit-edge-mild">1.1%</td><td class="odds">+8990</td><td class="avg">0.01</td></tr>
+<tr><td>Home Run</td><td class="pit-edge-mild">4.7%</td><td class="odds">+2045</td><td class="avg">0.05</td><td class="pit-edge-mild">6.9%</td><td class="odds">+1347</td><td class="avg">0.07</td><td class="pit-edge-mild">9.1%</td><td class="odds">+998</td><td class="avg">0.09</td></tr>
+<tr><td>In-play out</td><td class="pit-edge-strong">84.8%</td><td class="odds">-556</td><td class="avg">1.22</td><td class="pit-edge-mild">94.0%</td><td class="odds">-1580</td><td class="avg">1.83</td><td class="pit-edge-mild">97.7%</td><td class="odds">-4202</td><td class="avg">2.44</td></tr>
+<tr><td>Hit (any)</td><td class="pit-edge-mild">31.7%</td><td class="odds">+215</td><td class="avg">0.35</td><td class="pit-edge-mild">43.6%</td><td class="odds">+129</td><td class="avg">0.52</td><td class="pit-edge-mild">53.4%</td><td class="odds">-115</td><td class="avg">0.70</td></tr>
+<tr><td>On-base</td><td class="pit-edge-strong">42.0%</td><td class="odds">+138</td><td class="avg">0.48</td><td class="pit-edge-strong">55.9%</td><td class="odds">-127</td><td class="avg">0.72</td><td class="pit-edge-mild">66.4%</td><td class="odds">-198</td><td class="avg">0.95</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Projection by times through the order</h2>
+<table><thead><tr><th>TTO</th><th>Proj xwOBA</th><th>Proj K %</th><th>Proj Whiff %</th><th>Proj Hard Hit %</th><th>Sample (eff PA)</th></tr></thead><tbody>
+<tr><td>1</td><td class="pit-edge-strong">0.220</td><td>15.2%</td><td>11.7%</td><td>34.4%</td><td>72.2</td></tr>
+<tr><td>2</td><td class="pit-edge-strong">0.229</td><td>15.2%</td><td>11.7%</td><td>34.4%</td><td>68.2</td></tr>
+<tr><td>3</td><td>0.324</td><td>15.2%</td><td>11.7%</td><td>34.4%</td><td>35.8</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Side-by-side profile (platoon-filtered)</h2>
+<table><thead><tr><th>Metric</th><th>Batter</th><th>Pitcher (allowed)</th></tr></thead><tbody>
+<tr><td>Chase %</td><td>28.7%</td><td class="pit-edge-mild">32.6%</td></tr>
+<tr><td>Whiff %</td><td class="bat-edge-strong">14.2%</td><td class="bat-edge-mild">21.5%</td></tr>
+<tr><td>K %</td><td class="bat-edge-strong">13.0%</td><td class="pit-edge-mild">25.8%</td></tr>
+<tr><td>BB %</td><td class="pit-edge-mild">7.2%</td><td>7.7%</td></tr>
+<tr><td>Hard Hit %</td><td class="pit-edge-mild">33.5%</td><td class="pit-edge-strong">32.5%</td></tr>
+<tr><td>Barrel %</td><td class="pit-edge-strong">3.2%</td><td class="pit-edge-mild">6.9%</td></tr>
+<tr><td>GB %</td><td class="bat-edge-mild">37.6%</td><td>40.1%</td></tr>
+<tr><td>Air %</td><td class="bat-edge-mild">62.4%</td><td>59.9%</td></tr>
+<tr><td>xwOBA</td><td>0.312</td><td class="pit-edge-strong">0.263</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Pitch-mix projection</h2>
+<table><thead><tr><th>Pitch</th><th>Marginal Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th><th style='text-align:left'>Pitcher BB-mix</th><th>Adj batter xwOBA</th><th>Adj &Delta; (pts)</th><th>Projected xwOBA</th><th>Projected Whiff %</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.1</td><td class="bat-edge-mild">0.340</td><td class="pit-edge-mild">0.286</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 26% / LD 18% / FB 47% / PU 9%</td><td class="pit-edge-mild">0.291</td><td class="pit-edge-strong">-49</td><td class="pit-edge-strong">0.262</td><td>7.7</td></tr>
+<tr><td>Split-Finger</td><td>35.5</td><td class="pit-edge-strong">0.268</td><td class="pit-edge-strong">0.257</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 47% / LD 20% / FB 26% / PU 7%</td><td class="pit-edge-mild">0.273</td><td>+5</td><td class="pit-edge-strong">0.215</td><td>17.4</td></tr>
+<tr><td>Cutter</td><td>13.0</td><td>0.318</td><td class="pit-edge-strong">0.230</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 39% / LD 32% / FB 29% / PU 0%</td><td class="bat-edge-strong">0.362</td><td class="bat-edge-strong">+44</td><td class="pit-edge-mild">0.277</td><td>8.5</td></tr>
+<tr><td>Slider</td><td>2.4</td><td class="pit-edge-strong">0.255</td><td class="pit-edge-strong">0.216</td><td style='text-align:left;font-size:12px;color:var(--muted)'>GB 40% / LD 21% / FB 32% / PU 7%</td><td class="pit-edge-strong">0.245</td><td class="pit-edge-mild">-10</td><td class="pit-edge-strong">0.146</td><td>27.6</td></tr>
+</tbody></table>
+<p class="note">Adj &Delta; (pts) is the bb_type mix discount applied to the batter's per-pitch xwOBA: a 100 mph 0&deg; grounder produces a much lower xwOBA than a 100 mph 25&deg; line drive, so when the pitcher's induced bb_type mix is more grounder-heavy than the batter's career mix on this pitch, the projection is shifted down by the equivalent per-PA amount (and vice versa for air-ball-heavy pitchers).</p>
+</section>
+<section class="card">
+<h2>Count-state pitch mix (pitcher, vs same hand)</h2>
+<table><thead><tr>
+<th>Pitch</th>
+<th>0-0</th>
+<th>0-2</th>
+<th>3-2</th>
+<th>0-1</th>
+<th>1-2</th>
+<th>1-0</th>
+</tr></thead><tbody>
+<tr>
+<td>4-Seam Fastball</td>
+<td>50.1</td>
+<td>45.5</td>
+<td>53.2</td>
+<td>46.1</td>
+<td>44.5</td>
+<td>53.4</td>
+</tr>
+<tr>
+<td>Split-Finger</td>
+<td>25.1</td>
+<td>50.3</td>
+<td>30.1</td>
+<td>45.3</td>
+<td>45.2</td>
+<td>30.8</td>
+</tr>
+<tr>
+<td>Cutter</td>
+<td>21.8</td>
+<td>3.2</td>
+<td>15.4</td>
+<td>6.9</td>
+<td>4.9</td>
+<td>15.1</td>
+</tr>
+<tr>
+<td>Slider</td>
+<td>3.0</td>
+<td>1.1</td>
+<td>1.3</td>
+<td>1.7</td>
+<td>5.3</td>
+<td>0.7</td>
+</tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Shape-aware comps from batter history</h2>
+<table><thead><tr><th>Pitch</th><th>Shape (eff velo / IVB / HB-in)</th><th>n comps (eff)</th><th>Whiff %</th><th>xwOBA</th><th>Hard Hit %</th><th>Confidence</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>92.4 / +1.2 / -1.0</td><td>315.0</td><td class="bat-edge-strong">6.9%</td><td class="bat-edge-strong">0.395</td><td>34.7%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Split-Finger</td><td>84.8 / +2.7 / -1.2</td><td>85.2</td><td>24.9%</td><td>0.301</td><td>35.0%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Cutter</td><td>87.6 / +2.1 / -0.2</td><td>52.0</td><td class="bat-edge-strong">11.5%</td><td class="bat-edge-mild">0.347</td><td>39.4%</td><td><span class="pill">high</span></td></tr>
+<tr><td>Slider</td><td>83.7 / +2.9 / +0.4</td><td>119.8</td><td class="bat-edge-mild">22.1%</td><td class="pit-edge-strong">0.269</td><td>14.5%</td><td><span class="pill">high</span></td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Zone overlay</h2>
+<table><thead><tr><th>Pitch</th><th>In-zone %</th><th>Top zones (attack share)</th><th>Intersection xwOBA</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>52.0</td><td>z12=21%, z11=18%, z4=12%</td><td>0.312</td></tr>
+<tr><td>Split-Finger</td><td>39.9</td><td>z13=41%, z7=16%, z11=10%</td><td class="pit-edge-mild">0.288</td></tr>
+<tr><td>Cutter</td><td>56.4</td><td>z13=18%, z11=18%, z4=11%</td><td>0.306</td></tr>
+<tr><td>Slider</td><td>57.6</td><td>z14=20%, z4=18%, z8=12%</td><td>0.312</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Bat-tracking interaction</h2>
+<div class="kv">
+<div>bat speed <b>67.8</b> mph</div>
+<div>swing length <b>7.2</b> ft</div>
+<div>attack angle <b>7.0&deg;</b></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>VAA (deg)</th><th>Bat attack (deg)</th><th>Swings (n)</th><th>Match gap (deg)</th><th>Note</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>-4.3</td><td>+2.6</td><td>273</td><td class="bat-edge-mild">-1.7</td><td>on plane</td></tr>
+<tr><td>Split-Finger</td><td>-7.1</td><td>+11.7</td><td>37</td><td class="pit-edge-mild">+4.6</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+<tr><td>Cutter</td><td>-5.7</td><td>+4.5</td><td>75</td><td class="bat-edge-mild">-1.2</td><td>on plane</td></tr>
+<tr><td>Slider</td><td>-7.1</td><td>+10.7</td><td>78</td><td class="pit-edge-mild">+3.7</td><td>swing steeper than pitch — pop-up / swing-under risk</td></tr>
+</tbody></table>
+<p class="note">Match gap = bat attack angle + pitch VAA. |gap| &le; 3&deg; = on plane; positive = swing steeper than pitch (under risk); negative = swing flatter than pitch (top risk).</p>
+</section>
+<section class="card">
+<h2>First-pitch &amp; two-strike sub-profiles</h2>
+<div class="kv">
+<div>pitcher first-pitch strike% <b>60.4%</b></div>
+<div>batter first-pitch swing% <b>40.1%</b></div>
+<div>batter xwOBA on first-pitch swings <b>0.382</b></div>
+</div>
+<div class="kv">
+<div>pitcher putaway% <b>48.3%</b></div>
+<div>batter K% in 2-strike counts <b>29.2%</b></div>
+<div>batter xwOBA in 2-strike counts <b>0.258</b></div>
+</div>
+<p class="subtitle">Pitcher's two-strike mix: <span class="pill">4-Seam Fastball 48.0%</span> <span class="pill">Split-Finger 42.9%</span> <span class="pill">Cutter 5.8%</span> <span class="pill">Slider 3.2%</span></p>
+</section>
+<section class="card">
+<h2>Edge analysis</h2>
+<p class="subtitle"><b>Pitches favoring the hitter</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>4-Seam Fastball</td><td>49.1</td><td class="bat-edge-strong">0.340</td><td>0.286</td></tr>
+<tr><td>Cutter</td><td>13.0</td><td class="bat-edge-strong">0.318</td><td>0.230</td></tr>
+<tr><td>Slider</td><td>2.4</td><td class="bat-edge-strong">0.255</td><td>0.216</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px"><b>Pitches favoring the pitcher</b></p>
+<table><thead><tr><th>Pitch</th><th>Usage %</th><th>Batter xwOBA</th><th>Pitcher xwOBA allowed</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>35.5</td><td>0.268</td><td class="pit-edge-strong">0.257</td></tr>
+<tr><td>Slider</td><td>2.4</td><td>0.255</td><td class="pit-edge-strong">0.216</td></tr>
+<tr><td>Cutter</td><td>13.0</td><td>0.318</td><td class="pit-edge-strong">0.230</td></tr>
+</tbody></table>
+</section>
+<section class="card">
+<h2>Deception &amp; shape signature</h2>
+<div class="kv">
+<div>release-point cluster <b>1.48</b> in <span class="pill">tight (deceptive)</span></div>
+</div>
+<table><thead><tr><th>Pitch</th><th>&Delta; from release centroid (in)</th><th>Spin axis (deg)</th></tr></thead><tbody>
+<tr><td>Split-Finger</td><td>0.32</td><td>230</td></tr>
+<tr><td>Slider</td><td>1.04</td><td>145</td></tr>
+<tr><td>4-Seam Fastball</td><td>1.42</td><td>217</td></tr>
+<tr><td>Cutter</td><td>2.35</td><td>197</td></tr>
+</tbody></table>
+<p class="note">LHB vs RHP — opposite-side platoon advantage to the hitter.</p>
+</section>
+<section class="card">
+<h2>Defensive alignment</h2>
+<p class="subtitle">Batter ground-ball BABIP by infield alignment</p>
+<table><thead><tr><th>Alignment</th><th>GB BABIP</th><th>Sample (eff GB)</th></tr></thead><tbody>
+<tr><td>Strategic</td><td class="bat-edge-mild">0.286</td><td>7.0</td></tr>
+<tr><td>Standard</td><td class="pit-edge-mild">0.197</td><td>62.2</td></tr>
+<tr><td>Infield shade</td><td class="pit-edge-mild">0.189</td><td>39.8</td></tr>
+</tbody></table>
+<p class="subtitle" style="margin-top:14px">Pitcher's typical infield alignment usage: <span class="pill">Infield shade 72.5%</span> <span class="pill">Standard 22.6%</span> <span class="pill">Strategic 4.9%</span></p>
+</section>
+</div>
+</details>
+</section>
+<footer>
+<ul class='note-list'>
+<li>Each batter block uses the same per-matchup methodology; see any single-matchup report or <code>README.md</code> for the full layer-by-layer breakdown.</li>
+<li>Lineup rollups assume each batter gets exactly 3 PAs vs this pitcher and that PAs are independent (no fatigue / TTO interaction across the rollup).</li>
+<li>Verdict pill is based on projected xwOBA vs league baseline: &lt;25 pts = Even, 25-50 = Slight, 50-100 = Edge, &gt;100 = Strong.</li>
+<li>Cell coloring in the grid: <span class='bat-edge-strong' style='padding:1px 6px;border-radius:4px'>strong batter edge</span>, <span class='bat-edge-mild' style='padding:1px 6px;border-radius:4px'>mild batter edge</span>, <span class='pit-edge-mild' style='padding:1px 6px;border-radius:4px'>mild pitcher edge</span>, <span class='pit-edge-strong' style='padding:1px 6px;border-radius:4px'>strong pitcher edge</span> &mdash; relative to league baseline.</li>
+</ul>
+</footer>
+</main></body></html>

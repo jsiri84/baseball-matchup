@@ -10,8 +10,15 @@ env/
 # ----- IDE / OS -----
 .vscode/
 .idea/
+.cursor/
 .DS_Store
 Thumbs.db
+
+# ----- Scratch / one-off helpers -----
+# Disposable utilities like _peek_hh.py, _reconstruct_lineups.py, _show_top.py.
+# Top-level files starting with an underscore are treated as scratch and
+# excluded from version control.
+/_*.py
 
 # ----- Data + caches -----
 # Cached Statcast pulls are organized into data/<year>/ subfolders.
