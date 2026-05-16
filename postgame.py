@@ -44,6 +44,7 @@ from matchup import (
     _td,
     edge_class,
     fmt3,
+    report_timestamp_html,
 )
 from log_setup import setup_logging
 from sortable import sortable_html
@@ -1153,7 +1154,7 @@ def _doc_open(title: str) -> list[str]:
 
 
 def _doc_close() -> list[str]:
-    return ["</main>", sortable_html(), "</body></html>"]
+    return [report_timestamp_html(), "</main>", sortable_html(), "</body></html>"]
 
 
 def _render_game_html(sidecar: dict, rows: list[dict], date_str: str) -> str:

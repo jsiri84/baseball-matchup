@@ -34,6 +34,7 @@ import sys
 import threading
 import warnings
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import numpy as np
@@ -127,6 +128,18 @@ PITCHER_XWOBA_SHRINK_K = 75.0     # pitcher PA; targets per-pitch xwOBA noise
                                   # (k=200 over-compressed proj_xwoba std from
                                   # 0.082 to 0.034; k=75 keeps the right-tail
                                   # fix without flattening the bulk)
+
+# Per-metric soft_log5 blending parameter (alpha=1 -> pure log5, alpha=0 ->
+# additive).  Damps the odds-ratio amplification when both batter and
+# pitcher rates are far from league average.  K% needs damping (top bin
+# missed by ~160 pts under pure log5); BB% / xwOBA / HBP% are near-calibrated
+# under pure log5 so they default to 1.0 and can be retuned later from the
+# accuracy dashboard if drift appears.
+K_PCT_ALPHA = 0.8     # 0.6 closed top-bin miss but crushed K% spread ratio
+                      # from 0.61 -> 0.37; 0.8 splits the difference
+BB_PCT_ALPHA = 1.0
+HBP_PCT_ALPHA = 1.0
+XWOBA_ALPHA = 1.0
 
 # Per-PA outcome distribution baseline (sums to 1.00; sourced from 2025 MLB).
 LG_OUTCOMES = {
@@ -404,6 +417,48 @@ def log5(b: float, p: float, lg: float) -> float:
 def additive(b: float, p: float, lg: float) -> float:
     """Additive combination for continuous stats: clipped to [0, 1]."""
     return float(np.clip(b + p - lg, 0.0, 1.0))
+
+
+def soft_log5(b: float, p: float, lg: float, alpha: float) -> float:
+    """log5 with damped tail amplification via log-odds ratio scaling.
+
+    Pure log5 is sigmoid(logit(b) + logit(p) - logit(lg)).  We re-center the
+    sum on logit(lg) and scale the centered deviation by alpha in [0, 1]:
+
+        result = sigmoid(logit(lg) + alpha * ((logit(b) - logit(lg))
+                                              + (logit(p) - logit(lg))))
+
+    alpha=1.0 is pure log5 (today's behavior).  alpha=0.0 returns lg
+    identically.  Intermediate values pull each input's log-odds ratio
+    toward league before combining, which damps the multiplicative
+    amplification at the extremes while preserving log5's [0, 1] shape near
+    the bulk.
+
+    Motivation: the accuracy dashboard shows pure log5 over-projects K% in
+    the top bin by ~160 pts (proj 37% vs actual 22%) -- a structural
+    property of multiplying two above-league odds ratios.  Per-metric
+    alphas are tuned empirically from the calibration table; xwOBA / BB%
+    currently sit near-calibrated under pure log5 so they default to 1.0
+    and only K% needs damping.  Note: damping below ~1.0 will compress the
+    projection spread (the same calibration / spread trade-off seen with
+    input shrinkage), so don't push alpha too low without watching the
+    spread diagnostic.
+    """
+    if alpha >= 1.0:
+        return log5(b, p, lg)
+    if alpha <= 0.0:
+        return float(min(max(lg, 0.0), 1.0))
+    if lg <= 0 or lg >= 1:
+        return (b + p) / 2
+    eps = 1e-6
+    bb = min(max(b, eps), 1 - eps)
+    pp = min(max(p, eps), 1 - eps)
+    lgc = min(max(lg, eps), 1 - eps)
+    logit_lg = math.log(lgc / (1 - lgc))
+    centered = (math.log(bb / (1 - bb)) - logit_lg
+                + math.log(pp / (1 - pp)) - logit_lg)
+    final = logit_lg + alpha * centered
+    return 1.0 / (1.0 + math.exp(-final))
 
 
 def shrunk_rate(rate: float, n: float, lg: float, k: float) -> float:
@@ -922,9 +977,9 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
     b_pa_overall = float(batter_overall.get("n_pa_w", 0.0) or 0.0)
     b_k_shrunk  = shrunk_rate(batter_overall["K_pct"],  b_pa_overall, LG_K_PCT,   K_PCT_SHRINK_K)
     b_bb_shrunk = shrunk_rate(batter_overall["BB_pct"], b_pa_overall, LG_BB_PCT,  BB_PCT_SHRINK_K)
-    proj_k   = log5(b_k_shrunk,  pitcher_overall["K_pct"],   LG_K_PCT)
-    proj_bb  = log5(b_bb_shrunk, pitcher_overall["BB_pct"],  LG_BB_PCT)
-    proj_hbp = log5(batter_overall["HBP_pct"], pitcher_overall["HBP_pct"], LG_HBP_PCT)
+    proj_k   = soft_log5(b_k_shrunk,  pitcher_overall["K_pct"],   LG_K_PCT, K_PCT_ALPHA)
+    proj_bb  = soft_log5(b_bb_shrunk, pitcher_overall["BB_pct"],  LG_BB_PCT, BB_PCT_ALPHA)
+    proj_hbp = soft_log5(batter_overall["HBP_pct"], pitcher_overall["HBP_pct"], LG_HBP_PCT, HBP_PCT_ALPHA)
 
     # Guard against an empty / all-zero marginal: previously the per-pitch loop
     # silently contributed nothing while K/BB/HBP kept firing, leaving the
@@ -3030,6 +3085,8 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 .cq-panel table tbody td { padding: 5px 8px; }
 .cq-panel .sweet td:first-child { background: #f1f5f9; font-weight: 600; }
 .cq-panel .sweet td:first-child::before { content: '\\2605  '; color: #2563eb; }
+.report-timestamp { color: var(--muted); font-size: 11px; text-align: right;
+                    margin: 16px 0 8px 0; font-variant-numeric: tabular-nums; }
 """
 
 
@@ -3040,6 +3097,23 @@ def _h(text) -> str:
     if isinstance(text, float) and math.isnan(text):
         return "&mdash;"
     return html.escape(str(text))
+
+
+_REPORT_TZ = ZoneInfo("America/New_York")
+
+
+def report_timestamp_html() -> str:
+    """Tiny footer line showing when this report was generated, in ET.
+
+    Used by every HTML generator (matchup, postgame, accuracy, roundup,
+    build_site) so reports carry a consistent "as of" stamp.  Reports run
+    out of CI / cloud machines often have unintuitive local time -- pinning
+    to America/New_York (DST-aware) gives a stable wall-clock that matches
+    MLB scheduling.
+    """
+    now = datetime.now(_REPORT_TZ)
+    return (f'<div class="report-timestamp">Generated '
+            f'{now.strftime("%Y-%m-%d %H:%M:%S %Z")}</div>')
 
 
 def edge_class(value, baseline, scale, batter_favors_high: bool = True) -> str:
@@ -3910,6 +3984,7 @@ def to_html(
     # ----- Notes / footer -----
     if not body_only:
         parts.append(_html_footer_notes(batter_meta, pitcher_meta, season))
+        parts.append(report_timestamp_html())
         parts.append("</main>")
         parts.append(sortable_html())
         parts.append("</body></html>")
@@ -4724,6 +4799,7 @@ def to_lineup_html(pitcher_meta: dict, season: int,
     )
     parts.append("</ul>")
     parts.append("</footer>")
+    parts.append(report_timestamp_html())
 
     parts.append("</main>")
     parts.append(sortable_html())

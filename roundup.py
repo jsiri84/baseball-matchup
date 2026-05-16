@@ -42,6 +42,7 @@ from matchup import (
     _td,
     edge_class,
     fmt3,
+    report_timestamp_html,
 )
 from log_setup import setup_logging
 from sortable import sortable_html
@@ -268,6 +269,7 @@ def _build_html(title: str, subtitle: str, rows: list[dict],
     )
     parts.append("</ul>")
     parts.append("</footer>")
+    parts.append(report_timestamp_html())
 
     parts.append("</main>")
     parts.append(sortable_html())

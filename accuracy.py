@@ -33,7 +33,7 @@ import pandas as pd
 
 from matchup import (
     LG_XWOBA, LG_XBA, LG_K_PCT, LG_BB_PCT, LG_HARD_HIT,
-    _HTML_CSS, _h, _td, edge_class, fmt3,
+    _HTML_CSS, _h, _td, edge_class, fmt3, report_timestamp_html,
 )
 from log_setup import setup_logging
 from sortable import sortable_html
@@ -728,6 +728,7 @@ def _render_html(hitter: pd.DataFrame, pa: pd.DataFrame,
     parts.append(_render_spearman(spearman_blocks))
 
     parts.append("</section>")
+    parts.append(report_timestamp_html())
     parts.append("</main>")
     parts.append(sortable_html())
     parts.append("</body></html>")
