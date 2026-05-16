@@ -55,6 +55,7 @@ from batter import (
 )
 from pitcher import pull as _pull_pitcher_raw
 from log_setup import setup_logging
+from sortable import sortable_html
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 pd.set_option("display.width", 160)
@@ -3811,7 +3812,9 @@ def to_html(
     # ----- Notes / footer -----
     if not body_only:
         parts.append(_html_footer_notes(batter_meta, pitcher_meta, season))
-        parts.append("</main></body></html>")
+        parts.append("</main>")
+        parts.append(sortable_html())
+        parts.append("</body></html>")
     return "\n".join(parts)
 
 
@@ -4624,7 +4627,9 @@ def to_lineup_html(pitcher_meta: dict, season: int,
     parts.append("</ul>")
     parts.append("</footer>")
 
-    parts.append("</main></body></html>")
+    parts.append("</main>")
+    parts.append(sortable_html())
+    parts.append("</body></html>")
     return "\n".join(parts)
 
 

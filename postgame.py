@@ -46,6 +46,7 @@ from matchup import (
     fmt3,
 )
 from log_setup import setup_logging
+from sortable import sortable_html
 
 pyb_cache.enable()
 
@@ -1115,7 +1116,7 @@ def _doc_open(title: str) -> list[str]:
 
 
 def _doc_close() -> list[str]:
-    return ["</main></body></html>"]
+    return ["</main>", sortable_html(), "</body></html>"]
 
 
 def _render_game_html(sidecar: dict, rows: list[dict], date_str: str) -> str:

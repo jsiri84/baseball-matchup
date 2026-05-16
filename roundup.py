@@ -44,6 +44,7 @@ from matchup import (
     fmt3,
 )
 from log_setup import setup_logging
+from sortable import sortable_html
 
 ROOT = Path(__file__).parent
 
@@ -250,6 +251,7 @@ def _build_html(title: str, subtitle: str, rows: list[dict],
     parts.append("</footer>")
 
     parts.append("</main>")
+    parts.append(sortable_html())
     parts.append("</body></html>")
     return "\n".join(parts)
 

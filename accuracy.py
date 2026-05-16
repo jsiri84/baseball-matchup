@@ -36,6 +36,7 @@ from matchup import (
     _HTML_CSS, _h, _td, edge_class, fmt3,
 )
 from log_setup import setup_logging
+from sortable import sortable_html
 
 ROOT = Path(__file__).parent
 ACCURACY_DIR = ROOT / "data" / "accuracy"
@@ -492,7 +493,9 @@ def _render_html(hitter: pd.DataFrame, pa: pd.DataFrame,
     parts.append(_render_spearman(spearman_blocks))
 
     parts.append("</section>")
-    parts.append("</main></body></html>")
+    parts.append("</main>")
+    parts.append(sortable_html())
+    parts.append("</body></html>")
     return "\n".join(parts)
 
 

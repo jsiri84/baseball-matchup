@@ -30,6 +30,8 @@ import sys
 from pathlib import Path
 from urllib.parse import quote
 
+from sortable import sortable_html
+
 ROOT = Path(__file__).parent
 REPORTS_DIR = ROOT / "reports"
 
@@ -339,6 +341,7 @@ def _render_day_index(date_str: str, date_dir: Path) -> str:
     parts.append("</footer>")
 
     parts.append("</main>")
+    parts.append(sortable_html())
     parts.append("</body></html>")
     return "\n".join(parts)
 
@@ -429,6 +432,7 @@ def _render_archive(dates: list[str]) -> str:
                  'baseball-matchup</a> &middot; <code>build_site.py</code>')
     parts.append("</footer>")
     parts.append("</main>")
+    parts.append(sortable_html())
     parts.append("</body></html>")
     return "\n".join(parts)
 
