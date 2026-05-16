@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Post-game vs Edward Cabrera — CWS (2026-05-14)</title>
+<style>
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --ink: #1f2937;
+  --muted: #64748b;
+  --line: #e5e7eb;
+  --accent: #2563eb;
+  --bat-strong-bg: #d1fae5;
+  --bat-strong-fg: #065f46;
+  --bat-mild-bg: #ecfdf5;
+  --bat-mild-fg: #047857;
+  --pit-strong-bg: #fee2e2;
+  --pit-strong-fg: #991b1b;
+  --pit-mild-bg: #fef2f2;
+  --pit-mild-fg: #b91c1c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                          Helvetica, Arial, sans-serif;
+             font-size: 14px; line-height: 1.45; }
+.container { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+.page-head { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+.page-head h1 { margin: 0 0 6px 0; font-size: 26px; font-weight: 700; }
+.page-head .meta { color: var(--muted); font-size: 13px; }
+.badge { display: inline-block; padding: 2px 8px; margin-left: 8px;
+         font-size: 11px; font-weight: 600; border-radius: 999px;
+         background: #e0e7ff; color: #1e3a8a; vertical-align: middle; letter-spacing: 0.5px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.card h2 { margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: var(--ink);
+           letter-spacing: 0.2px; text-transform: uppercase; }
+.narrative { font-size: 15px; line-height: 1.55; padding: 12px 14px;
+             background: #f1f5f9; border-left: 4px solid var(--accent);
+             border-radius: 4px; margin: 0 0 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+table thead th { text-align: right; font-weight: 600; padding: 8px 10px;
+                 color: var(--muted); border-bottom: 1px solid var(--line);
+                 background: #fafbfc; }
+table thead th:first-child, table tbody td:first-child { text-align: left; }
+table tbody td { padding: 7px 10px; text-align: right; border-bottom: 1px solid #f1f5f9;
+                 font-variant-numeric: tabular-nums; }
+table tbody tr:last-child td { border-bottom: none; }
+.bat-edge-strong { background: var(--bat-strong-bg); color: var(--bat-strong-fg); font-weight: 700; }
+.bat-edge-mild { background: var(--bat-mild-bg); color: var(--bat-mild-fg); }
+.pit-edge-strong { background: var(--pit-strong-bg); color: var(--pit-strong-fg); font-weight: 700; }
+.pit-edge-mild { background: var(--pit-mild-bg); color: var(--pit-mild-fg); }
+.note { color: var(--muted); font-size: 12px; margin: 6px 0 0 0; }
+.note-list { margin: 6px 0 0 0; padding-left: 20px; color: #334155; }
+.note-list li { margin-bottom: 4px; font-size: 13px; }
+.subtitle { font-size: 13px; color: var(--muted); margin: 0 0 10px 0; }
+.divider-row td { background: #f8fafc; color: var(--muted); font-style: italic; }
+
+/* ----- Multi-PA outlook ----- */
+table.multi-pa thead tr:first-child th.pa-group {
+  text-align: center; text-transform: uppercase; font-size: 11px;
+  letter-spacing: 0.4px; color: var(--ink); background: #eef2f7;
+  border-bottom: 1px solid var(--line);
+}
+table.multi-pa thead tr:first-child th.pa-group + th.pa-group {
+  border-left: 1px solid var(--line);
+}
+table.multi-pa thead tr:nth-child(2) th { font-size: 11px; }
+table.multi-pa th.outcome-col { text-align: left; vertical-align: bottom; }
+table.multi-pa tbody td { white-space: nowrap; }
+table.multi-pa tbody td.odds { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody td.avg { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody tr td:nth-child(5),
+table.multi-pa tbody tr td:nth-child(8) { border-left: 1px solid #f1f5f9; }
+table.multi-pa thead tr:nth-child(2) th:nth-child(4),
+table.multi-pa thead tr:nth-child(2) th:nth-child(7) { border-left: 1px solid var(--line); }
+.kv { display: flex; flex-wrap: wrap; gap: 14px 24px; padding: 4px 0 8px 0; font-size: 13px; }
+.kv > div { color: var(--muted); }
+.kv > div b { color: var(--ink); font-weight: 600; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px;
+        background: #f1f5f9; color: #334155; font-size: 11px; }
+footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+
+/* ----- Lineup view ----- */
+.lineup-hero { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: baseline;
+               padding: 14px 18px; background: #eff6ff; border-left: 4px solid var(--accent);
+               border-radius: 6px; margin-bottom: 16px; }
+.lineup-hero .stat { font-size: 13px; color: var(--muted); }
+.lineup-hero .stat b { display: block; font-size: 18px; color: var(--ink);
+                       font-variant-numeric: tabular-nums; font-weight: 700; margin-top: 2px; }
+table.pitcher-bf tbody td { font-variant-numeric: tabular-nums; }
+table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
+                                        background: #fff7ed; }
+.lineup-grid td.spot { text-align: center; font-weight: 700; color: var(--muted); width: 32px; }
+.lineup-grid td.name { font-weight: 600; text-align: left; }
+.lineup-grid td.handpill { text-align: center; }
+.lineup-grid td.handpill .pill { font-weight: 600; }
+.lineup-grid td.pitch-cell { text-align: left; font-size: 12px; color: var(--muted); }
+.lineup-grid td.verdict { text-align: center; font-weight: 600; border-radius: 4px; }
+.lineup-grid .neutral { background: #f1f5f9; color: #334155; }
+.batter-block { margin-top: 14px; border: 1px solid var(--line); border-radius: 10px;
+                background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.batter-block > summary { list-style: none; cursor: pointer; padding: 14px 20px;
+                          font-size: 15px; display: flex; align-items: center;
+                          gap: 10px 16px; flex-wrap: wrap; }
+.batter-block > summary::-webkit-details-marker { display: none; }
+.batter-block > summary::before { content: '\25B8'; font-size: 11px; color: var(--muted);
+                                  transition: transform 0.15s ease; display: inline-block; }
+.batter-block[open] > summary::before { transform: rotate(90deg); }
+.batter-block > summary .spot { font-weight: 700; color: var(--muted); width: 22px; text-align: right; }
+.batter-block > summary .name { font-weight: 700; color: var(--ink); }
+.batter-block > summary .summary-stat { color: var(--muted); font-size: 12px;
+                                        font-variant-numeric: tabular-nums; }
+.batter-block > summary .summary-stat b { color: var(--ink); font-weight: 700; }
+.batter-block > summary .verdict-pill { margin-left: auto; padding: 3px 10px; border-radius: 999px;
+                                        font-size: 11px; font-weight: 700; letter-spacing: 0.4px; }
+.batter-block .batter-body { padding: 0 20px 18px 20px; border-top: 1px solid var(--line); }
+.batter-block .batter-body section.card { border: none; padding: 14px 0; margin-bottom: 0;
+                                          box-shadow: none; border-bottom: 1px dashed var(--line); }
+.batter-block .batter-body section.card:last-child { border-bottom: none; }
+.batter-block .batter-body .page-head { display: none; }
+
+/* ----- Contact-quality projection ----- */
+.cq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+           gap: 14px; margin-top: 4px; }
+.cq-panel h3 { margin: 0 0 6px 0; font-size: 12px; font-weight: 700; color: var(--muted);
+               text-transform: uppercase; letter-spacing: 0.4px; }
+.cq-panel table { font-size: 12px; }
+.cq-panel table thead th { padding: 5px 8px; font-size: 11px; }
+.cq-panel table tbody td { padding: 5px 8px; }
+.cq-panel .sweet td:first-child { background: #f1f5f9; font-weight: 600; }
+.cq-panel .sweet td:first-child::before { content: '\2605  '; color: #2563eb; }
+
+.verdict-neutral { color: var(--muted); }
+.line { color: var(--muted); font-variant-numeric: tabular-nums; }
+.delta-pos { color: #1c8c4e; font-weight: 600; }
+.delta-neg { color: #b34141; font-weight: 600; }
+.delta-zero { color: var(--muted); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.verdict-pills { display: flex; flex-direction: column; gap: 2px; align-items: stretch; }
+.verdict-pills .pill { font-size: 0.78em; padding: 1px 6px; text-align: center;
+                      border-radius: 4px; white-space: nowrap; }
+td.pass-fail { text-align: center; font-size: 1.3em; font-weight: 700; }
+td.pass-fail.pf-pass { color: #1c8c4e; }
+td.pass-fail.pf-fail { color: #b34141; }
+td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; }
+.pa-grid-wrap { margin-top: 18px; }
+.pa-grid-wrap h3 { margin: 6px 0 4px 0; font-size: 1.0em; }
+.pa-grid-wrap .summary-line { font-size: 0.9em; color: var(--muted); margin-bottom: 6px;
+                              font-variant-numeric: tabular-nums; }
+.cq-table { border-collapse: collapse; font-size: 0.88em; margin-bottom: 8px;
+            font-variant-numeric: tabular-nums; }
+.cq-table th, .cq-table td { padding: 2px 8px; text-align: right; }
+.cq-table th { font-weight: 500; color: var(--muted); }
+.cq-table td.label { text-align: left; color: var(--muted); }
+.pa-grid { border-collapse: collapse; font-size: 0.88em; font-variant-numeric: tabular-nums; }
+.pa-grid th, .pa-grid td { padding: 2px 8px; }
+.pa-grid th { font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border, #ccc); }
+.pa-grid td { text-align: right; }
+.pa-grid td.label { text-align: left; }
+.pa-grid .hh   { background: rgba(179,65,65,0.18); font-weight: 600; }
+.pa-grid .hh-strong { background: rgba(179,65,65,0.32); font-weight: 700; }
+.pa-grid .ss   { background: rgba(28,140,78,0.14); }
+.pa-grid .xba-hot   { background: rgba(28,140,78,0.20); font-weight: 600; }
+.pa-grid .xba-cold  { background: rgba(179,65,65,0.18); }
+.pa-grid .xwoba-hot { background: rgba(28,140,78,0.22); font-weight: 600; }
+.pa-grid .xwoba-cold{ background: rgba(179,65,65,0.18); }
+</style>
+</head><body>
+<main class="container">
+<header class="page-head">
+<h1>Post-game vs Edward Cabrera — CWS (2026-05-14)</h1>
+<div class="meta">Three-axis projection vs actual per hitter: <b>contact</b> (on-contact xwOBA, hard-hit%), <b>discipline</b> (K%, BB%), and <b>outcome</b> (rolled-up xwOBA). Contact-axis isolates projection skill from BABIP noise — a 0-for-4 with three 105 mph at-em-balls can read "Matched contact / Matched approach / Under outcome" instead of looking like a model miss.</div>
+</header>
+<section class="card">
+<h2>Hitter results</h2>
+<table class="lineup-grid">
+<thead><tr><th>#</th><th style="text-align:left">Batter</th><th>Hand</th><th>Proj xwOBA</th><th>Actual xwOBA</th><th>Actual xBA</th><th>&Delta; xwOBA pts</th><th>On-contact xwOBA proj → act</th><th>&Delta; contact pts</th><th>Hard contact (xBA)</th><th>Weak / K (xBA)</th><th style="text-align:left">Line</th><th title="PASS: headline xwOBA within ±50 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±50 pts with ≥2 BIP">Proj</th><th>Verdict (contact / discipline / outcome)</th></tr></thead>
+<tbody>
+<tr><td class="spot">1</td><td class="name">Derek Hill</td><td class="handpill"><span class="pill">RHB</span></td><td class="pit-edge-strong">0.254</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">2</td><td class="name">Munetaka Murakami</td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-strong">0.415</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">3</td><td class="name">Miguel Vargas</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-mild">0.335</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">4</td><td class="name">Colson Montgomery</td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-strong">0.364</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">5</td><td class="name">Chase Meidroth</td><td class="handpill"><span class="pill">RHB</span></td><td class="pit-edge-strong">0.235</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">6</td><td class="name">Andrew Benintendi</td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-strong">0.361</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">7</td><td class="name">Jarred Kelenic</td><td class="handpill"><span class="pill">LHB</span></td><td class="bat-edge-strong">0.379</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">8</td><td class="name">Tristan Peters</td><td class="handpill"><span class="pill">LHB</span></td><td>0.321</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+<tr><td class="spot">9</td><td class="name">Drew Romo</td><td class="handpill"><span class="pill">LHB</span></td><td>0.327</td><td>—</td><td>—</td><td class="num delta-zero">—</td><td class="num">— → —</td><td class="num delta-zero">—</td><td class="num">—</td><td class="num">—</td><td class="line">DNP</td><td class="pass-fail pf-na" title="DNP — no plate appearances">—</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">—</span><span class="pill verdict-neutral" title="Discipline">—</span><span class="pill verdict-neutral" title="Outcome">—</span></div></td></tr>
+</tbody></table>
+<p class="note">&Delta; xwOBA pts = (actual − proj) × 1000. &Delta; contact pts = (actual on-contact xwOBA − proj on-contact xwOBA) × 1000. On-contact xwOBA strips BABIP noise from results.</p>
+</section>
+<section class="card">
+<h2>Per-PA contact quality (Savant view)</h2>
+<div class="pa-grid-wrap" id="batter-1-pa"><h3>#1 Derek Hill <span class="pill">RHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-2-pa"><h3>#2 Munetaka Murakami <span class="pill">LHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-3-pa"><h3>#3 Miguel Vargas <span class="pill">RHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-4-pa"><h3>#4 Colson Montgomery <span class="pill">LHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-5-pa"><h3>#5 Chase Meidroth <span class="pill">RHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-6-pa"><h3>#6 Andrew Benintendi <span class="pill">LHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-7-pa"><h3>#7 Jarred Kelenic <span class="pill">LHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-8-pa"><h3>#8 Tristan Peters <span class="pill">LHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+<div class="pa-grid-wrap" id="batter-9-pa"><h3>#9 Drew Romo <span class="pill">LHB</span> · DNP</h3><div class="summary-line">No Statcast PA rows.</div></div>
+</section>
+</main></body></html>

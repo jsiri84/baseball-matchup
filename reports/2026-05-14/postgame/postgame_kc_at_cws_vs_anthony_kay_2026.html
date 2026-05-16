@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Post-game vs Anthony Kay — KC (2026-05-14)</title>
+<style>
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --ink: #1f2937;
+  --muted: #64748b;
+  --line: #e5e7eb;
+  --accent: #2563eb;
+  --bat-strong-bg: #d1fae5;
+  --bat-strong-fg: #065f46;
+  --bat-mild-bg: #ecfdf5;
+  --bat-mild-fg: #047857;
+  --pit-strong-bg: #fee2e2;
+  --pit-strong-fg: #991b1b;
+  --pit-mild-bg: #fef2f2;
+  --pit-mild-fg: #b91c1c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                          Helvetica, Arial, sans-serif;
+             font-size: 14px; line-height: 1.45; }
+.container { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+.page-head { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+.page-head h1 { margin: 0 0 6px 0; font-size: 26px; font-weight: 700; }
+.page-head .meta { color: var(--muted); font-size: 13px; }
+.badge { display: inline-block; padding: 2px 8px; margin-left: 8px;
+         font-size: 11px; font-weight: 600; border-radius: 999px;
+         background: #e0e7ff; color: #1e3a8a; vertical-align: middle; letter-spacing: 0.5px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.card h2 { margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: var(--ink);
+           letter-spacing: 0.2px; text-transform: uppercase; }
+.narrative { font-size: 15px; line-height: 1.55; padding: 12px 14px;
+             background: #f1f5f9; border-left: 4px solid var(--accent);
+             border-radius: 4px; margin: 0 0 14px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+table thead th { text-align: right; font-weight: 600; padding: 8px 10px;
+                 color: var(--muted); border-bottom: 1px solid var(--line);
+                 background: #fafbfc; }
+table thead th:first-child, table tbody td:first-child { text-align: left; }
+table tbody td { padding: 7px 10px; text-align: right; border-bottom: 1px solid #f1f5f9;
+                 font-variant-numeric: tabular-nums; }
+table tbody tr:last-child td { border-bottom: none; }
+.bat-edge-strong { background: var(--bat-strong-bg); color: var(--bat-strong-fg); font-weight: 700; }
+.bat-edge-mild { background: var(--bat-mild-bg); color: var(--bat-mild-fg); }
+.pit-edge-strong { background: var(--pit-strong-bg); color: var(--pit-strong-fg); font-weight: 700; }
+.pit-edge-mild { background: var(--pit-mild-bg); color: var(--pit-mild-fg); }
+.note { color: var(--muted); font-size: 12px; margin: 6px 0 0 0; }
+.note-list { margin: 6px 0 0 0; padding-left: 20px; color: #334155; }
+.note-list li { margin-bottom: 4px; font-size: 13px; }
+.subtitle { font-size: 13px; color: var(--muted); margin: 0 0 10px 0; }
+.divider-row td { background: #f8fafc; color: var(--muted); font-style: italic; }
+
+/* ----- Multi-PA outlook ----- */
+table.multi-pa thead tr:first-child th.pa-group {
+  text-align: center; text-transform: uppercase; font-size: 11px;
+  letter-spacing: 0.4px; color: var(--ink); background: #eef2f7;
+  border-bottom: 1px solid var(--line);
+}
+table.multi-pa thead tr:first-child th.pa-group + th.pa-group {
+  border-left: 1px solid var(--line);
+}
+table.multi-pa thead tr:nth-child(2) th { font-size: 11px; }
+table.multi-pa th.outcome-col { text-align: left; vertical-align: bottom; }
+table.multi-pa tbody td { white-space: nowrap; }
+table.multi-pa tbody td.odds { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody td.avg { color: var(--muted); font-size: 12px; }
+table.multi-pa tbody tr td:nth-child(5),
+table.multi-pa tbody tr td:nth-child(8) { border-left: 1px solid #f1f5f9; }
+table.multi-pa thead tr:nth-child(2) th:nth-child(4),
+table.multi-pa thead tr:nth-child(2) th:nth-child(7) { border-left: 1px solid var(--line); }
+.kv { display: flex; flex-wrap: wrap; gap: 14px 24px; padding: 4px 0 8px 0; font-size: 13px; }
+.kv > div { color: var(--muted); }
+.kv > div b { color: var(--ink); font-weight: 600; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px;
+        background: #f1f5f9; color: #334155; font-size: 11px; }
+footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+
+/* ----- Lineup view ----- */
+.lineup-hero { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: baseline;
+               padding: 14px 18px; background: #eff6ff; border-left: 4px solid var(--accent);
+               border-radius: 6px; margin-bottom: 16px; }
+.lineup-hero .stat { font-size: 13px; color: var(--muted); }
+.lineup-hero .stat b { display: block; font-size: 18px; color: var(--ink);
+                       font-variant-numeric: tabular-nums; font-weight: 700; margin-top: 2px; }
+table.pitcher-bf tbody td { font-variant-numeric: tabular-nums; }
+table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
+                                        background: #fff7ed; }
+.lineup-grid td.spot { text-align: center; font-weight: 700; color: var(--muted); width: 32px; }
+.lineup-grid td.name { font-weight: 600; text-align: left; }
+.lineup-grid td.handpill { text-align: center; }
+.lineup-grid td.handpill .pill { font-weight: 600; }
+.lineup-grid td.pitch-cell { text-align: left; font-size: 12px; color: var(--muted); }
+.lineup-grid td.verdict { text-align: center; font-weight: 600; border-radius: 4px; }
+.lineup-grid .neutral { background: #f1f5f9; color: #334155; }
+.batter-block { margin-top: 14px; border: 1px solid var(--line); border-radius: 10px;
+                background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.batter-block > summary { list-style: none; cursor: pointer; padding: 14px 20px;
+                          font-size: 15px; display: flex; align-items: center;
+                          gap: 10px 16px; flex-wrap: wrap; }
+.batter-block > summary::-webkit-details-marker { display: none; }
+.batter-block > summary::before { content: '\25B8'; font-size: 11px; color: var(--muted);
+                                  transition: transform 0.15s ease; display: inline-block; }
+.batter-block[open] > summary::before { transform: rotate(90deg); }
+.batter-block > summary .spot { font-weight: 700; color: var(--muted); width: 22px; text-align: right; }
+.batter-block > summary .name { font-weight: 700; color: var(--ink); }
+.batter-block > summary .summary-stat { color: var(--muted); font-size: 12px;
+                                        font-variant-numeric: tabular-nums; }
+.batter-block > summary .summary-stat b { color: var(--ink); font-weight: 700; }
+.batter-block > summary .verdict-pill { margin-left: auto; padding: 3px 10px; border-radius: 999px;
+                                        font-size: 11px; font-weight: 700; letter-spacing: 0.4px; }
+.batter-block .batter-body { padding: 0 20px 18px 20px; border-top: 1px solid var(--line); }
+.batter-block .batter-body section.card { border: none; padding: 14px 0; margin-bottom: 0;
+                                          box-shadow: none; border-bottom: 1px dashed var(--line); }
+.batter-block .batter-body section.card:last-child { border-bottom: none; }
+.batter-block .batter-body .page-head { display: none; }
+
+/* ----- Contact-quality projection ----- */
+.cq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+           gap: 14px; margin-top: 4px; }
+.cq-panel h3 { margin: 0 0 6px 0; font-size: 12px; font-weight: 700; color: var(--muted);
+               text-transform: uppercase; letter-spacing: 0.4px; }
+.cq-panel table { font-size: 12px; }
+.cq-panel table thead th { padding: 5px 8px; font-size: 11px; }
+.cq-panel table tbody td { padding: 5px 8px; }
+.cq-panel .sweet td:first-child { background: #f1f5f9; font-weight: 600; }
+.cq-panel .sweet td:first-child::before { content: '\2605  '; color: #2563eb; }
+
+.verdict-neutral { color: var(--muted); }
+.line { color: var(--muted); font-variant-numeric: tabular-nums; }
+.delta-pos { color: #1c8c4e; font-weight: 600; }
+.delta-neg { color: #b34141; font-weight: 600; }
+.delta-zero { color: var(--muted); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.verdict-pills { display: flex; flex-direction: column; gap: 2px; align-items: stretch; }
+.verdict-pills .pill { font-size: 0.78em; padding: 1px 6px; text-align: center;
+                      border-radius: 4px; white-space: nowrap; }
+td.pass-fail { text-align: center; font-size: 1.3em; font-weight: 700; }
+td.pass-fail.pf-pass { color: #1c8c4e; }
+td.pass-fail.pf-fail { color: #b34141; }
+td.pass-fail.pf-na   { color: var(--muted); font-size: 1.0em; font-weight: 400; }
+.pa-grid-wrap { margin-top: 18px; }
+.pa-grid-wrap h3 { margin: 6px 0 4px 0; font-size: 1.0em; }
+.pa-grid-wrap .summary-line { font-size: 0.9em; color: var(--muted); margin-bottom: 6px;
+                              font-variant-numeric: tabular-nums; }
+.cq-table { border-collapse: collapse; font-size: 0.88em; margin-bottom: 8px;
+            font-variant-numeric: tabular-nums; }
+.cq-table th, .cq-table td { padding: 2px 8px; text-align: right; }
+.cq-table th { font-weight: 500; color: var(--muted); }
+.cq-table td.label { text-align: left; color: var(--muted); }
+.pa-grid { border-collapse: collapse; font-size: 0.88em; font-variant-numeric: tabular-nums; }
+.pa-grid th, .pa-grid td { padding: 2px 8px; }
+.pa-grid th { font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border, #ccc); }
+.pa-grid td { text-align: right; }
+.pa-grid td.label { text-align: left; }
+.pa-grid .hh   { background: rgba(179,65,65,0.18); font-weight: 600; }
+.pa-grid .hh-strong { background: rgba(179,65,65,0.32); font-weight: 700; }
+.pa-grid .ss   { background: rgba(28,140,78,0.14); }
+.pa-grid .xba-hot   { background: rgba(28,140,78,0.20); font-weight: 600; }
+.pa-grid .xba-cold  { background: rgba(179,65,65,0.18); }
+.pa-grid .xwoba-hot { background: rgba(28,140,78,0.22); font-weight: 600; }
+.pa-grid .xwoba-cold{ background: rgba(179,65,65,0.18); }
+</style>
+</head><body>
+<main class="container">
+<header class="page-head">
+<h1>Post-game vs Anthony Kay — KC (2026-05-14)</h1>
+<div class="meta">Three-axis projection vs actual per hitter: <b>contact</b> (on-contact xwOBA, hard-hit%), <b>discipline</b> (K%, BB%), and <b>outcome</b> (rolled-up xwOBA). Contact-axis isolates projection skill from BABIP noise — a 0-for-4 with three 105 mph at-em-balls can read "Matched contact / Matched approach / Under outcome" instead of looking like a model miss.</div>
+</header>
+<section class="card">
+<h2>Hitter results</h2>
+<table class="lineup-grid">
+<thead><tr><th>#</th><th style="text-align:left">Batter</th><th>Hand</th><th>Proj xwOBA</th><th>Actual xwOBA</th><th>Actual xBA</th><th>&Delta; xwOBA pts</th><th>On-contact xwOBA proj → act</th><th>&Delta; contact pts</th><th>Hard contact (xBA)</th><th>Weak / K (xBA)</th><th style="text-align:left">Line</th><th title="PASS: headline xwOBA within ±50 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±50 pts with ≥2 BIP">Proj</th><th>Verdict (contact / discipline / outcome)</th></tr></thead>
+<tbody>
+<tr><td class="spot">1</td><td class="name">Maikel Garcia</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.405</td><td class="pit-edge-strong">0.274</td><td class="bat-edge-strong">0.289</td><td class="num delta-neg">-130</td><td class="num">0.413 → 0.274</td><td class="num delta-neg">-138</td><td class="num">3: .165 / .302 / .540</td><td class="num">2: .423 / .017</td><td class="line">1-for-5 · 1 RBI, 1 R</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >50 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">2</td><td class="name">Bobby Witt Jr.</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.567</td><td class="bat-edge-strong">0.358</td><td class="pit-edge-mild">0.210</td><td class="num delta-neg">-209</td><td class="num">0.554 → 0.368</td><td class="num delta-neg">-186</td><td class="num">1: .154</td><td class="num">1: .477</td><td class="line">1-for-3 · 1 BB</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >50 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">3</td><td class="name">Jac Caglianone</td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.216</td><td class="pit-edge-strong">0.013</td><td class="pit-edge-strong">0.009</td><td class="num delta-neg">-203</td><td class="num">0.172 → 0.013</td><td class="num delta-neg">-159</td><td class="num">1: .009</td><td class="num">—</td><td class="line">0-for-1</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±50 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±50 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill bat-edge-strong" title="Discipline">More disciplined (-)</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">4</td><td class="name">Salvador Perez</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.433</td><td class="bat-edge-strong">0.354</td><td class="bat-edge-strong">0.373</td><td class="num delta-neg">-79</td><td class="num">0.408 → 0.471</td><td class="num delta-pos">+63</td><td class="num">1: .729</td><td class="num">2: .056 / .709 · 1K</td><td class="line">2-for-4 · 1 K</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >50 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill bat-edge-mild" title="Contact">Beat contact</span><span class="pill pit-edge-strong" title="Discipline">More aggressive (+)</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">5</td><td class="name">Nick Loftin</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.407</td><td class="bat-edge-strong">0.430</td><td class="pit-edge-strong">0.207</td><td class="num delta-pos">+24</td><td class="num">0.404 → 0.333</td><td class="num delta-neg">-71</td><td class="num">1: .434</td><td class="num">2: .098 / .088</td><td class="line">0-for-3</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±50 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±50 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-mild" title="Contact">Under contact</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill bat-edge-mild" title="Outcome">Beat outcome</span></div></td></tr>
+<tr><td class="spot">6</td><td class="name">Vinnie Pasquantino</td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.137</td><td class="pit-edge-strong">0.093</td><td class="pit-edge-strong">0.053</td><td class="num delta-neg">-43</td><td class="num">0.136 → 0.124</td><td class="num delta-neg">-12</td><td class="num">1: .200</td><td class="num">2: .003 / .009 · 1K</td><td class="line">0-for-4 · 1 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±50 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±50 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill verdict-neutral" title="Contact">Matched contact</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill pit-edge-mild" title="Outcome">Under outcome</span></div></td></tr>
+<tr><td class="spot">7</td><td class="name">Starling Marte</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.422</td><td class="bat-edge-strong">0.416</td><td class="bat-edge-strong">0.341</td><td class="num delta-neg">-6</td><td class="num">0.416 → 0.484</td><td class="num delta-pos">+69</td><td class="num">—</td><td class="num">2: .103 / .920 · 1K</td><td class="line">1-for-3 · 1 BB, 1 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±50 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±50 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill bat-edge-mild" title="Contact">Beat contact</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill verdict-neutral" title="Outcome">Matched outcome</span></div></td></tr>
+<tr><td class="spot">8</td><td class="name">Isaac Collins</td><td class="handpill"><span class="pill">RHB</span></td><td class="bat-edge-strong">0.394</td><td class="pit-edge-strong">0.214</td><td class="pit-edge-strong">0.050</td><td class="num delta-neg">-180</td><td class="num">0.410 → 0.045</td><td class="num delta-neg">-366</td><td class="num">1: .143</td><td class="num">2: .006 / .001</td><td class="line">0-for-3</td><td class="pass-fail pf-fail" title="FAIL: headline xwOBA off by >50 pts AND different xwOBA tier AND contact axis didn't save it">&times;</td><td class="verdict"><div class="verdict-pills"><span class="pill pit-edge-strong" title="Contact">Under contact (-)</span><span class="pill verdict-neutral" title="Discipline">Matched approach</span><span class="pill pit-edge-strong" title="Outcome">Under outcome (-)</span></div></td></tr>
+<tr><td class="spot">9</td><td class="name">Kyle Isbel</td><td class="handpill"><span class="pill">LHB</span></td><td class="pit-edge-strong">0.115</td><td class="pit-edge-strong">0.199</td><td class="pit-edge-mild">0.212</td><td class="num delta-pos">+83</td><td class="num">0.120 → 0.397</td><td class="num delta-pos">+277</td><td class="num">1: .124</td><td class="num">1: .723 · 2K</td><td class="line">1-for-4 · 1 R, 2 K</td><td class="pass-fail pf-pass" title="PASS: headline xwOBA within ±50 pts OR proj/actual in same xwOBA tier (Good≥.380, Avg .270-.380, Bad<.270) OR on-contact xwOBA within ±50 pts with ≥2 BIP">&check;</td><td class="verdict"><div class="verdict-pills"><span class="pill bat-edge-strong" title="Contact">Beat contact (+)</span><span class="pill pit-edge-mild" title="Discipline">More aggressive</span><span class="pill bat-edge-strong" title="Outcome">Beat outcome (+)</span></div></td></tr>
+</tbody></table>
+<p class="note">&Delta; xwOBA pts = (actual − proj) × 1000. &Delta; contact pts = (actual on-contact xwOBA − proj on-contact xwOBA) × 1000. On-contact xwOBA strips BABIP noise from results.</p>
+</section>
+<section class="card">
+<h2>Per-PA contact quality (Savant view)</h2>
+<div class="pa-grid-wrap" id="batter-1-pa"><h3>#1 Maikel Garcia <span class="pill">RHB</span> · 1-for-5 · 1 RBI, 1 R</h3>
+<div class="summary-line">BIP 5 · log-loss 0.917 vs lg 1.018 (skill +9.9% over 5 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.413</td><td>0.274</td></tr>
+<tr><td class="label">Hard-hit %</td><td>43.0%</td><td>60.0%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>0.0%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>96.8</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>106.8</td></tr>
+<tr><td class="label">Whiff %</td><td>9.4%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>6.7%</td><td>0.0%</td></tr>
+<tr><td class="label">BB %</td><td>14.6%</td><td>0.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>1</td><td class="label">Single</td><td class="hh-strong">100.0</td><td class="">3</td><td>90</td><td>70.4</td><td>97.3</td><td class="xba-hot">0.540</td><td class="xwoba-hot">0.501</td></tr>
+<tr><td>2</td><td class="label">Out</td><td class="">83.5</td><td class="">56</td><td>204</td><td>74.2</td><td>86.4</td><td class="xba-cold">0.017</td><td class="xwoba-cold">0.015</td></tr>
+<tr><td>5</td><td class="label">Out</td><td class="hh-strong">104.2</td><td class="">-9</td><td>18</td><td>71.8</td><td>94.7</td><td class="">0.302</td><td class="">0.298</td></tr>
+<tr><td>7</td><td class="label">Out</td><td class="hh-strong">106.8</td><td class="">-20</td><td>10</td><td>74.8</td><td>94.9</td><td class="">0.165</td><td class="xwoba-cold">0.149</td></tr>
+<tr><td>9</td><td class="label">Out</td><td class="">89.4</td><td class="">4</td><td>85</td><td>69.6</td><td>95.2</td><td class="">0.423</td><td class="">0.409</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-2-pa"><h3>#2 Bobby Witt Jr. <span class="pill">RHB</span> · 1-for-3 · 1 BB</h3>
+<div class="summary-line">BIP 2 · log-loss 1.437 vs lg 1.498 (skill +4.1% over 4 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.554</td><td>0.368</td></tr>
+<tr><td class="label">Hard-hit %</td><td>55.2%</td><td>50.0%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>50.0%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>91.3</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>96.2</td></tr>
+<tr><td class="label">Whiff %</td><td>12.4%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>8.1%</td><td>0.0%</td></tr>
+<tr><td class="label">BB %</td><td>8.0%</td><td>25.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>1</td><td class="label">Single</td><td class="">86.5</td><td class="ss">8</td><td>129</td><td>75.0</td><td>85.6</td><td class="">0.477</td><td class="">0.451</td></tr>
+<tr><td>3</td><td class="label">Out</td><td class=""></td><td class=""></td><td></td><td>66.9</td><td>94.3</td><td class=""></td><td class=""></td></tr>
+<tr><td>5</td><td class="label">Walk</td><td class=""></td><td class=""></td><td></td><td></td><td>82.5</td><td class=""></td><td class="xwoba-hot">0.705</td></tr>
+<tr><td>7</td><td class="label">Out</td><td class="hh">96.2</td><td class="">33</td><td>354</td><td>70.1</td><td>95.2</td><td class="">0.154</td><td class="">0.285</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-3-pa"><h3>#3 Jac Caglianone <span class="pill">LHB</span> · 0-for-1</h3>
+<div class="summary-line">BIP 1 · log-loss 0.818 vs lg 0.781 (skill -4.7% over 1 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.172</td><td>0.013</td></tr>
+<tr><td class="label">Hard-hit %</td><td>17.0%</td><td>100.0%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>0.0%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>95.8</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>95.8</td></tr>
+<tr><td class="label">Whiff %</td><td>30.7%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>30.8%</td><td>0.0%</td></tr>
+<tr><td class="label">BB %</td><td>0.6%</td><td>0.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>7</td><td class="label">Out</td><td class="hh">95.8</td><td class="">45</td><td>268</td><td>78.9</td><td>84.3</td><td class="xba-cold">0.009</td><td class="xwoba-cold">0.013</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-4-pa"><h3>#4 Salvador Perez <span class="pill">RHB</span> · 2-for-4 · 1 K</h3>
+<div class="summary-line">BIP 3 · log-loss 1.491 vs lg 1.551 (skill +3.9% over 4 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.408</td><td>0.471</td></tr>
+<tr><td class="label">Hard-hit %</td><td>44.2%</td><td>33.3%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>66.7%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>83.9</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>97.1</td></tr>
+<tr><td class="label">Whiff %</td><td>15.9%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>9.8%</td><td>25.0%</td></tr>
+<tr><td class="label">BB %</td><td>3.6%</td><td>0.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>1</td><td class="label">Strikeout</td><td class=""></td><td class=""></td><td></td><td>68.7</td><td>96.8</td><td class=""></td><td class="xwoba-cold">0.000</td></tr>
+<tr><td>3</td><td class="label">Single</td><td class="">83.1</td><td class="ss">21</td><td>228</td><td>71.6</td><td>83.8</td><td class="xba-hot">0.709</td><td class="xwoba-hot">0.652</td></tr>
+<tr><td>5</td><td class="label">GIDP</td><td class="">71.6</td><td class="">-27</td><td>3</td><td>71.5</td><td>85.9</td><td class="xba-cold">0.056</td><td class="xwoba-cold">0.054</td></tr>
+<tr><td>8</td><td class="label">Single</td><td class="hh">97.1</td><td class="ss">10</td><td>147</td><td>74.0</td><td>83.1</td><td class="xba-hot">0.729</td><td class="xwoba-hot">0.708</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-5-pa"><h3>#5 Nick Loftin <span class="pill">RHB</span> · 0-for-3</h3>
+<div class="summary-line">BIP 3 · log-loss 1.096 vs lg 1.691 (skill +35.2% over 4 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.404</td><td>0.333</td></tr>
+<tr><td class="label">Hard-hit %</td><td>33.0%</td><td>33.3%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>33.3%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>78.7</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>100.3</td></tr>
+<tr><td class="label">Whiff %</td><td>12.6%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>5.9%</td><td>0.0%</td></tr>
+<tr><td class="label">BB %</td><td>13.0%</td><td>0.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>25.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>1</td><td class="label">HBP</td><td class=""></td><td class=""></td><td></td><td></td><td>84.7</td><td class=""></td><td class="xwoba-hot">0.737</td></tr>
+<tr><td>3</td><td class="label">Out</td><td class="">78.6</td><td class="">-6</td><td>19</td><td>70.6</td><td>94.6</td><td class="xba-cold">0.088</td><td class="xwoba-cold">0.079</td></tr>
+<tr><td>6</td><td class="label">Out</td><td class="hh-strong">100.3</td><td class="ss">32</td><td>363</td><td>71.6</td><td>91.1</td><td class="">0.434</td><td class="xwoba-hot">0.832</td></tr>
+<tr><td>8</td><td class="label">Out</td><td class="">57.2</td><td class="">-33</td><td>4</td><td>65.1</td><td>93.5</td><td class="xba-cold">0.098</td><td class="xwoba-cold">0.088</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-6-pa"><h3>#6 Vinnie Pasquantino <span class="pill">LHB</span> · 0-for-4 · 1 K</h3>
+<div class="summary-line">BIP 3 · log-loss 0.739 vs lg 0.959 (skill +22.9% over 4 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.136</td><td>0.124</td></tr>
+<tr><td class="label">Hard-hit %</td><td>18.4%</td><td>33.3%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>33.3%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>85.6</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>96.5</td></tr>
+<tr><td class="label">Whiff %</td><td>25.6%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>30.4%</td><td>25.0%</td></tr>
+<tr><td class="label">BB %</td><td>0.6%</td><td>0.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>1</td><td class="label">Strikeout</td><td class=""></td><td class=""></td><td></td><td>62.8</td><td>95.7</td><td class=""></td><td class="xwoba-cold">0.000</td></tr>
+<tr><td>4</td><td class="label">Out</td><td class="">88.9</td><td class="">53</td><td>216</td><td>74.0</td><td>80.9</td><td class="xba-cold">0.009</td><td class="xwoba-cold">0.008</td></tr>
+<tr><td>6</td><td class="label">Out</td><td class="">71.3</td><td class="">76</td><td>54</td><td>68.1</td><td>90.4</td><td class="xba-cold">0.003</td><td class="xwoba-cold">0.003</td></tr>
+<tr><td>8</td><td class="label">Out</td><td class="hh">96.5</td><td class="ss">31</td><td>335</td><td>70.7</td><td>82.8</td><td class="">0.200</td><td class="">0.362</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-7-pa"><h3>#7 Starling Marte <span class="pill">RHB</span> · 1-for-3 · 1 BB, 1 K</h3>
+<div class="summary-line">BIP 2 · log-loss 1.717 vs lg 1.676 (skill -2.4% over 4 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.416</td><td>0.484</td></tr>
+<tr><td class="label">Hard-hit %</td><td>41.6%</td><td>0.0%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>100.0%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>86.0</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>87.5</td></tr>
+<tr><td class="label">Whiff %</td><td>20.4%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>11.1%</td><td>25.0%</td></tr>
+<tr><td class="label">BB %</td><td>12.5%</td><td>25.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>2</td><td class="label">Walk</td><td class=""></td><td class=""></td><td></td><td></td><td>95.4</td><td class=""></td><td class="xwoba-hot">0.705</td></tr>
+<tr><td>4</td><td class="label">Strikeout</td><td class=""></td><td class=""></td><td></td><td>74.6</td><td>96.2</td><td class=""></td><td class="xwoba-cold">0.000</td></tr>
+<tr><td>6</td><td class="label">Single</td><td class="">84.4</td><td class="ss">19</td><td>255</td><td></td><td>95.5</td><td class="xba-hot">0.920</td><td class="xwoba-hot">0.861</td></tr>
+<tr><td>8</td><td class="label">Out</td><td class="">87.5</td><td class="ss">25</td><td>311</td><td>70.6</td><td>95.0</td><td class="xba-cold">0.103</td><td class="xwoba-cold">0.108</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-8-pa"><h3>#8 Isaac Collins <span class="pill">RHB</span> · 0-for-3</h3>
+<div class="summary-line">BIP 3 · log-loss 1.229 vs lg 1.691 (skill +27.4% over 4 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.410</td><td>0.045</td></tr>
+<tr><td class="label">Hard-hit %</td><td>62.5%</td><td>33.3%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>0.0%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>85.6</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>100.2</td></tr>
+<tr><td class="label">Whiff %</td><td>18.0%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>12.5%</td><td>0.0%</td></tr>
+<tr><td class="label">BB %</td><td>12.3%</td><td>0.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>25.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>2</td><td class="label">Out</td><td class="">65.8</td><td class="">68</td><td>120</td><td>73.2</td><td>95.5</td><td class="xba-cold">0.001</td><td class="xwoba-cold">0.000</td></tr>
+<tr><td>4</td><td class="label">HBP</td><td class=""></td><td class=""></td><td></td><td></td><td>94.9</td><td class=""></td><td class="xwoba-hot">0.737</td></tr>
+<tr><td>6</td><td class="label">Out</td><td class="">90.7</td><td class="">65</td><td>131</td><td>76.3</td><td>94.1</td><td class="xba-cold">0.006</td><td class="xwoba-cold">0.005</td></tr>
+<tr><td>9</td><td class="label">Out</td><td class="hh-strong">100.2</td><td class="">-16</td><td>8</td><td>76.9</td><td>93.8</td><td class="xba-cold">0.143</td><td class="xwoba-cold">0.129</td></tr>
+</tbody></table>
+</div>
+<div class="pa-grid-wrap" id="batter-9-pa"><h3>#9 Kyle Isbel <span class="pill">LHB</span> · 1-for-4 · 1 R, 2 K</h3>
+<div class="summary-line">BIP 2 · log-loss 1.906 vs lg 2.266 (skill +15.9% over 4 PA)</div>
+<table class="cq-table"><thead><tr><th class="label" style="text-align:left">Metric</th><th>Projected</th><th>Actual</th></tr></thead><tbody>
+<tr><td class="label">On-contact xwOBA</td><td>0.120</td><td>0.397</td></tr>
+<tr><td class="label">Hard-hit %</td><td>22.8%</td><td>50.0%</td></tr>
+<tr><td class="label">Sweet-spot %</td><td>—</td><td>50.0%</td></tr>
+<tr><td class="label">Avg EV</td><td>—</td><td>95.1</td></tr>
+<tr><td class="label">Max EV</td><td>—</td><td>98.0</td></tr>
+<tr><td class="label">Whiff %</td><td>24.5%</td><td>—</td></tr>
+<tr><td class="label">K %</td><td>36.8%</td><td>50.0%</td></tr>
+<tr><td class="label">BB %</td><td>0.8%</td><td>0.0%</td></tr>
+<tr><td class="label">HBP %</td><td>—</td><td>0.0%</td></tr>
+</tbody></table>
+<table class="pa-grid"><thead><tr><th>Inn</th><th class="label" style="text-align:left">Result</th><th>EV</th><th>LA</th><th>Hit Dist</th><th>Bat Speed</th><th>Pitch Velo</th><th>xBA</th><th>xwOBA</th></tr></thead><tbody>
+<tr><td>2</td><td class="label">Strikeout</td><td class=""></td><td class=""></td><td></td><td></td><td>83.2</td><td class=""></td><td class="xwoba-cold">0.000</td></tr>
+<tr><td>4</td><td class="label">Out</td><td class="hh">98.0</td><td class="">-25</td><td>4</td><td>65.2</td><td>93.8</td><td class="xba-cold">0.124</td><td class="xwoba-cold">0.116</td></tr>
+<tr><td>7</td><td class="label">Triple</td><td class="">92.2</td><td class="ss">17</td><td>279</td><td>65.4</td><td>83.6</td><td class="xba-hot">0.723</td><td class="xwoba-hot">0.678</td></tr>
+<tr><td>9</td><td class="label">Strikeout</td><td class=""></td><td class=""></td><td></td><td></td><td>95.9</td><td class=""></td><td class="xwoba-cold">0.000</td></tr>
+</tbody></table>
+</div>
+</section>
+</main></body></html>

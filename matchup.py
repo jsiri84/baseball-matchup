@@ -4112,6 +4112,13 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         if len(pf) else "—"
     )
 
+    def _f(v, default=float("nan")) -> float:
+        try:
+            x = float(v)
+            return x if not math.isnan(x) else default
+        except (TypeError, ValueError):
+            return default
+
     return {
         "spot": spot,
         "name": bm["name"],
@@ -4127,6 +4134,21 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         "hr_pct": _outcome_prob(out, "Home Run"),
         "hit_pct": _outcome_prob(out, "Hit (any)"),
         "ob_pct": _outcome_prob(out, "On-base"),
+        # Full 8-bucket outcome distribution for PA-level scoring in postgame.
+        "proj_dist": {
+            "K":  _outcome_prob(out, "Strikeout"),
+            "BB": _outcome_prob(out, "Walk"),
+            "HBP": _outcome_prob(out, "HBP"),
+            "1B": _outcome_prob(out, "Single"),
+            "2B": _outcome_prob(out, "Double"),
+            "3B": _outcome_prob(out, "Triple"),
+            "HR": _outcome_prob(out, "Home Run"),
+            "Out": _outcome_prob(out, "In-play out"),
+        },
+        # Contact-quality + discipline projections (BABIP-independent eval).
+        "proj_hardhit_pct": _f(proj.get("HardHit_pct")),
+        "proj_whiff_pct": _f(proj.get("Whiff_pct")),
+        "proj_xwoba_on_contact": _f(proj.get("xwOBA_bbtype", proj.get("xwOBA"))),
         "best_pitch": best_pitch,
         "worst_pitch": worst_pitch,
         "verdict_label": label,
@@ -4698,11 +4720,47 @@ def _resolve_inputs(batter_arg: str | None, pitcher_arg: str | None,
     return bid, pid
 
 
+# Mutable report-date override. Defaults to today; main() can rewrite this
+# from a --date flag or by parsing the batch CSV filename.
+_REPORT_DATE: date = date.today()
+
+
+def _set_report_date(d: date) -> None:
+    global _REPORT_DATE
+    _REPORT_DATE = d
+
+
 def _report_dir() -> Path:
-    """Return (and create) today's report output directory: reports/<YYYY-MM-DD>/."""
-    d = ROOT / "reports" / date.today().isoformat()
+    """Return (and create) the report output directory: reports/<_REPORT_DATE>/.
+
+    Defaults to today, but is overridable when generating reports for a past
+    or future slate (e.g. `--batch matchups_actual_2026-05-14.csv` should
+    land under `reports/2026-05-14/`, not under today's folder).
+    """
+    d = ROOT / "reports" / _REPORT_DATE.isoformat()
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+_CSV_DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
+
+
+def _derive_report_date(batch_path: Path | None, override: str | None) -> date:
+    """Pick the right slate date for the report output directory.
+
+    Priority: explicit --date override -> date parsed from batch CSV
+    filename (e.g. matchups_2026-05-14.csv) -> today.
+    """
+    if override:
+        return date.fromisoformat(override)
+    if batch_path is not None:
+        m = _CSV_DATE_RE.search(batch_path.name)
+        if m:
+            try:
+                return date.fromisoformat(m.group(1))
+            except ValueError:
+                pass
+    return date.today()
 
 
 def _roundup_data_dir() -> Path:
@@ -5110,14 +5168,23 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=None,
                     help="parallel workers for report generation in --batch mode "
                          "(default min(8, cpu_count)). Set 1 to disable threading.")
+    ap.add_argument("--date", type=str, default=None,
+                    help="report output date (YYYY-MM-DD). Defaults to the "
+                         "date parsed from the --batch CSV filename "
+                         "(matchups_YYYY-MM-DD.csv) or today.")
     args = ap.parse_args()
 
     if args.fix_data_layout:
         _normalize_data_layout()
         return
 
+    batch_path = Path(args.batch) if args.batch else None
+    _set_report_date(_derive_report_date(batch_path, args.date))
+    if _REPORT_DATE != date.today():
+        print(f"[matchup] output dir: reports/{_REPORT_DATE.isoformat()}/")
+
     if args.batch:
-        run_batch(Path(args.batch), args.season, workers=args.workers)
+        run_batch(batch_path, args.season, workers=args.workers)
         if args.commit_cache:
             commit_prior_season_cache(args.season, push=not args.no_push)
         return

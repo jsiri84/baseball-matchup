@@ -23,7 +23,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from log_setup import setup_logging
@@ -32,13 +32,23 @@ ROOT = Path(__file__).parent
 PY = sys.executable
 
 
-def run(cmd: list[str], label: str) -> None:
-    """Run a subprocess in ROOT, streaming output. Exit on failure."""
+def run(cmd: list[str], label: str, allow_fail: bool = False) -> int:
+    """Run a subprocess in ROOT, streaming output.
+
+    If allow_fail is True, log the failure but do not exit; returns the exit
+    code so the caller can decide. Default is exit-on-failure.
+    """
     print(f"\n=== {label} ===")
     print(f"$ {' '.join(cmd)}")
     r = subprocess.run(cmd, cwd=ROOT)
     if r.returncode != 0:
-        sys.exit(f"\n[daily] step failed: {label} (exit {r.returncode})")
+        msg = f"[daily] step failed: {label} (exit {r.returncode})"
+        if allow_fail:
+            print(msg)
+            print("[daily] continuing (step marked allow_fail).")
+            return r.returncode
+        sys.exit(msg)
+    return 0
 
 
 def git(*args: str, check: bool = True) -> subprocess.CompletedProcess:
@@ -48,35 +58,48 @@ def git(*args: str, check: bool = True) -> subprocess.CompletedProcess:
     return r
 
 
-def commit_reports(today: str, push: bool) -> None:
-    reports_dir = ROOT / "reports" / today
-    if not reports_dir.exists():
+def commit_reports(today: str, yesterday: str, push: bool) -> None:
+    today_dir = ROOT / "reports" / today
+    if not today_dir.exists():
         print(f"\n[daily] no reports directory at reports/{today}; nothing to commit")
         return
 
-    rel = f"reports/{today}"
-    # reports/ is gitignored, so force-add. Once added, future modifications
-    # are tracked normally even though the ignore pattern remains. Force-add
-    # only the .html / .md outputs (skip the _data/ sidecar JSONs that the
-    # roundup consumes -- they're regenerable and noisy). The per-day
-    # index.html written by build_site.py is included by the *.html glob.
+    # Today's matchup outputs.
+    today_rel = f"reports/{today}"
     for pattern in ("*.html", "*.md"):
-        git("add", "-f", "--", f"{rel}/{pattern}", check=False)
+        git("add", "-f", "--", f"{today_rel}/{pattern}", check=False)
+
+    # Yesterday's postgame outputs (force-add since reports/ is gitignored).
+    yesterday_rel = f"reports/{yesterday}"
+    if (ROOT / yesterday_rel).exists():
+        git("add", "-f", "--", f"{yesterday_rel}/postgame/", check=False)
+        # Legacy: catch in-place postgame files from older runs.
+        git("add", "-f", "--", f"{yesterday_rel}/postgame_*.html", check=False)
+        # Updated per-day hub for yesterday (build_site.py was rerun).
+        git("add", "-f", "--", f"{yesterday_rel}/index.html", check=False)
+
+    # Rolling accuracy dashboard.
+    accuracy_rel = "reports/accuracy"
+    if (ROOT / accuracy_rel).exists():
+        git("add", "-f", "--", f"{accuracy_rel}/index.html", check=False)
+        git("add", "-f", "--", f"{accuracy_rel}/*.html", check=False)
 
     # Root navigation pages (not under reports/, so not gitignored).
     for root_page in ("index.html", "archive.html"):
         if (ROOT / root_page).exists():
             git("add", "--", root_page, check=False)
 
-    status = git("status", "--porcelain", "--", rel, "index.html", "archive.html")
+    pathspecs = [today_rel, yesterday_rel, accuracy_rel,
+                 "index.html", "archive.html"]
+    status = git("status", "--porcelain", "--", *pathspecs)
     if not status.stdout.strip():
-        print(f"\n[daily] no new/changed files under {rel} or root index pages; nothing to commit")
+        print(f"\n[daily] no new/changed files; nothing to commit")
         return
 
     n = sum(1 for _ in status.stdout.strip().splitlines())
     msg = f"reports: daily run {today} ({n} file{'s' if n != 1 else ''})"
     git("commit", "-m", msg)
-    print(f"\n[daily] committed {n} report file(s): {msg!r}")
+    print(f"\n[daily] committed {n} file(s): {msg!r}")
 
     if push:
         pr = git("push", check=False)
@@ -95,10 +118,18 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=None,
                     help="forwarded to matchup.py --workers; parallel report "
                          "generation thread count (default: matchup.py's own default)")
+    ap.add_argument("--no-postgame", action="store_true",
+                    help="skip yesterday's postgame + rolling accuracy steps "
+                         "(useful for repro runs that don't have completed games)")
+    ap.add_argument("--accuracy-window", default="30",
+                    help="trailing window in days for accuracy.py (default 30, "
+                         "or 'all')")
     args = ap.parse_args()
 
     log_path = setup_logging("daily")
-    today = datetime.now().strftime("%Y-%m-%d")
+    today_dt = datetime.now()
+    today = today_dt.strftime("%Y-%m-%d")
+    yesterday = (today_dt - timedelta(days=1)).strftime("%Y-%m-%d")
     print(f"[daily] run for {today}")
     print(f"[daily] logging to {log_path.relative_to(ROOT)}")
 
@@ -126,14 +157,33 @@ def main() -> int:
     # 4. day-level roundup (top-50 / bottom-50 hitters by projected xwOBA)
     run([PY, "roundup.py", "--date", today], "build top/bottom-50 roundup")
 
-    # 4b. site navigation: today's hub + root index.html + archive.html
-    run([PY, "build_site.py", "--date", today], "build navigation site (hub + root index)")
+    # 4b. postgame for yesterday + rolling accuracy dashboard. Both are
+    # network-bound (postgame hits StatsAPI + pybaseball Statcast) and may
+    # fail on transient errors -- mark allow_fail so the daily run still
+    # produces today's outputs even if yesterday's postgame can't complete.
+    if not args.no_postgame:
+        pg_rc = run([PY, "postgame.py", "--date", yesterday],
+                    f"postgame for {yesterday}", allow_fail=True)
+        if pg_rc == 0:
+            run([PY, "accuracy.py", "--window", args.accuracy_window],
+                "rolling accuracy dashboard", allow_fail=True)
+        else:
+            print("[daily] postgame failed; skipping accuracy rebuild")
+
+    # 4c. site navigation: rebuild yesterday's hub (to surface postgame links)
+    # and today's hub + root index.html + archive.html.
+    if (ROOT / "reports" / yesterday).exists() and not args.no_postgame:
+        run([PY, "build_site.py", "--date", yesterday],
+            f"rebuild yesterday hub ({yesterday}) for postgame links",
+            allow_fail=True)
+    run([PY, "build_site.py", "--date", today],
+        "build navigation site (hub + root index)")
 
     # 5. commit today's reports
     if args.no_commit:
         print("\n[daily] --no-commit set; skipping reports commit")
     else:
-        commit_reports(today, push=not args.no_push)
+        commit_reports(today, yesterday, push=not args.no_push)
 
     print("\n[daily] done.")
     return 0

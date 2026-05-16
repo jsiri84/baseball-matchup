@@ -39,6 +39,13 @@ PITCHER_RE = re.compile(
     r"^(?P<away>[a-z]{2,4})_at_(?P<home>[a-z]{2,4})_vs_(?P<slug>.+)_(?P<year>\d{4})\.html$",
     re.IGNORECASE,
 )
+# Slate-wide postgame (e.g. postgame_2026-05-14.html). Per-game postgame
+# files are named postgame_<pitcher_stem>.html (no date) and matched below.
+POSTGAME_SLATE_RE = re.compile(r"^postgame_(\d{4}-\d{2}-\d{2})\.html$", re.IGNORECASE)
+POSTGAME_GAME_RE = re.compile(
+    r"^postgame_(?P<away>[a-z]{2,4})_at_(?P<home>[a-z]{2,4})_vs_(?P<slug>.+)_(?P<year>\d{4})\.html$",
+    re.IGNORECASE,
+)
 
 
 SITE_CSS = """
@@ -117,8 +124,12 @@ def _h(text) -> str:
 
 
 def _href(filename: str) -> str:
-    """URL-encode a filename for use in an href (handles non-ASCII like u-acute)."""
-    return quote(filename, safe="")
+    """URL-encode a filename for use in an href (handles non-ASCII like u-acute).
+
+    Keeps forward slashes intact so subdirectory hrefs (e.g. postgame/foo.html)
+    render correctly.
+    """
+    return quote(filename, safe="/")
 
 
 def _list_dates() -> list[str]:
@@ -137,10 +148,49 @@ def _classify_date_files(date_dir: Path) -> dict:
     roundups: list[dict] = []
     games: dict[str, dict] = {}
     other: list[str] = []
+    postgame_slate: str | None = None  # filename of postgame_<date>.html if present
+
+    # Postgame outputs live under reports/<date>/postgame/.  Older slates may
+    # still have postgame_*.html sitting directly in the date dir; pick up
+    # whichever exists.
+    postgame_subdir = date_dir / "postgame"
+    postgame_candidates: list[Path] = []
+    if postgame_subdir.exists():
+        postgame_candidates.extend(sorted(postgame_subdir.glob("postgame_*.html")))
+    postgame_candidates.extend(sorted(date_dir.glob("postgame_*.html")))
+
+    for p in postgame_candidates:
+        name = p.name
+        # filename used as href is relative to the date dir
+        rel_href = (
+            f"postgame/{name}" if p.parent.name == "postgame" else name
+        )
+        m = POSTGAME_SLATE_RE.match(name)
+        if m:
+            postgame_slate = rel_href
+            continue
+        m = POSTGAME_GAME_RE.match(name)
+        if m:
+            away = m.group("away").upper()
+            home = m.group("home").upper()
+            slug = m.group("slug")
+            game_key = f"{away}_at_{home}"
+            games.setdefault(game_key, {
+                "away": away, "home": home, "pitchers": [],
+            }).setdefault("postgames", []).append({
+                "name": slug.replace("_", " ").title(),
+                "filename": rel_href,
+            })
+
     for p in sorted(date_dir.glob("*.html")):
         name = p.name
         if name == "index.html":
             continue
+
+        if POSTGAME_SLATE_RE.match(name) or POSTGAME_GAME_RE.match(name):
+            # Already handled above (legacy in-place postgame files).
+            continue
+
         m = ROUNDUP_RE.match(name)
         if m:
             kind, n, _date = m.groups()
@@ -169,8 +219,11 @@ def _classify_date_files(date_dir: Path) -> dict:
     roundups.sort(key=lambda r: (r["kind"] != "top", r["n"]))
     for g in games.values():
         g["pitchers"].sort(key=lambda p: p["name"].lower())
+        if "postgames" in g:
+            g["postgames"].sort(key=lambda p: p["name"].lower())
 
-    return {"roundups": roundups, "games": games, "other": other}
+    return {"roundups": roundups, "games": games, "other": other,
+            "postgame_slate": postgame_slate}
 
 
 def _render_day_index(date_str: str, date_dir: Path) -> str:
@@ -178,6 +231,8 @@ def _render_day_index(date_str: str, date_dir: Path) -> str:
     roundups = bucket["roundups"]
     games = bucket["games"]
     other = bucket["other"]
+    postgame_slate = bucket["postgame_slate"]
+    has_accuracy = (REPORTS_DIR / "accuracy" / "index.html").exists()
 
     parts: list[str] = []
     parts.append("<!doctype html>")
@@ -193,16 +248,21 @@ def _render_day_index(date_str: str, date_dir: Path) -> str:
 
     parts.append('<header class="page-head">')
     parts.append(f"<h1>Matchup reports &middot; {_h(date_str)}</h1>")
+    meta_links = [
+        '<a href="../../archive.html">All dates</a>',
+        '<a href="../../">Home</a>',
+    ]
+    if has_accuracy:
+        meta_links.append('<a href="../accuracy/index.html">Accuracy dashboard</a>')
     parts.append('<div class="meta">'
                  f'{len(games)} game{"s" if len(games) != 1 else ""} &middot; '
                  f'{sum(len(g["pitchers"]) for g in games.values())} pitcher report'
                  f'{"s" if sum(len(g["pitchers"]) for g in games.values()) != 1 else ""} &middot; '
-                 '<a href="../../archive.html">All dates</a> &middot; '
-                 '<a href="../../">Home</a>'
+                 + ' &middot; '.join(meta_links) +
                  '</div>')
     parts.append("</header>")
 
-    if roundups:
+    if roundups or postgame_slate:
         parts.append('<section class="card">')
         parts.append("<h2>Slate roundup</h2>")
         parts.append('<div class="cta-row">')
@@ -216,6 +276,14 @@ def _render_day_index(date_str: str, date_dir: Path) -> str:
                 f'<a class="cta {cls}" href="{_href(r["filename"])}">'
                 f'<p class="cta-title">{_h(label)}</p>'
                 f'<p class="cta-sub">{_h(sub)}</p>'
+                f'</a>'
+            )
+        if postgame_slate:
+            parts.append(
+                f'<a class="cta" href="{_href(postgame_slate)}">'
+                f'<p class="cta-title">Postgame results</p>'
+                f'<p class="cta-sub">Projection vs actual for every hitter '
+                f'(contact / discipline / outcome axes)</p>'
                 f'</a>'
             )
         parts.append('</div>')
@@ -241,6 +309,12 @@ def _render_day_index(date_str: str, date_dir: Path) -> str:
                     f'</a></li>'
                 )
             parts.append("</ul>")
+            for pg in g.get("postgames") or []:
+                parts.append(
+                    f'<p class="note"><a href="{_href(pg["filename"])}">'
+                    f'Postgame vs {_h(pg["name"])}'
+                    f'</a></p>'
+                )
             parts.append('</div>')
         parts.append('</div>')
         parts.append('</section>')
@@ -324,11 +398,16 @@ def _render_archive(dates: list[str]) -> str:
     parts.append("</head>")
     parts.append("<body>")
     parts.append('<main class="container">')
+    has_accuracy = (REPORTS_DIR / "accuracy" / "index.html").exists()
     parts.append('<header class="page-head">')
     parts.append("<h1>Report archive</h1>")
+    meta_links = ['<a href="index.html">Latest</a>']
+    if has_accuracy:
+        meta_links.append('<a href="reports/accuracy/index.html">Accuracy dashboard</a>')
     parts.append(f'<div class="meta">{len(dates)} date'
                  f'{"s" if len(dates) != 1 else ""} available &middot; '
-                 '<a href="index.html">Latest</a></div>')
+                 + ' &middot; '.join(meta_links) +
+                 '</div>')
     parts.append("</header>")
     parts.append('<section class="card">')
     if not dates:
