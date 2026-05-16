@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matchup reports - 2026-05-16</title>
+<style>
+:root {
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --ink: #1f2937;
+  --muted: #64748b;
+  --line: #e5e7eb;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                          Helvetica, Arial, sans-serif;
+             font-size: 14px; line-height: 1.45; }
+.container { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+.page-head { padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.page-head h1 { margin: 0 0 6px 0; font-size: 26px; font-weight: 700; }
+.page-head .meta { color: var(--muted); font-size: 13px; }
+.page-head .meta a { color: var(--accent); text-decoration: none; }
+.page-head .meta a:hover { text-decoration: underline; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.card h2 { margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: var(--muted);
+           letter-spacing: 0.6px; text-transform: uppercase; }
+.note { color: var(--muted); font-size: 12px; margin: 6px 0 0 0; }
+
+/* Roundup CTA buttons */
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.cta { flex: 1 1 240px; display: block; padding: 16px 18px; border-radius: 10px;
+       text-decoration: none; color: var(--ink); border: 1px solid var(--line);
+       background: var(--card); transition: transform 0.05s ease, box-shadow 0.1s ease; }
+.cta:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
+.cta.top { background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 70%); border-color: #a7f3d0; }
+.cta.bot { background: linear-gradient(180deg, #fef2f2 0%, #ffffff 70%); border-color: #fecaca; }
+.cta .cta-title { font-size: 16px; font-weight: 700; margin: 0; }
+.cta .cta-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+/* Game grid */
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+             gap: 14px; }
+.game { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 14px 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.game h3 { margin: 0 0 10px 0; font-size: 14px; font-weight: 700;
+           letter-spacing: 0.4px; }
+.game h3 .away { color: var(--muted); }
+.game h3 .at { color: var(--muted); margin: 0 6px; font-weight: 400; }
+.game ul { list-style: none; padding: 0; margin: 0; }
+.game li { margin: 0; padding: 6px 0; border-top: 1px solid #f1f5f9; }
+.game li:first-child { border-top: none; padding-top: 2px; }
+.game li a { color: var(--accent); text-decoration: none; font-weight: 600;
+             font-size: 13px; }
+.game li a:hover { text-decoration: underline; }
+.game li .vs { color: var(--muted); font-weight: 400; margin-right: 4px; }
+
+/* Archive list */
+.archive { padding: 0; margin: 0; list-style: none; }
+.archive li { padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px;
+              background: var(--card); margin-bottom: 8px;
+              display: flex; justify-content: space-between; align-items: center; }
+.archive li a { color: var(--accent); text-decoration: none; font-weight: 700;
+                font-size: 15px; }
+.archive li a:hover { text-decoration: underline; }
+.archive li .count { color: var(--muted); font-size: 12px; }
+
+footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<main class="container">
+<header class="page-head">
+<h1>Matchup reports &middot; 2026-05-16</h1>
+<div class="meta">15 games &middot; 30 pitcher reports &middot; <a href="../../archive.html">All dates</a> &middot; <a href="../../">Home</a> &middot; <a href="../accuracy/index.html">Accuracy dashboard</a></div>
+</header>
+<section class="card">
+<h2>Slate roundup</h2>
+<div class="cta-row">
+<a class="cta top" href="top50_2026-05-16.html"><p class="cta-title">Top 50 hitters</p><p class="cta-sub">Best projected matchups across the slate</p></a>
+<a class="cta bot" href="bottom50_2026-05-16.html"><p class="cta-title">Bottom 50 hitters</p><p class="cta-sub">Worst projected matchups across the slate</p></a>
+</div>
+</section>
+<section class="card">
+<h2>Games</h2>
+<div class="game-grid">
+<div class="game">
+<h3><span class="away">AZ</span><span class="at">@</span><span class="home">COL</span></h3>
+<ul>
+<li><a href="az_at_col_vs_eduardo_rodriguez_2026.html"><span class="vs">vs</span>Eduardo Rodriguez</a></li>
+<li><a href="az_at_col_vs_tomoyuki_sugano_2026.html"><span class="vs">vs</span>Tomoyuki Sugano</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">BAL</span><span class="at">@</span><span class="home">WSH</span></h3>
+<ul>
+<li><a href="bal_at_wsh_vs_cade_cavalli_2026.html"><span class="vs">vs</span>Cade Cavalli</a></li>
+<li><a href="bal_at_wsh_vs_chris_bassitt_2026.html"><span class="vs">vs</span>Chris Bassitt</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">BOS</span><span class="at">@</span><span class="home">ATL</span></h3>
+<ul>
+<li><a href="bos_at_atl_vs_bryce_elder_2026.html"><span class="vs">vs</span>Bryce Elder</a></li>
+<li><a href="bos_at_atl_vs_payton_tolle_2026.html"><span class="vs">vs</span>Payton Tolle</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">CHC</span><span class="at">@</span><span class="home">CWS</span></h3>
+<ul>
+<li><a href="chc_at_cws_vs_davis_martin_2026.html"><span class="vs">vs</span>Davis Martin</a></li>
+<li><a href="chc_at_cws_vs_jameson_taillon_2026.html"><span class="vs">vs</span>Jameson Taillon</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">CIN</span><span class="at">@</span><span class="home">CLE</span></h3>
+<ul>
+<li><a href="cin_at_cle_vs_chris_paddack_2026.html"><span class="vs">vs</span>Chris Paddack</a></li>
+<li><a href="cin_at_cle_vs_joey_cantillo_2026.html"><span class="vs">vs</span>Joey Cantillo</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">KC</span><span class="at">@</span><span class="home">STL</span></h3>
+<ul>
+<li><a href="kc_at_stl_vs_kyle_leahy_2026.html"><span class="vs">vs</span>Kyle Leahy</a></li>
+<li><a href="kc_at_stl_vs_noah_cameron_2026.html"><span class="vs">vs</span>Noah Cameron</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">LAD</span><span class="at">@</span><span class="home">LAA</span></h3>
+<ul>
+<li><a href="lad_at_laa_vs_jos%C3%A9_soriano_2026.html"><span class="vs">vs</span>José Soriano</a></li>
+<li><a href="lad_at_laa_vs_justin_wrobleski_2026.html"><span class="vs">vs</span>Justin Wrobleski</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">MIA</span><span class="at">@</span><span class="home">TB</span></h3>
+<ul>
+<li><a href="mia_at_tb_vs_nick_martinez_2026.html"><span class="vs">vs</span>Nick Martinez</a></li>
+<li><a href="mia_at_tb_vs_sandy_alcantara_2026.html"><span class="vs">vs</span>Sandy Alcantara</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">MIL</span><span class="at">@</span><span class="home">MIN</span></h3>
+<ul>
+<li><a href="mil_at_min_vs_connor_prielipp_2026.html"><span class="vs">vs</span>Connor Prielipp</a></li>
+<li><a href="mil_at_min_vs_logan_henderson_2026.html"><span class="vs">vs</span>Logan Henderson</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">NYY</span><span class="at">@</span><span class="home">NYM</span></h3>
+<ul>
+<li><a href="nyy_at_nym_vs_carlos_rod%C3%B3n_2026.html"><span class="vs">vs</span>Carlos Rodón</a></li>
+<li><a href="nyy_at_nym_vs_huascar_brazob%C3%A1n_2026.html"><span class="vs">vs</span>Huascar Brazobán</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">PHI</span><span class="at">@</span><span class="home">PIT</span></h3>
+<ul>
+<li><a href="phi_at_pit_vs_bubba_chandler_2026.html"><span class="vs">vs</span>Bubba Chandler</a></li>
+<li><a href="phi_at_pit_vs_cristopher_s%C3%A1nchez_2026.html"><span class="vs">vs</span>Cristopher Sánchez</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">SD</span><span class="at">@</span><span class="home">SEA</span></h3>
+<ul>
+<li><a href="sd_at_sea_vs_logan_gilbert_2026.html"><span class="vs">vs</span>Logan Gilbert</a></li>
+<li><a href="sd_at_sea_vs_walker_buehler_2026.html"><span class="vs">vs</span>Walker Buehler</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">SF</span><span class="at">@</span><span class="home">ATH</span></h3>
+<ul>
+<li><a href="sf_at_ath_vs_luis_severino_2026.html"><span class="vs">vs</span>Luis Severino</a></li>
+<li><a href="sf_at_ath_vs_trevor_mcdonald_2026.html"><span class="vs">vs</span>Trevor Mcdonald</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">TEX</span><span class="at">@</span><span class="home">HOU</span></h3>
+<ul>
+<li><a href="tex_at_hou_vs_jacob_degrom_2026.html"><span class="vs">vs</span>Jacob Degrom</a></li>
+<li><a href="tex_at_hou_vs_kai_wei_teng_2026.html"><span class="vs">vs</span>Kai Wei Teng</a></li>
+</ul>
+</div>
+<div class="game">
+<h3><span class="away">TOR</span><span class="at">@</span><span class="home">DET</span></h3>
+<ul>
+<li><a href="tor_at_det_vs_casey_mize_2026.html"><span class="vs">vs</span>Casey Mize</a></li>
+<li><a href="tor_at_det_vs_mason_fluharty_2026.html"><span class="vs">vs</span>Mason Fluharty</a></li>
+</ul>
+</div>
+</div>
+</section>
+<footer>
+Generated by <a href="https://github.com/jsiri84/baseball-matchup">baseball-matchup</a> &middot; <code>build_site.py</code>
+</footer>
+</main>
+</body></html>
