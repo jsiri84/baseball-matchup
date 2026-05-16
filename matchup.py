@@ -460,7 +460,13 @@ def soft_log5(b: float, p: float, lg: float, alpha: float) -> float:
     logit_lg = math.log(lgc / (1 - lgc))
     centered = (math.log(bb / (1 - bb)) - logit_lg
                 + math.log(pp / (1 - pp)) - logit_lg)
-    final = logit_lg + alpha * centered
+    # Asymmetric damping: only pull the above-league side back toward lg.
+    # Symmetric damping was inadvertently pulling below-league projections
+    # UP toward league (e.g. low-K hitters proj'd 12% when actual was 7%,
+    # because soft_log5 was nudging them away from their true low rate).
+    if centered > 0:
+        centered = alpha * centered
+    final = logit_lg + centered
     return 1.0 / (1.0 + math.exp(-final))
 
 
