@@ -140,6 +140,9 @@ K_PCT_ALPHA = 0.8     # 0.6 closed top-bin miss but crushed K% spread ratio
 BB_PCT_ALPHA = 1.0
 HBP_PCT_ALPHA = 1.0
 XWOBA_ALPHA = 1.0
+HARD_HIT_ALPHA = 0.8  # damp log5 amplification on per-pitch hard-hit %;
+                      # accuracy dashboard top bins (45-55%) were running
+                      # 47-80 pts over actual under pure log5
 
 # Per-PA outcome distribution baseline (sums to 1.00; sourced from 2025 MLB).
 LG_OUTCOMES = {
@@ -1109,7 +1112,7 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
         m_xba   = additive(b_a_adj, p_a, LG_XBA)
         m_xslg  = additive(b_s_adj, p_s, LG_XSLG)
         m_whiff = log5(b_w, p_w, LG_WHIFF)
-        m_hh = log5(b_h, p_h, LG_HARD_HIT)
+        m_hh = soft_log5(b_h, p_h, LG_HARD_HIT, HARD_HIT_ALPHA)
 
         proj_xwoba += p * m_xwoba
         proj_xba   += p * m_xba
