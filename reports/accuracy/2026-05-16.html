@@ -185,13 +185,12 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <div class="acc-section"><h2>Calibration: proj hard-hit% → actual hard-hit%</h2>
 <div class="acc-note">Hard-hit % converges fastest of any contact-quality metric. PA &ge; 3.</div>
 <table class="acc-table"><thead><tr><th class="label">Proj bin</th><th>n</th><th>mean proj</th><th>mean actual</th><th>&Delta; pts</th><th>95% CI</th></tr></thead><tbody>
-<tr><td class="label">0-30%</td><td>9</td><td>23.6%</td><td>40.7%</td><td class="delta-pos">+172</td><td>[16.5%, 70.5%]</td></tr>
-<tr><td class="label">30-35%</td><td>24</td><td>33.0%</td><td>35.4%</td><td class="delta-pos">+25</td><td>[19.5%, 55.3%]</td></tr>
-<tr><td class="label">35-40%</td><td>47</td><td>37.7%</td><td>41.7%</td><td class="delta-pos">+40</td><td>[28.7%, 55.9%]</td></tr>
-<tr><td class="label">40-45%</td><td>50</td><td>42.2%</td><td>40.1%</td><td class="delta-neg">-20</td><td>[27.7%, 53.9%]</td></tr>
-<tr><td class="label">45-50%</td><td>31</td><td>47.8%</td><td>39.8%</td><td class="delta-neg">-80</td><td>[24.7%, 57.3%]</td></tr>
-<tr><td class="label">50-55%</td><td>7</td><td>52.4%</td><td>47.6%</td><td class="delta-neg">-47</td><td>[18.7%, 78.2%]</td></tr>
-<tr><td class="label">&gt;=55%</td><td>3</td><td>56.3%</td><td>50.0%</td><td class="delta-neg">-63</td><td>[12.5%, 87.5%]</td></tr>
+<tr><td class="label">0-30%</td><td>9</td><td>25.9%</td><td>40.7%</td><td class="delta-pos">+148</td><td>[16.5%, 70.5%]</td></tr>
+<tr><td class="label">30-35%</td><td>15</td><td>33.2%</td><td>31.1%</td><td class="delta-neg">-21</td><td>[13.7%, 56.2%]</td></tr>
+<tr><td class="label">35-40%</td><td>58</td><td>37.7%</td><td>42.1%</td><td class="delta-pos">+44</td><td>[30.3%, 54.9%]</td></tr>
+<tr><td class="label">40-45%</td><td>55</td><td>42.0%</td><td>39.2%</td><td class="delta-neg">-28</td><td>[27.4%, 52.4%]</td></tr>
+<tr><td class="label">45-50%</td><td>27</td><td>46.9%</td><td>42.0%</td><td class="delta-neg">-49</td><td>[25.6%, 60.5%]</td></tr>
+<tr><td class="label">50-55%</td><td>7</td><td>52.0%</td><td>47.6%</td><td class="delta-neg">-43</td><td>[18.7%, 78.2%]</td></tr>
 </tbody></table>
 <div class="acc-note">League baseline: 40.0%. A well-calibrated model has &Delta; pts near zero in every bin.</div>
 </div>
@@ -222,7 +221,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n</th><th title="Mean sample-size denominator: PA for headline / K / BB; n_bip for hard-hit and on-contact xwOBA">mean n</th><th>mean proj</th><th>mean actual</th><th>proj std</th><th>actual std (raw)</th><th>actual std (corrected)</th><th>ratio</th><th>read</th></tr></thead><tbody>
 <tr><td class="label">xwOBA</td><td>175</td><td>4.1</td><td>0.319</td><td>0.321</td><td>0.037</td><td>0.200</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
 <tr><td class="label">on-contact xwOBA</td><td>171</td><td>2.8</td><td>0.378</td><td>0.366</td><td>0.065</td><td>0.266</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
-<tr><td class="label">hard-hit %</td><td>171</td><td>2.8</td><td>0.404</td><td>0.404</td><td>0.070</td><td>0.332</td><td>0.067</td><td class="">1.03</td><td class="">calibrated</td></tr>
+<tr><td class="label">hard-hit %</td><td>171</td><td>2.8</td><td>0.401</td><td>0.404</td><td>0.058</td><td>0.332</td><td>0.067</td><td class="">0.85</td><td class="">calibrated</td></tr>
 <tr><td class="label">K %</td><td>175</td><td>4.1</td><td>0.237</td><td>0.223</td><td>0.056</td><td>0.236</td><td>0.113</td><td class="skill-neg">0.49</td><td class="skill-neg">hedging</td></tr>
 <tr><td class="label">BB %</td><td>175</td><td>4.1</td><td>0.085</td><td>0.097</td><td>0.036</td><td>0.143</td><td>0.037</td><td class="">0.99</td><td class="">calibrated</td></tr>
 </tbody></table></div>
@@ -245,7 +244,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n</th><th>RMSE</th><th>MAE</th><th>bias</th></tr></thead><tbody>
 <tr><td class="label">xwOBA</td><td>193</td><td>0.204</td><td>0.159</td><td class="delta-neg">-0.009</td></tr>
 <tr><td class="label">on-contact xwOBA</td><td>183</td><td>0.264</td><td>0.210</td><td class="delta-neg">-0.021</td></tr>
-<tr><td class="label">hard-hit %</td><td>183</td><td>0.352</td><td>0.291</td><td class="delta-pos">0.006</td></tr>
+<tr><td class="label">hard-hit %</td><td>183</td><td>0.350</td><td>0.291</td><td class="delta-pos">0.008</td></tr>
 <tr><td class="label">K %</td><td>193</td><td>0.255</td><td>0.207</td><td class="delta-neg">-0.007</td></tr>
 <tr><td class="label">BB %</td><td>193</td><td>0.156</td><td>0.117</td><td class="delta-pos">0.014</td></tr>
 </tbody></table></div>
@@ -254,7 +253,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n days</th><th>mean &rho;</th><th>p25</th><th>median</th><th>p75</th></tr></thead><tbody>
 <tr><td class="label">xwOBA</td><td>1</td><td>0.204</td><td>0.204</td><td>0.204</td><td>0.204</td></tr>
 <tr><td class="label">on-contact xwOBA</td><td>1</td><td>0.107</td><td>0.107</td><td>0.107</td><td>0.107</td></tr>
-<tr><td class="label">hard-hit %</td><td>1</td><td>0.025</td><td>0.025</td><td>0.025</td><td>0.025</td></tr>
+<tr><td class="label">hard-hit %</td><td>1</td><td>0.028</td><td>0.028</td><td>0.028</td><td>0.028</td></tr>
 </tbody></table>
 <details><summary>Per-day xwOBA rank correlation</summary>
 <table class="acc-table"><thead><tr><th class="label">Date</th><th>hitters</th><th>&rho;</th></tr></thead><tbody>
@@ -262,7 +261,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </tbody></table></details>
 </div>
 </section>
-<div class="report-timestamp">Generated 2026-05-16 16:19:08 EDT</div>
+<div class="report-timestamp">Generated 2026-05-16 16:44:55 EDT</div>
 </main>
 <style>
 th.sortable { cursor: pointer; user-select: none; }
