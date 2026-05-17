@@ -4359,6 +4359,17 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         except (TypeError, ValueError):
             return default
 
+    # Pull the batter's 14-day xwOBA out of the recent-form panel so the
+    # per-batter <details> summary can surface both overall and platoon
+    # form alongside the projection.  Either may be None when the sample
+    # is below RECENT_FORM_MIN_PA -- the renderer falls back to an em-dash.
+    rf = p.get("recent_form") or {}
+    _overall_bat = ((rf.get("overall") or {}).get("batter") or {})
+    _platoon_bat = ((rf.get("platoon") or {}).get("batter") or {})
+    _d14_overall = (_overall_bat.get("d14") or {}).get("xwOBA")
+    _d14_platoon = (_platoon_bat.get("d14") or {}).get("xwOBA")
+    _platoon_label = (rf.get("platoon_labels") or {}).get("batter")
+
     return {
         "spot": spot,
         "name": bm["name"],
@@ -4370,6 +4381,9 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         "bbtype_adj_pts": float(proj.get("xwOBA_adj_pts", 0.0) or 0.0),
         "park_pf": float(proj.get("park_pf", 1.0) or 1.0),
         "park_pts": float(proj.get("xwOBA_park_pts", 0.0) or 0.0),
+        "form_d14_xwoba": (float(_d14_overall) if _d14_overall is not None else None),
+        "form_d14_xwoba_platoon": (float(_d14_platoon) if _d14_platoon is not None else None),
+        "form_d14_platoon_label": _platoon_label,
         "delta_pts": delta,
         "k_pct": _outcome_prob(out, "Strikeout"),
         "bb_pct": _outcome_prob(out, "Walk"),
@@ -4641,11 +4655,45 @@ def _summary_for_block(r: dict, pname: str) -> str:
     if xslg is not None and not (isinstance(xslg, float) and math.isnan(xslg)):
         slash_bits.append(f"xSLG <b>{xslg:.3f}</b>")
     slash_str = " / ".join(slash_bits)
+
+    # Park boost: only shown when the park applied a non-trivial nudge.
+    # Same edge-class scale as the lineup grid (mild ±7.5 pts, strong ±22.5),
+    # so the inline pill matches the colored Park (pts) column.
+    park_pts = float(r.get("park_pts", 0.0) or 0.0)
+    park_html = ""
+    if abs(park_pts) >= 0.5:
+        park_cls = edge_class(park_pts, 0.0, 15.0, batter_favors_high=True)
+        park_sign = "+" if park_pts >= 0 else ""
+        park_html = (
+            f'<span class="summary-stat {park_cls}" style="padding:1px 6px;'
+            f'border-radius:4px">Park <b>{park_sign}{park_pts:.0f} pts</b></span>'
+        )
+
+    # Recent 14d form: overall + platoon-filtered batter xwOBA, with the
+    # platoon hand label ("vs RHP") inline.  Either side may be None when
+    # the 14d sample is below RECENT_FORM_MIN_PA -- render as an em-dash so
+    # the field is still present and signals "not enough data".
+    def _fmt_xwoba(v) -> str:
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return "&mdash;"
+        return f"{float(v):.3f}"
+
+    d14_overall = r.get("form_d14_xwoba")
+    d14_platoon = r.get("form_d14_xwoba_platoon")
+    pl_label = r.get("form_d14_platoon_label") or "platoon"
+    form_html = (
+        f'<span class="summary-stat">14d <b>{_fmt_xwoba(d14_overall)}</b></span>'
+        f'<span class="summary-stat">{_h(pl_label)} '
+        f'<b>{_fmt_xwoba(d14_platoon)}</b></span>'
+    )
+
     return (
         f'<span class="spot">{r["spot"]}.</span>'
         f'<span class="name">{_h(r["name"])}</span>'
         f'<span class="badge">{_h(r["stand"])}HB</span>'
         f'<span class="summary-stat">proj {slash_str} ({delta_str})</span>'
+        f'{park_html}'
+        f'{form_html}'
         f'<span class="summary-stat">K <b>{r["k_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">BB <b>{r["bb_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">HR <b>{r["hr_pct"]*100:.1f}%</b></span>'
