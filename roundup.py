@@ -167,7 +167,12 @@ def _grid_row_html(rank: int, row: dict) -> str:
     bb_cls = edge_class(sr["bb_pct"]*100, LG_BB_PCT*100, 2.0, batter_favors_high=True)
     hr_cls = edge_class(sr["hr_pct"]*100, LG_OUTCOMES["HR"]*100, 1.0, batter_favors_high=True)
     hit_cls = edge_class(sr["hit_pct"]*100, LG_HIT_PCT*100, 2.0, batter_favors_high=True)
-    ob_cls = edge_class(sr["ob_pct"]*100, LG_OB_PCT*100, 2.5, batter_favors_high=True)
+    # Park (pts) replaces OB% to match the per-game lineup grid in
+    # matchup.py.  Same 15.0-pt edge scale so coloring is consistent
+    # across the report.
+    park_pts = float(sr.get("park_pts", 0.0) or 0.0)
+    park_cls = edge_class(park_pts, 0.0, 15.0, batter_favors_high=True)
+    park_sign = "+" if park_pts >= 0 else ""
 
     anchor = f"r{rank}-{sr.get('anchor', 'batter')}"
     proj_marker = ' <span class="badge" title="Projected lineup">P</span>' if row["projected"] else ""
@@ -188,7 +193,7 @@ def _grid_row_html(rank: int, row: dict) -> str:
         f'{_td(f"{sr['bb_pct']*100:.1f}%", bb_cls)}'
         f'{_td(f"{sr['hr_pct']*100:.1f}%", hr_cls)}'
         f'{_td(f"{sr['hit_pct']*100:.1f}%", hit_cls)}'
-        f'{_td(f"{sr['ob_pct']*100:.1f}%", ob_cls)}'
+        f'{_td(f"{park_sign}{park_pts:.0f}", park_cls)}'
         f'<td class="pitch-cell">{_h(sr.get("best_pitch") or "—")}</td>'
         f'<td class="pitch-cell">{_h(sr.get("worst_pitch") or "—")}</td>'
         f'<td class="verdict {sr["verdict_css"]}">{_h(sr["verdict_label"])}</td>'
@@ -227,7 +232,7 @@ def _build_html(title: str, subtitle: str, rows: list[dict],
                  '<th style="text-align:left">Pitcher</th>'
                  '<th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th>'
                  '<th>&Delta; (pts)</th>'
-                 '<th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th><th>OB%</th>'
+                 '<th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th><th>Park (pts)</th>'
                  '<th style="text-align:left">Best pitch</th>'
                  '<th style="text-align:left">Worst pitch</th>'
                  '<th>Verdict</th>'
