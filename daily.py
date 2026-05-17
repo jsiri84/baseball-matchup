@@ -149,6 +149,12 @@ def main() -> int:
     ap.add_argument("--accuracy-window", default="30",
                     help="trailing window in days for accuracy.py (default 30, "
                          "or 'all')")
+    ap.add_argument("--force", action="store_true",
+                    help="forward --force to matchup.py, bypassing the "
+                         "smoke-clobber guard.  Use ONLY when you genuinely "
+                         "intend to overwrite a larger archived slate with "
+                         "a smaller one (e.g. mid-day re-run after games "
+                         "have already finished and dropped off the feed).")
     args = ap.parse_args()
 
     log_path = setup_logging("daily")
@@ -185,6 +191,8 @@ def main() -> int:
     matchup_cmd = [PY, "matchup.py", "--batch", str(csv_path)]
     if args.workers is not None:
         matchup_cmd.extend(["--workers", str(args.workers)])
+    if args.force:
+        matchup_cmd.append("--force")
     if not args.no_commit:
         matchup_cmd.append("--commit-cache")
         if args.no_push:

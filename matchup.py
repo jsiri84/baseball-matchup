@@ -5150,10 +5150,14 @@ def _is_sandbox_root() -> bool:
 
 
 def _existing_slate_game_count() -> int:
-    """Count games already recorded in the active slate.json (if any).
+    """Count unique matchup_keys (i.e. *games*) in the active slate.json.
 
-    Returns 0 when the slate doesn't exist or can't be parsed.  Used by
-    the smoke-clobber guard before a batch run overwrites it.
+    Note: slate["games"] holds ONE ENTRY PER LINEUP -- a 15-game slate
+    produces ~30 entries since each game contributes two sides.  The
+    clobber guard compares against the unique-matchup-key count in the
+    batch CSV, so we have to count keys here too (not raw len).
+
+    Returns 0 when the slate doesn't exist or can't be parsed.
     """
     slate = _REPORT_ROOT / _REPORT_DATE.isoformat() / "_data" / "slate.json"
     if not slate.exists():
@@ -5161,7 +5165,8 @@ def _existing_slate_game_count() -> int:
     try:
         with slate.open("r", encoding="utf-8") as f:
             data = json.load(f)
-        return len(data.get("games", []))
+        keys = {g.get("matchup_key") for g in data.get("games", []) if g.get("matchup_key")}
+        return len(keys)
     except (OSError, ValueError):
         return 0
 
