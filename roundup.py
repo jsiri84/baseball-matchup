@@ -121,7 +121,14 @@ def _verdict_pill_html(label: str, css: str) -> str:
 
 
 def _summary_line(rank: int, row: dict) -> str:
-    """Inline summary line for a per-batter <details><summary>."""
+    """Inline summary line for a per-batter <details><summary>.
+
+    Mirrors matchup.py's _summary_for_block so the per-game and the
+    roundup views show the same headline pills (Park boost, 14d, and
+    platoon-filtered 14d).  Data comes from the slate.json summary
+    row that matchup._lineup_summary_row writes, so no extra plumbing
+    is needed.
+    """
     sr = row["sr"]
     delta_str = f"{sr['delta_pts']:+.0f} pts"
     proj_flag = ' <span class="badge" title="Projected lineup">PROJ</span>' if row["projected"] else ""
@@ -133,6 +140,39 @@ def _summary_line(rank: int, row: dict) -> str:
     if xslg is not None and not (isinstance(xslg, float) and math.isnan(xslg)):
         slash_bits.append(f"xSLG <b>{xslg:.3f}</b>")
     slash_str = " / ".join(slash_bits)
+
+    # Park boost: signed wOBA-pts impact from the daily park factor.
+    # Same 15.0-pt edge scale as the lineup grid Park column so the
+    # coloring matches across pages.  Hidden when neutral so the pill
+    # row stays clean.
+    park_pts = float(sr.get("park_pts", 0.0) or 0.0)
+    park_html = ""
+    if abs(park_pts) >= 0.5:
+        park_cls = edge_class(park_pts, 0.0, 15.0, batter_favors_high=True)
+        park_sign = "+" if park_pts >= 0 else ""
+        park_html = (
+            f'<span class="summary-stat {park_cls}" style="padding:1px 6px;'
+            f'border-radius:4px">Park <b>{park_sign}{park_pts:.0f} pts</b></span>'
+        )
+
+    # Recent 14d form: overall + platoon-filtered (vs RHP / vs LHP).
+    # Either may be missing when the batter's 14d sample is below
+    # RECENT_FORM_MIN_PA -- show an em-dash so the field is still
+    # present and the reader sees "thin data" rather than no signal.
+    def _fmt_xwoba(v) -> str:
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return "&mdash;"
+        return f"{float(v):.3f}"
+
+    d14_overall = sr.get("form_d14_xwoba")
+    d14_platoon = sr.get("form_d14_xwoba_platoon")
+    pl_label = sr.get("form_d14_platoon_label") or "platoon"
+    form_html = (
+        f'<span class="summary-stat">14d <b>{_fmt_xwoba(d14_overall)}</b></span>'
+        f'<span class="summary-stat">{_h(pl_label)} '
+        f'<b>{_fmt_xwoba(d14_platoon)}</b></span>'
+    )
+
     return (
         f'<span class="spot">{rank}.</span>'
         f'<span class="name">{_h(sr["name"])}</span>'
@@ -141,6 +181,8 @@ def _summary_line(rank: int, row: dict) -> str:
         f'vs <b>{_h(row["pitcher_name"] or "?")}</b> '
         f'({_h(row["p_throws"])}HP){proj_flag}</span>'
         f'<span class="summary-stat">proj {slash_str} ({delta_str})</span>'
+        f'{park_html}'
+        f'{form_html}'
         f'<span class="summary-stat">K <b>{sr["k_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">BB <b>{sr["bb_pct"]*100:.1f}%</b></span>'
         f'<span class="summary-stat">HR <b>{sr["hr_pct"]*100:.1f}%</b></span>'
