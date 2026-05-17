@@ -10,7 +10,14 @@ env/
 # ----- IDE / OS -----
 .vscode/
 .idea/
-.cursor/
+# Cursor agent rules ARE tracked so they apply across machines / cloud
+# agents.  Everything else in .cursor/ (plans, indexes, etc.) stays local.
+# Pattern note: we cannot ignore .cursor/ wholesale and then re-include a
+# child -- git's negation rules require the parent directory not to be
+# excluded.  So we ignore the specific children we don't want instead.
+.cursor/plans/
+.cursor/indexes/
+.cursor/agent-transcripts/
 .DS_Store
 Thumbs.db
 
@@ -33,6 +40,11 @@ data/2026/
 # ----- Generated reports -----
 # All matchup/lineup reports go to reports/<YYYY-MM-DD>/ and are regenerable.
 reports/
+
+# Sandbox output for smoke tests.  matchup.py --out-dir sandbox/ writes
+# here so smoke runs cannot clobber archived reports/<date>/ artifacts
+# (slate.json especially -- not in git, only lives in the working tree).
+sandbox/
 
 # ----- Per-run logs -----
 # Each script run tees stdout/stderr to logs/<timestamp>/<script>.log via

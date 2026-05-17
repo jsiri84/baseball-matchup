@@ -1,0 +1,41 @@
+---
+description: Sandbox convention for smoke tests in this repo
+alwaysApply: true
+---
+
+# Smoke tests MUST use a sandbox directory
+
+`matchup.py --batch` writes to `reports/<date>/` and overwrites the
+canonical `_data/slate.json`. That sidecar is **not stored in git** --
+it lives only in the working tree and is the only source-of-truth for
+postgame grading. Running a smoke test against a real date with a
+small batch CSV silently destroys that day's slate and breaks
+accuracy data forever for that date.
+
+## Required pattern
+
+For ANY `matchup.py --batch` smoke test with a real date, pass
+`--out-dir sandbox` (or set `BASEBALL_BOT_REPORT_ROOT=sandbox`).
+Output goes to `sandbox/<date>/`, which is `.gitignore`d.
+
+```bash
+# RIGHT
+python matchup.py --batch _smoke_az_col.csv --date 2026-05-16 --out-dir sandbox
+
+# WRONG -- destroys reports/2026-05-16/_data/slate.json
+python matchup.py --batch _smoke_az_col.csv --date 2026-05-16
+```
+
+A runtime guard in `matchup.py` refuses to clobber a real slate when
+the batch is smaller, but **don't rely on the guard**. Always pass
+`--out-dir sandbox` for any throwaway run.
+
+## Other artifact rules
+
+- Disposable Python scripts go at repo root prefixed with `_` (e.g.
+  `_check_pf_row.py`), which `.gitignore` excludes. Delete after use.
+- Disposable CSVs the same: `_smoke_az_col.csv`, not `smoke.csv`.
+- Never write under `data/`, `parkdata/`, `matchups/`, or
+  `reports/<date>/` while smoke testing.
+- After the smoke test verifies what you need, delete the `_*` files
+  and the `sandbox/` output before the next step.

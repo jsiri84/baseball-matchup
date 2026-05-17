@@ -35,6 +35,22 @@ No formal linter config exists in the repo. Use `flake8 --select=E9,F63,F7,F82 *
 
 No automated test suite exists. Validate changes by running `matchup.py` in single-matchup mode and inspecting the generated HTML report under `reports/<date>/`.
 
+### Smoke tests — ALWAYS use --out-dir sandbox
+
+**Critical**: `matchup.py --batch` writes to `reports/<date>/` and overwrites the canonical `_data/slate.json` (a working-tree-only file not stored in git). Running a smoke test with a real date against a real `reports/<date>/` will silently destroy that day's slate sidecar and break postgame grading for that date.
+
+For ANY smoke test that uses `--batch` with a real date, always pass `--out-dir sandbox` (or set `BASEBALL_BOT_REPORT_ROOT=sandbox`). Output goes to `sandbox/<date>/` which is `.gitignored` and never touched by the real pipeline.
+
+```bash
+# RIGHT -- smoke testing AZ@COL against the real 2026-05-16 date
+python matchup.py --batch _smoke_az_col.csv --date 2026-05-16 --out-dir sandbox
+
+# WRONG -- this will clobber reports/2026-05-16/_data/slate.json
+python matchup.py --batch _smoke_az_col.csv --date 2026-05-16
+```
+
+A safety guard in `matchup.py` refuses to overwrite a real `reports/<date>/` slate.json when the batch input has significantly fewer games than the existing slate, and prints the fix. `--force` bypasses it for legitimate small-slate replays.
+
 ### Dependencies
 
 `pip install -r requirements.txt` plus `tabulate` (needed by pandas `to_markdown()`). The `tabulate` package is an unlisted transitive dependency.

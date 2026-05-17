@@ -5058,22 +5058,86 @@ def _resolve_inputs(batter_arg: str | None, pitcher_arg: str | None,
 # from a --date flag or by parsing the batch CSV filename.
 _REPORT_DATE: date = date.today()
 
+# Mutable report-root override.  Defaults to ``reports/`` under repo root,
+# meaning real production reports land in ``reports/<date>/``.  Smoke tests
+# and other throwaway runs MUST redirect this somewhere else (typically
+# ``sandbox/``) so they cannot clobber archived slate.json / HTML.  Set via
+# main()'s --out-dir CLI flag or the BASEBALL_BOT_REPORT_ROOT env var.
+_REPORT_ROOT: Path = ROOT / "reports"
+
 
 def _set_report_date(d: date) -> None:
     global _REPORT_DATE
     _REPORT_DATE = d
 
 
-def _report_dir() -> Path:
-    """Return (and create) the report output directory: reports/<_REPORT_DATE>/.
+def _set_report_root(root: Path) -> None:
+    """Override the report-root directory (used by --out-dir / env var).
 
-    Defaults to today, but is overridable when generating reports for a past
-    or future slate (e.g. `--batch matchups_actual_2026-05-14.csv` should
-    land under `reports/2026-05-14/`, not under today's folder).
+    Path may be absolute or relative; we normalize to absolute so subsequent
+    ``_report_dir()`` calls always land in the same place regardless of
+    cwd changes inside the run.
     """
-    d = ROOT / "reports" / _REPORT_DATE.isoformat()
+    global _REPORT_ROOT
+    _REPORT_ROOT = Path(root).resolve()
+
+
+def _report_dir() -> Path:
+    """Return (and create) the report output directory: <root>/<_REPORT_DATE>/.
+
+    ``<root>`` is normally ``reports/`` but is overridable via
+    ``--out-dir`` / ``BASEBALL_BOT_REPORT_ROOT`` for smoke testing.
+    """
+    d = _REPORT_ROOT / _REPORT_DATE.isoformat()
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+def _is_sandbox_root() -> bool:
+    """True when the active report root is *not* the production reports/
+    directory.  Used by the safety guard to skip the
+    real-slate-clobber check.
+    """
+    return _REPORT_ROOT.resolve() != (ROOT / "reports").resolve()
+
+
+def _existing_slate_game_count() -> int:
+    """Count games already recorded in the active slate.json (if any).
+
+    Returns 0 when the slate doesn't exist or can't be parsed.  Used by
+    the smoke-clobber guard before a batch run overwrites it.
+    """
+    slate = _REPORT_ROOT / _REPORT_DATE.isoformat() / "_data" / "slate.json"
+    if not slate.exists():
+        return 0
+    try:
+        with slate.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        return len(data.get("games", []))
+    except (OSError, ValueError):
+        return 0
+
+
+def _count_batch_matchups(batch_path: Path | None) -> int:
+    """Return the number of unique ``matchup_key``s in a batch CSV.
+
+    Used by the smoke-clobber guard to detect 'small batch about to
+    overwrite big slate' situations.  Returns 0 if the file is missing
+    or unreadable.
+    """
+    if batch_path is None or not batch_path.exists():
+        return 0
+    try:
+        import csv as _csv
+        keys: set[str] = set()
+        with batch_path.open("r", encoding="utf-8", newline="") as f:
+            reader = _csv.reader(f)
+            for row in reader:
+                if row and row[0]:
+                    keys.add(row[0])
+        return len(keys)
+    except OSError:
+        return 0
 
 
 _CSV_DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
@@ -5689,6 +5753,20 @@ def main() -> None:
                     help="report output date (YYYY-MM-DD). Defaults to the "
                          "date parsed from the --batch CSV filename "
                          "(matchups_YYYY-MM-DD.csv) or today.")
+    ap.add_argument("--out-dir", type=str, default=None,
+                    help="redirect report output root from the default "
+                         "reports/ to a sandbox directory. Use this for "
+                         "SMOKE TESTS so you do not clobber archived "
+                         "reports/<date>/ artifacts (slate.json especially "
+                         "-- it is not in git). Equivalent env var: "
+                         "BASEBALL_BOT_REPORT_ROOT. Example: "
+                         "--out-dir sandbox")
+    ap.add_argument("--force", action="store_true",
+                    help="bypass the smoke-clobber guard. Required when "
+                         "running --batch against a real reports/<date>/ "
+                         "directory if the existing slate has more games "
+                         "than the batch input (otherwise you would lose "
+                         "data). Has no effect with --out-dir set.")
     args = ap.parse_args()
 
     if args.fix_data_layout:
@@ -5697,10 +5775,40 @@ def main() -> None:
 
     batch_path = Path(args.batch) if args.batch else None
     _set_report_date(_derive_report_date(batch_path, args.date))
+
+    # Resolve report root.  Priority: --out-dir flag > env var > default
+    # reports/.  Setting this AT ALL (regardless of value) flips the
+    # is_sandbox check, so smoke tests should always pass --out-dir
+    # somewhere outside the real reports/ tree.
+    out_dir_arg = args.out_dir or os.environ.get("BASEBALL_BOT_REPORT_ROOT")
+    if out_dir_arg:
+        _set_report_root(Path(out_dir_arg))
+        print(f"[matchup] SANDBOX mode: output root -> {_REPORT_ROOT}")
     if _REPORT_DATE != date.today():
-        print(f"[matchup] output dir: reports/{_REPORT_DATE.isoformat()}/")
+        rel = _REPORT_ROOT.name if not _is_sandbox_root() else str(_REPORT_ROOT)
+        print(f"[matchup] output dir: {rel}/{_REPORT_DATE.isoformat()}/")
 
     if args.batch:
+        # Smoke-clobber guard: if we're about to write to a REAL
+        # reports/<date>/ that already has a multi-game slate.json,
+        # and the batch input is much smaller, refuse to run.  The user
+        # is almost certainly doing a smoke test and forgot --out-dir.
+        if not _is_sandbox_root():
+            existing = _existing_slate_game_count()
+            batch_matchups = _count_batch_matchups(batch_path)
+            if (existing >= 5
+                    and batch_matchups > 0
+                    and batch_matchups < existing
+                    and not args.force):
+                sys.exit(
+                    f"\n[matchup] REFUSING TO RUN: writing to real "
+                    f"reports/{_REPORT_DATE.isoformat()}/ would shrink "
+                    f"slate.json from {existing} games to {batch_matchups}.\n"
+                    f"This looks like a smoke test.  Options:\n"
+                    f"  1. Re-run with --out-dir sandbox  (recommended)\n"
+                    f"  2. Re-run with --force  (overwrite anyway -- dangerous)\n"
+                )
+
         run_batch(batch_path, args.season, workers=args.workers)
         if args.commit_cache:
             commit_prior_season_cache(args.season, push=not args.no_push)
