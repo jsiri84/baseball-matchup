@@ -3205,6 +3205,7 @@ def to_html(
     align: dict,
     contact_quality: dict | None = None,
     recent_form: dict | None = None,
+    park_info: dict | None = None,
     body_only: bool = False,
 ) -> str:
     parts: list[str] = []
@@ -3265,6 +3266,46 @@ def to_html(
         f'{_td(fmt3(proj_s_h), cls_s_h)}'
         '</tr></tbody></table>'
     )
+
+    # ----- Park factor row -----
+    # Shown in the Verdict card so the reader can see exactly how much of
+    # the projected slash is venue-driven, with hitter/pitcher coloring
+    # matching the rest of the report.
+    pf_eff = float(proj.get("park_pf", 1.0) or 1.0)
+    pf_pts = float(proj.get("xwOBA_park_pts", 0.0) or 0.0)
+    if park_info or abs(pf_eff - 1.0) >= 0.001 or abs(pf_pts) >= 0.5:
+        # `park_info` is None for single-matchup mode (no park applied);
+        # we still render the row for lineup mode where the per-batter
+        # piece carries park_info from the BPP daily / player file.
+        venue = (park_info or {}).get("venue") or ""
+        src = (park_info or {}).get("source") or "game"
+        src_label = {"player": "BPP player", "game": "BPP game"}.get(src, src)
+        todays_full = (park_info or {}).get("todays_full")
+        bat_bias    = (park_info or {}).get("batter_bias")
+        pit_bias    = (park_info or {}).get("pitcher_bias")
+        # PF favors the hitter when > 1.0; reuse the standard edge_class so
+        # the cell shading matches xwOBA / xBA / etc.  scale=0.03 means
+        # mild edge at +/-1.5%, strong edge at +/-4.5%, which puts Coors
+        # (~+8.5%) firmly in "strong hitter" and Petco (~-5%) in "mild
+        # pitcher" territory.
+        cls_eff = edge_class(pf_eff, 1.0, 0.03, batter_favors_high=True)
+        cls_pts = edge_class(pf_pts, 0.0, 15.0, batter_favors_high=True)
+        sign_pts = "+" if pf_pts >= 0 else ""
+        parts.append(
+            '<table style="margin-bottom:10px"><thead><tr>'
+            '<th>Park factor</th><th>Source</th><th>Today PF</th>'
+            '<th>&divide; Bat bias</th><th>&divide; Pit bias</th>'
+            '<th>= Effective</th><th>xwOBA impact</th>'
+            '</tr></thead><tbody><tr>'
+            f'<td style="text-align:left">{_h(venue) or "&mdash;"}</td>'
+            f'<td style="text-align:left;color:var(--muted)">{_h(src_label)}</td>'
+            f'<td>{f"&times;{float(todays_full):.3f}" if todays_full is not None else "&mdash;"}</td>'
+            f'<td>{f"&divide;{float(bat_bias):.3f}" if bat_bias is not None else "&mdash;"}</td>'
+            f'<td>{f"&divide;{float(pit_bias):.3f}" if pit_bias is not None else "&mdash;"}</td>'
+            f'{_td(f"&times;{pf_eff:.3f}", cls_eff)}'
+            f'{_td(f"{sign_pts}{pf_pts:.1f} pts", cls_pts)}'
+            '</tr></tbody></table>'
+        )
 
     parts.append("<table>")
     parts.append("<thead><tr><th>Frame</th><th>Projected xwOBA</th>"
@@ -4244,6 +4285,7 @@ def _render_html_from_pieces(p: dict, body_only: bool = False) -> str:
         p["decep"], p["handed_note"], p["align"],
         contact_quality=p.get("contact_quality"),
         recent_form=p.get("recent_form"),
+        park_info=p.get("park_info"),
         body_only=body_only,
     )
 
@@ -4526,17 +4568,19 @@ def to_lineup_markdown(pitcher_meta: dict, season: int,
     lines.append("## Lineup grid")
     lines.append("")
     lines.append(
-        "| # | Batter | Hand | Proj xwOBA | Proj xBA | Proj xSLG | Δ (pts) | K% | BB% | HR% | Hit% | OB% | Best pitch (xwOBA) | Worst pitch (xwOBA) | Verdict |"
+        "| # | Batter | Hand | Proj xwOBA | Proj xBA | Proj xSLG | Δ (pts) | K% | BB% | HR% | Hit% | Park (pts) | Best pitch (xwOBA) | Worst pitch (xwOBA) | Verdict |"
     )
     lines.append("|---:|---|:-:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|:-:|")
     for r in summary_rows:
+        park_pts = float(r.get("park_pts", 0.0) or 0.0)
+        park_sign = "+" if park_pts >= 0 else ""
         lines.append(
             f"| {r['spot']} | {r['name']} | {r['stand']}HB | "
             f"{r['proj_xwoba']:.3f} | {fmt3(r.get('proj_xba'))} | {fmt3(r.get('proj_xslg'))} | "
             f"{r['delta_pts']:+.0f} | "
             f"{r['k_pct']*100:.1f}% | {r['bb_pct']*100:.1f}% | "
             f"{r['hr_pct']*100:.1f}% | {r['hit_pct']*100:.1f}% | "
-            f"{r['ob_pct']*100:.1f}% | {r['best_pitch']} | {r['worst_pitch']} | "
+            f"{park_sign}{park_pts:.0f} | {r['best_pitch']} | {r['worst_pitch']} | "
             f"{r['verdict_label']} |"
         )
     lines.append("")
@@ -4793,7 +4837,8 @@ def to_lineup_html(pitcher_meta: dict, season: int,
                  '<th>#</th><th style="text-align:left">Batter</th><th>Hand</th>'
                  '<th>Proj xwOBA</th><th>Proj xBA</th><th>Proj xSLG</th>'
                  '<th>&Delta; (pts)</th>'
-                 '<th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th><th>OB%</th>'
+                 '<th>K%</th><th>BB%</th><th>HR%</th><th>Hit%</th>'
+                 '<th>Park (pts)</th>'
                  '<th style="text-align:left">Best pitch</th>'
                  '<th style="text-align:left">Worst pitch</th>'
                  '<th>Verdict</th>'
@@ -4821,12 +4866,13 @@ def to_lineup_html(pitcher_meta: dict, season: int,
             2.0,
             batter_favors_high=True,
         )
-        ob_cls = edge_class(
-            r["ob_pct"]*100,
-            sum(LG_OUTCOMES[k] for k in ("1B", "2B", "3B", "HR", "BB", "HBP"))*100,
-            2.5,
-            batter_favors_high=True,
-        )
+        # Park column shows the per-batter xwOBA impact in wOBA points,
+        # colored on the same scale as the Verdict-card park-factor row
+        # (scale=15 pts -> mild edge at +/-7.5, strong at +/-22.5).  This
+        # surfaces the per-batter PF variation directly in the grid view.
+        park_pts = float(r.get("park_pts", 0.0) or 0.0)
+        park_cls = edge_class(park_pts, 0.0, 15.0, batter_favors_high=True)
+        park_sign = "+" if park_pts >= 0 else ""
         parts.append(
             "<tr>"
             f'<td class="spot">{r["spot"]}</td>'
@@ -4840,7 +4886,7 @@ def to_lineup_html(pitcher_meta: dict, season: int,
             f'{_td(f"{r['bb_pct']*100:.1f}%", bb_cls)}'
             f'{_td(f"{r['hr_pct']*100:.1f}%", hr_cls)}'
             f'{_td(f"{r['hit_pct']*100:.1f}%", hit_cls)}'
-            f'{_td(f"{r['ob_pct']*100:.1f}%", ob_cls)}'
+            f'{_td(f"{park_sign}{park_pts:.0f}", park_cls)}'
             f'<td class="pitch-cell">{_h(r["best_pitch"])}</td>'
             f'<td class="pitch-cell">{_h(r["worst_pitch"])}</td>'
             f'<td class="verdict {r["verdict_css"]}">{_h(r["verdict_label"])}</td>'
