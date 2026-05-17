@@ -57,6 +57,7 @@ from batter import (
 from pitcher import pull as _pull_pitcher_raw
 from log_setup import setup_logging
 from sortable import sortable_html
+import park_factors
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 pd.set_option("display.width", 160)
@@ -965,7 +966,8 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
             batter_overall: dict, pitcher_overall: dict,
             marginal: pd.Series,
             batter_count_xwoba: dict[str, float] | None = None,
-            pitcher_count_dist: dict[str, float] | None = None) -> dict:
+            pitcher_count_dist: dict[str, float] | None = None,
+            park_pf: float = 1.0) -> dict:
     """Headline projection: log5 for rates, additive for xwOBA/xBA/xSLG.
 
     The per-pitch xwOBA/xBA/xSLG additive is computed twice: a `_raw` version
@@ -1178,14 +1180,19 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
                     * (batter_count_xwoba[c] - bat_x_overall)
                     for c in common
                 ) * COUNT_XWOBA_BLEND_ALPHA
-    proj_xwoba_final = proj_xwoba_bbtype + count_shift
+    # Apply park factor as the LAST step on the headline number, after the
+    # count-state shift.  Half-strength park_pf is computed upstream by
+    # park_factors.effective_xwoba_pf().  Defaults to 1.0 (neutral) so
+    # single-matchup runs and dates without a CSV behave as before.
+    proj_xwoba_final = (proj_xwoba_bbtype + count_shift) * park_pf
 
     # On-contact xwOBA: back out K/BB/HBP contributions from the per-PA number
     # so postgame can compare against actual on-contact xwOBA (per-BIP).
     # xwOBA_per_PA = K*0 + BB*wOBA_BB + HBP*wOBA_HBP + BIP_share * xwOBA_on_contact
-    # Use proj_xwoba_final (post-count-shift) to stay consistent with the
-    # sidecar's headline xwOBA, so on-contact is always >= per-PA for hitters
-    # with positive K-rate (the count-shift gets propagated to on-contact).
+    # Use proj_xwoba_final (post-count-shift, post-park-factor) to stay
+    # consistent with the sidecar's headline xwOBA, so on-contact is always
+    # >= per-PA for hitters with positive K-rate (the count-shift / park
+    # adjustment gets propagated to on-contact).
     _bip_share = max(1e-9, 1.0 - proj_k - proj_bb - proj_hbp)
     proj_xwoba_on_contact = (
         proj_xwoba_final - WOBA_BB * proj_bb - WOBA_HBP * proj_hbp
@@ -1201,6 +1208,8 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
         "xwOBA_count_pts": count_shift * 1000,
         "count_blend": count_breakdown,
         "Whiff_pct": proj_whiff, "HardHit_pct": proj_hh,
+        "park_pf": park_pf,
+        "xwOBA_park_pts": (proj_xwoba_final - (proj_xwoba_bbtype + count_shift)) * 1000,
         "pitch_table": pitch_table,
         "marginal": marginal,
         "marginal_fallback": marginal_fallback,
@@ -4097,7 +4106,9 @@ def count_mix_summary(pit_vs_bat: pd.DataFrame, top_n: int = 4) -> pd.DataFrame:
 # ---------- pipeline ------------------------------------------------------
 
 def compute_matchup_pieces(batter_id: int, pitcher_id: int,
-                           season: int = DEFAULT_SEASON) -> dict:
+                           season: int = DEFAULT_SEASON,
+                           park_pf: float = 1.0,
+                           park_info: dict | None = None) -> dict:
     """Run the analysis pipeline and return all computed pieces in a dict.
 
     The returned dict has every kwarg needed by `to_markdown` / `to_html`,
@@ -4151,7 +4162,8 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
     proj = project(batter_pt, pitcher_pt, batter_overall, pitcher_overall,
                     marginal,
                     batter_count_xwoba=bat_count_xwoba,
-                    pitcher_count_dist=pit_count_dist)
+                    pitcher_count_dist=pit_count_dist,
+                    park_pf=park_pf)
     comps = shape_comps(bat_vs_pit, pitcher_pt)
     zone_df = zone_overlay(pit_vs_bat, bat_vs_pit, pitcher_pt)
     tto = tto_curve(pit_vs_bat)
@@ -4196,6 +4208,7 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
         "contact_quality": contact_quality,
         "recent_form": recent_form,
         "batter_overall": batter_overall, "pitcher_overall": pitcher_overall,
+        "park_info": park_info,
     }
 
 
@@ -4313,6 +4326,8 @@ def _lineup_summary_row(p: dict, spot: int) -> dict:
         "proj_xslg": float(proj.get("xSLG", float("nan"))) if proj.get("xSLG") is not None else float("nan"),
         "proj_xwoba_raw": float(proj.get("xwOBA_raw", proj["xwOBA"]) or proj["xwOBA"]),
         "bbtype_adj_pts": float(proj.get("xwOBA_adj_pts", 0.0) or 0.0),
+        "park_pf": float(proj.get("park_pf", 1.0) or 1.0),
+        "park_pts": float(proj.get("xwOBA_park_pts", 0.0) or 0.0),
         "delta_pts": delta,
         "k_pct": _outcome_prob(out, "Strikeout"),
         "bb_pct": _outcome_prob(out, "Walk"),
@@ -4599,7 +4614,8 @@ def to_lineup_html(pitcher_meta: dict, season: int,
                    summary_rows: list[dict], rollup: dict,
                    per_batter_pieces: list[dict],
                    projected: bool = False,
-                   pitcher_range: dict | None = None) -> str:
+                   pitcher_range: dict | None = None,
+                   game_park_info: dict | None = None) -> str:
     parts: list[str] = []
     pname = pitcher_meta["name"]
     title = f"Lineup vs {pname} - matchup report"
@@ -4637,6 +4653,73 @@ def to_lineup_html(pitcher_meta: dict, season: int,
         )
         + '</div>'
     )
+
+    # Park factor banner.
+    #
+    # `game_park_info` is the lineup-level (team-blended) breakdown:
+    # today's full daily PF, batter-team input bias, pitcher-team input
+    # bias, and the resulting "game" effective PF.  We show this as the
+    # overall context regardless of whether per-player factors were
+    # applied.
+    #
+    # If the per-batter pieces carry "source: player" tags, we also
+    # display the min/max effective range across the lineup so users
+    # can see how much the per-player adjustment varied within this
+    # game (vs the single team-blended number).
+    banner_info = game_park_info or (
+        per_batter_pieces[0].get("park_info") if per_batter_pieces else None)
+    if banner_info:
+        venue = banner_info.get("venue") or "Unknown park"
+        eff = float(banner_info.get("effective",
+                                    banner_info.get("effective_xwoba_pf", 1.0)))
+        # Collect per-batter effective PFs (when player-level was used).
+        per_pfs: list[float] = []
+        any_player = False
+        for piece in per_batter_pieces:
+            pi = piece.get("park_info") or {}
+            if pi.get("source") == "player":
+                any_player = True
+            v = pi.get("effective")
+            if v is not None:
+                try:
+                    per_pfs.append(float(v))
+                except (TypeError, ValueError):
+                    pass
+        if abs(eff - 1.0) >= 0.001:
+            sign = "+" if eff >= 1.0 else ""
+            todays_full = banner_info.get("todays_full")
+            bat_bias    = banner_info.get("batter_bias")
+            pit_bias    = banner_info.get("pitcher_bias")
+            bat_team    = banner_info.get("batter_team", "")
+            pit_team    = banner_info.get("pitcher_team", "")
+            if todays_full is not None and bat_bias is not None and pit_bias is not None:
+                parts.append(
+                    f'<div class="meta">Park: <b>{_h(venue)}</b> &middot; '
+                    f'today PF &times;{float(todays_full):.3f} '
+                    f'&divide; {_h(bat_team)} input bias &times;{float(bat_bias):.3f} '
+                    f'&divide; {_h(pit_team)} input bias &times;{float(pit_bias):.3f} '
+                    f'= game-level effective &times;{eff:.3f} '
+                    f'({sign}{(eff - 1.0) * 100:.1f}%)</div>'
+                )
+            else:
+                # Legacy sidecar path -- old half-strength format.
+                raw = float(banner_info.get("raw_xwoba_pf", 1.0))
+                parts.append(
+                    f'<div class="meta">Park: <b>{_h(venue)}</b> &middot; '
+                    f'applied xwOBA factor &times;{eff:.3f} '
+                    f'({sign}{(eff - 1.0) * 100:.1f}%, half-strength of raw &times;{raw:.3f})</div>'
+                )
+        # Add a per-batter range line when player-level PFs were applied.
+        if any_player and per_pfs:
+            lo, hi = min(per_pfs), max(per_pfs)
+            n_player = sum(1 for piece in per_batter_pieces
+                           if (piece.get("park_info") or {}).get("source") == "player")
+            parts.append(
+                f'<div class="meta">Per-batter park factors (BPP player file): '
+                f'applied to {n_player}/{len(per_batter_pieces)} batters &middot; '
+                f'effective range &times;{lo:.3f} to &times;{hi:.3f}'
+                f'</div>'
+            )
     parts.append("</header>")
 
     # ----- Hero rollup -----
@@ -4819,7 +4902,12 @@ def to_lineup_html(pitcher_meta: dict, season: int,
 def analyze_lineup(batter_ids: list[int], pitcher_id: int,
                    season: int = DEFAULT_SEASON,
                    pa_per_batter: int = DEFAULT_PA_PER_BATTER,
-                   projected: bool = False) -> tuple[str, str, str, dict]:
+                   projected: bool = False,
+                   park_pf: float = 1.0,
+                   park_info: dict | None = None,
+                   park_pf_per_batter: list[float] | None = None,
+                   park_info_per_batter: list[dict | None] | None = None,
+                   ) -> tuple[str, str, str, dict]:
     """Run analyze_matchup for each batter against the same pitcher and assemble
     a lineup-level report.
 
@@ -4839,8 +4927,19 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
     spot_counter = 0
     for raw_spot, bid in enumerate(batter_ids, start=1):
         print(f"  [{raw_spot}/{len(batter_ids)}] computing batter id {bid} ...")
+        # Prefer per-batter park PF (BPP player file) if provided; otherwise
+        # fall back to the lineup-level (game) PF.
+        batter_pf = park_pf
+        batter_info = park_info
+        if park_pf_per_batter is not None and (raw_spot - 1) < len(park_pf_per_batter):
+            batter_pf = float(park_pf_per_batter[raw_spot - 1])
+        if (park_info_per_batter is not None
+                and (raw_spot - 1) < len(park_info_per_batter)
+                and park_info_per_batter[raw_spot - 1] is not None):
+            batter_info = park_info_per_batter[raw_spot - 1]
         try:
-            p = compute_matchup_pieces(bid, pitcher_id, season)
+            p = compute_matchup_pieces(bid, pitcher_id, season,
+                                       park_pf=batter_pf, park_info=batter_info)
         except SystemExit as exc:
             print(f"    skipping batter id {bid}: {exc}")
             skipped.append((bid, str(exc)))
@@ -4861,7 +4960,8 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
     md = to_lineup_markdown(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
                             projected=projected, pitcher_range=pitcher_range)
     html_doc = to_lineup_html(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
-                              projected=projected, pitcher_range=pitcher_range)
+                              projected=projected, pitcher_range=pitcher_range,
+                              game_park_info=park_info)
 
     pit_slug = pitcher_meta["last"].lower().replace(" ", "_")
     out_stem = f"lineup_vs_{pit_slug}_{season}"
@@ -5139,6 +5239,43 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
         if removed:
             print(f"  removed {removed} stale sidecar(s) from {data_dir.relative_to(ROOT)}")
 
+        # Load daily park factors once for the slate.  Empty dict if no CSV
+        # for this date -- _process_lineup falls back to neutral PF=1.0 per
+        # matchup, so the pipeline still works on dates without park data.
+        park_factors_table = park_factors.load_park_factors(_REPORT_DATE)
+        if park_factors_table:
+            print(f"  loaded park factors for {len(park_factors_table)} game(s) "
+                  f"on {_REPORT_DATE.isoformat()}")
+        else:
+            print(f"  no park factor CSV found for {_REPORT_DATE.isoformat()}; "
+                  f"projections will use neutral PF=1.0")
+
+        # Load the BPP annual archive once for the slate.  Used by
+        # effective_xwoba_pf_deparked to back out each team's schedule-mix
+        # bias from inputs before applying today's daily PF at full strength
+        # (replaces the older 0.5 dampener).  Empty dict -> neutral fallback.
+        annual_pf_table = park_factors.load_annual_park_factors()
+        if annual_pf_table:
+            print(f"  loaded annual park factors for {len(annual_pf_table)} team(s) "
+                  f"(BPP multi-year baseline)")
+        else:
+            print("  no annual park factor archive found; "
+                  "de-parking disabled, daily PF applied at neutral 1.0x")
+
+        # Load BPP's PER-PLAYER park factor table for the slate (xlsx).
+        # When present, each batter gets their own HR/2B-3B/1B factors
+        # (handedness + spray + batted-ball profile baked in) instead of
+        # the team-blended game-level numbers from the daily CSV.  Batters
+        # not in the file (bench, projected, missing) fall back to the
+        # game-level PF for that matchup.
+        player_pf_table = park_factors.load_player_park_factors(_REPORT_DATE)
+        if player_pf_table:
+            print(f"  loaded per-player park factors for {len(player_pf_table)} batter(s) "
+                  f"(BPP daily xlsx)")
+        else:
+            print("  no per-player park factor xlsx found; "
+                  "all batters use game-level PF from daily CSV")
+
         slate_entries: list[dict] = []
 
         def _process_lineup(item) -> None:
@@ -5162,9 +5299,85 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
 
             tag = f"{matchup_key} vs {pitcher_name}" + (" (projected)" if is_projected else "")
             print(f"\n--- {tag} ---")
+
+            # Look up today's park factor for this game and combine with
+            # the annual archive to de-park batter and pitcher inputs.
+            # matchup_key is "AWAY@HOME"; park_factors.lookup() normalizes
+            # whitespace/case.  Falls back to neutral PF=1.0 if the daily
+            # CSV is missing or this matchup isn't in it.
+            #
+            # game_pf / game_pf_info are the GAME-LEVEL fallbacks used for
+            # any batter not found in the per-player xlsx, AND for the
+            # HTML banner's overall context line.
+            game_pf = 1.0
+            game_pf_info: dict | None = None
+            game_info: dict | None = None
+            pitcher_team = ""
+            if "@" in matchup_key and park_factors_table:
+                away_code, home_code = matchup_key.split("@", 1)
+                game_info = park_factors.lookup(park_factors_table, away_code, home_code)
+                if game_info is not None:
+                    # Game-level xwOBA factor (team-blended HR/2B-3B/1B).
+                    todays_full_game = park_factors.xwoba_pf(
+                        game_info["pf_HR"], game_info["pf_2B3B"], game_info["pf_1B"])
+                    # Pitcher's team is the side of matchup_key the hitters
+                    # are not on.  hitter_team was canonicalized earlier;
+                    # matchup_key codes match (post-normalization).
+                    pitcher_team = (home_code if hitter_team == away_code
+                                    else away_code)
+                    deparked = park_factors.effective_xwoba_pf_deparked(
+                        todays_full_game, hitter_team, pitcher_team, annual_pf_table)
+                    game_pf = float(deparked["effective"])
+                    game_pf_info = {**game_info, **deparked}
+
+            # Build PER-BATTER park PF / info lists from the BPP player
+            # xlsx.  Each batter gets their own HR/2B-3B/1B (handedness +
+            # spray baked in).  Missing batters fall back to game-level.
+            batter_park_pfs: list[float] = []
+            batter_park_infos: list[dict | None] = []
+            n_player_match = 0
+            for nm in names_sorted:
+                used = False
+                if player_pf_table and game_info is not None:
+                    player_row = park_factors.lookup_player(
+                        player_pf_table, hitter_team, nm)
+                    if player_row is not None:
+                        todays_full_pl = park_factors.xwoba_pf(
+                            player_row["pf_HR"],
+                            player_row["pf_2B3B"],
+                            player_row["pf_1B"])
+                        dep = park_factors.effective_xwoba_pf_deparked(
+                            todays_full_pl, hitter_team, pitcher_team,
+                            annual_pf_table)
+                        # Carry game-level venue label so the banner still
+                        # has a stable display name.
+                        batter_park_pfs.append(float(dep["effective"]))
+                        batter_park_infos.append({
+                            **dep,
+                            "venue":   game_info.get("venue", ""),
+                            "pf_HR":   player_row["pf_HR"],
+                            "pf_2B3B": player_row["pf_2B3B"],
+                            "pf_1B":   player_row["pf_1B"],
+                            "source":  "player",
+                            "player_name": player_row.get("name", nm),
+                        })
+                        n_player_match += 1
+                        used = True
+                if not used:
+                    batter_park_pfs.append(game_pf)
+                    batter_park_infos.append(
+                        {**game_pf_info, "source": "game"} if game_pf_info else None)
+
+            if player_pf_table:
+                print(f"  player-level park factors: {n_player_match}/{len(names_sorted)} "
+                      f"batters matched (rest use game-level)")
+
             try:
                 _, md, html_doc, roundup_data = analyze_lineup(
                     batter_ids, pid, season, projected=is_projected,
+                    park_pf=game_pf, park_info=game_pf_info,
+                    park_pf_per_batter=batter_park_pfs,
+                    park_info_per_batter=batter_park_infos,
                 )
             except SystemExit as exc:
                 print(f"  skipped {tag}: {exc}")
