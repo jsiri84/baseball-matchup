@@ -64,8 +64,15 @@ matchups/
 matchups_*.csv
 matchups_*.csv.*.bak
 
-# BPP park factor CSVs (licensed -- don't redistribute on the public repo)
-parkdata/
+# BPP park factor data is tracked so the Cursor Cloud Agent's daily.py
+# run (and any other CI / shared machine) has the same park factors the
+# local run sees -- otherwise reports come out with neutral park=1.000
+# and the published site loses a real signal.  Contains:
+#   - annual_park_factors_2023_2025.json (our transcription of BPP's
+#     annual archive; the de-parking baseline)
+#   - ParkFactors_<date>*.csv (daily game-level BPP CSV)
+#   - PlayerParkFactors_<date>*.xlsx (daily per-batter BPP XLSX)
+# Repo owner has the BPP subscription that produces the daily files.
 
 # Misc
 *.log

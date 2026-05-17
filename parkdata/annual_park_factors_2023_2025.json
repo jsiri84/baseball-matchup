@@ -1,0 +1,822 @@
+{
+  "_source": "BallparkPal (https://www.ballparkpal.com), Park Factors page",
+  "window": "2023-2025",
+  "adjust_for_yearly_ball_changes": true,
+  "_notes": {
+    "model": "100-baseline park factors. >100 inflates, <100 suppresses.",
+    "outcomes_actual_per_game": "Per-game counts at this park (Actual tab).",
+    "outcomes_expected_per_game": "Per-game expected from contact (Expected From Contact tab; excludes factors that affect contact).",
+    "outcomes_diff_pct": "Actual minus Expected, as a percentage (Diff vs Exp tab).",
+    "wind.direction_general": "Pct of games with wind blowing In / Out / Sideways.",
+    "wind.direction_specific": "Pct in each compass direction the wind blows TOWARD. Order: SW, W, NW, N, S, SE, E, NE (matches BPP screenshot column order ↙ ← ↖ ↑ ↓ ↘ → ↗).",
+    "wind.speed_buckets": "Pct of games in each mph bucket: 0-3, 4-7, 8-11, 12-18, 19+.",
+    "wind.receptiveness": "How sensitive HR rate is to wind blowing in/out at this park.",
+    "air.temperature_buckets": "Pct of games with avg temp in each degree-F decade.",
+    "air.pressure_buckets": "Pct of games in each pressure bucket (Lowest / Low / Med / High / Highest).",
+    "air.humidity_buckets": "Pct of games in each humidity bucket (same scheme as pressure).",
+    "traits.altitude_ft": "Stadium elevation in feet.",
+    "traits.outfield_size": "BPP categorical: Small / Medium / Large / X-Large / Variable.",
+    "traits.contact_rate": "How often pitches in play stay fair / drop in. Categorical.",
+    "traits.contact_quality": "Avg quality of contact at this park. Categorical.",
+    "traits.typical_carry_pct": "Pct lift/drag on fly-ball distance vs neutral conditions.",
+    "tropicana_dome": "Tropicana Field is a fixed-roof dome; BPP shows '-' for wind/air tables; we store null."
+  },
+  "teams": {
+    "ARI": {
+      "stadium": "Chase Field",
+      "model": {"runs": 102, "hits": 102, "hr": 92, "xbh": 113, "1b": 101, "k": 98, "bb": 98},
+      "outcomes_actual_per_game":   {"hr": 2.35, "xbh": 4.64, "1b": 10.92},
+      "outcomes_actual_totals":     {"hr": 568,  "xbh": 1122, "1b": 2642},
+      "outcomes_expected_per_game": {"hr": 2.54, "xbh": 4.13, "1b": 11.15},
+      "outcomes_expected_totals":   {"hr": 615,  "xbh": 999,  "1b": 2699},
+      "outcomes_diff_pct":          {"hr": -7.4, "xbh": 12.2, "1b": -2.1},
+      "outcomes_diff_totals":       {"hr": -46.9, "xbh": 122.5, "1b": -57.3},
+      "wind": {
+        "direction_general":  {"in": 7,  "out": 52, "sideways": 40},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [2, 2, 4, 26, 1, 5, 38, 23],
+        "speed_avg": 7.0,
+        "speed_buckets": {"0_3": 22, "4_7": 49, "8_11": 10, "12_18": 16, "19_plus": 4},
+        "receptiveness": {"in": 1.09, "out": 0.19, "overall": 1.28}
+      },
+      "air": {
+        "temperature_avg": 88.5,
+        "temperature_buckets": {"40s": 0, "50s": 0, "60s": 0, "70s": 22, "80s": 22, "90s": 55},
+        "pressure_avg": 1010,
+        "pressure_buckets":    {"lowest": 34, "low": 39, "med": 22, "high": 5, "highest": 0},
+        "humidity_avg": 15.0,
+        "humidity_buckets":    {"lowest": 81, "low": 18, "med": 0, "high": 0, "highest": 0}
+      },
+      "traits": {"altitude_ft": 1082, "outfield_size": "Large", "contact_rate": "Great", "contact_quality": "Bad", "wind_receptiveness": 1.28, "variation": 0.48, "typical_carry_pct": 0.68}
+    },
+    "ATH": {
+      "stadium": "Sutter Health Park",
+      "model": {"runs": 115, "hits": 106, "hr": 120, "xbh": 115, "1b": 100, "k": 100, "bb": 101},
+      "outcomes_actual_per_game":   {"hr": 3.26, "xbh": 4.52, "1b": 10.95},
+      "outcomes_actual_totals":     {"hr": 264,  "xbh": 366,  "1b": 887},
+      "outcomes_expected_per_game": {"hr": 2.70, "xbh": 4.00, "1b": 11.15},
+      "outcomes_expected_totals":   {"hr": 219,  "xbh": 324,  "1b": 903},
+      "outcomes_diff_pct":          {"hr": 20.5, "xbh": 13.0, "1b": -1.8},
+      "outcomes_diff_totals":       {"hr": 44.9, "xbh": 42.2, "1b": -16.2},
+      "wind": {
+        "direction_general":  {"in": 1,  "out": 92, "sideways": 6},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [0, 0, 30, 55, 0, 1, 6, 8],
+        "speed_avg": 11.1,
+        "speed_buckets": {"0_3": 5, "4_7": 14, "8_11": 25, "12_18": 54, "19_plus": 2},
+        "receptiveness": {"in": 2.52, "out": 1.01, "overall": 3.53}
+      },
+      "air": {
+        "temperature_avg": 80.7,
+        "temperature_buckets": {"40s": 0, "50s": 9, "60s": 9, "70s": 22, "80s": 36, "90s": 25},
+        "pressure_avg": 1012,
+        "pressure_buckets":    {"lowest": 14, "low": 48, "med": 32, "high": 6, "highest": 0},
+        "humidity_avg": 40.0,
+        "humidity_buckets":    {"lowest": 10, "low": 52, "med": 23, "high": 12, "highest": 2}
+      },
+      "traits": {"altitude_ft": 26, "outfield_size": "Large", "contact_rate": "Good", "contact_quality": "Avg", "wind_receptiveness": 3.53, "variation": 1.00, "typical_carry_pct": -0.95}
+    },
+    "ATL": {
+      "stadium": "Truist Park",
+      "model": {"runs": 93, "hits": 98, "hr": 96, "xbh": 94, "1b": 99, "k": 102, "bb": 98},
+      "outcomes_actual_per_game":   {"hr": 2.71, "xbh": 3.54, "1b": 10.82},
+      "outcomes_actual_totals":     {"hr": 660,  "xbh": 860,  "1b": 2629},
+      "outcomes_expected_per_game": {"hr": 2.80, "xbh": 3.78, "1b": 10.59},
+      "outcomes_expected_totals":   {"hr": 680,  "xbh": 918,  "1b": 2574},
+      "outcomes_diff_pct":          {"hr": -3.6, "xbh": -6.3, "1b": 2.2},
+      "outcomes_diff_totals":       {"hr": -20.7, "xbh": -58.4, "1b": 54.3},
+      "wind": {
+        "direction_general":  {"in": 38, "out": 39, "sideways": 23},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [12, 14, 18, 20, 11, 14, 9, 1],
+        "speed_avg": 7.1,
+        "speed_buckets": {"0_3": 10, "4_7": 51, "8_11": 33, "12_18": 6, "19_plus": 0},
+        "receptiveness": {"in": -0.62, "out": 2.61, "overall": 2.00}
+      },
+      "air": {
+        "temperature_avg": 82.0,
+        "temperature_buckets": {"40s": 0, "50s": 3, "60s": 6, "70s": 25, "80s": 40, "90s": 26},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 5, "low": 16, "med": 37, "high": 32, "highest": 10},
+        "humidity_avg": 50.1,
+        "humidity_buckets":    {"lowest": 1, "low": 31, "med": 46, "high": 15, "highest": 7}
+      },
+      "traits": {"altitude_ft": 1050, "outfield_size": "Medium", "contact_rate": "Poor", "contact_quality": "Great", "wind_receptiveness": 2.00, "variation": 0.90, "typical_carry_pct": -0.44}
+    },
+    "BAL": {
+      "stadium": "Oriole Park",
+      "model": {"runs": 109, "hits": 106, "hr": 98, "xbh": 107, "1b": 108, "k": 96, "bb": 98},
+      "outcomes_actual_per_game":   {"hr": 2.71, "xbh": 3.66, "1b": 10.71},
+      "outcomes_actual_totals":     {"hr": 658,  "xbh": 890,  "1b": 2603},
+      "outcomes_expected_per_game": {"hr": 2.83, "xbh": 3.89, "1b": 10.48},
+      "outcomes_expected_totals":   {"hr": 688,  "xbh": 945,  "1b": 2546},
+      "outcomes_diff_pct":          {"hr": -4.7, "xbh": -5.9, "1b": 2.3},
+      "outcomes_diff_totals":       {"hr": -29.4, "xbh": -55.2, "1b": 57.0},
+      "wind": {
+        "direction_general":  {"in": 26, "out": 45, "sideways": 29},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [10, 15, 19, 14, 8, 8, 14, 12],
+        "speed_avg": 7.3,
+        "speed_buckets": {"0_3": 12, "4_7": 48, "8_11": 28, "12_18": 11, "19_plus": 0},
+        "receptiveness": {"in": 0.62, "out": 2.40, "overall": 3.02}
+      },
+      "air": {
+        "temperature_avg": 76.0,
+        "temperature_buckets": {"40s": 1, "50s": 9, "60s": 12, "70s": 34, "80s": 33, "90s": 9},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 10, "low": 20, "med": 31, "high": 24, "highest": 15},
+        "humidity_avg": 59.1,
+        "humidity_buckets":    {"lowest": 0, "low": 10, "med": 49, "high": 29, "highest": 12}
+      },
+      "traits": {"altitude_ft": 130, "outfield_size": "Variable", "contact_rate": "Great", "contact_quality": "Good", "wind_receptiveness": 3.02, "variation": 1.41, "typical_carry_pct": -0.69}
+    },
+    "BOS": {
+      "stadium": "Fenway Park",
+      "model": {"runs": 112, "hits": 108, "hr": 94, "xbh": 121, "1b": 106, "k": 94, "bb": 100},
+      "outcomes_actual_per_game":   {"hr": 2.31, "xbh": 4.43, "1b": 11.26},
+      "outcomes_actual_totals":     {"hr": 560,  "xbh": 1072, "1b": 2725},
+      "outcomes_expected_per_game": {"hr": 2.64, "xbh": 3.74, "1b": 10.84},
+      "outcomes_expected_totals":   {"hr": 639,  "xbh": 905,  "1b": 2623},
+      "outcomes_diff_pct":          {"hr": -12.3, "xbh": 18.6, "1b": 3.9},
+      "outcomes_diff_totals":       {"hr": -78.5, "xbh": 167.1, "1b": 102.6},
+      "wind": {
+        "direction_general":  {"in": 24, "out": 52, "sideways": 24},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [14, 14, 19, 18, 7, 2, 10, 16],
+        "speed_avg": 7.5,
+        "speed_buckets": {"0_3": 9, "4_7": 50, "8_11": 31, "12_18": 11, "19_plus": 0},
+        "receptiveness": {"in": 1.20, "out": 4.58, "overall": 5.78}
+      },
+      "air": {
+        "temperature_avg": 69.8,
+        "temperature_buckets": {"40s": 5, "50s": 19, "60s": 18, "70s": 35, "80s": 18, "90s": 4},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 13, "low": 22, "med": 27, "high": 20, "highest": 17},
+        "humidity_avg": 59.8,
+        "humidity_buckets":    {"lowest": 0, "low": 15, "med": 38, "high": 31, "highest": 15}
+      },
+      "traits": {"altitude_ft": 20, "outfield_size": "Variable", "contact_rate": "Good", "contact_quality": "Great", "wind_receptiveness": 5.78, "variation": 1.84, "typical_carry_pct": -1.55}
+    },
+    "CHC": {
+      "stadium": "Wrigley Field",
+      "model": {"runs": 96, "hits": 97, "hr": 101, "xbh": 92, "1b": 98, "k": 101, "bb": 104},
+      "outcomes_actual_per_game":   {"hr": 2.45, "xbh": 3.31, "1b": 10.31},
+      "outcomes_actual_totals":     {"hr": 592,  "xbh": 799,  "1b": 2485},
+      "outcomes_expected_per_game": {"hr": 2.48, "xbh": 3.68, "1b": 10.54},
+      "outcomes_expected_totals":   {"hr": 598,  "xbh": 886,  "1b": 2541},
+      "outcomes_diff_pct":          {"hr": -1.0, "xbh": -9.8, "1b": -2.1},
+      "outcomes_diff_totals":       {"hr": -6.2, "xbh": -87.4, "1b": -55.9},
+      "wind": {
+        "direction_general":  {"in": 50, "out": 34, "sideways": 16},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [18, 11, 11, 14, 24, 9, 5, 9],
+        "speed_avg": 9.7,
+        "speed_buckets": {"0_3": 4, "4_7": 31, "8_11": 34, "12_18": 26, "19_plus": 4},
+        "receptiveness": {"in": 4.72, "out": 4.43, "overall": 9.15}
+      },
+      "air": {
+        "temperature_avg": 69.9,
+        "temperature_buckets": {"40s": 10, "50s": 11, "60s": 15, "70s": 42, "80s": 19, "90s": 2},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 10, "low": 21, "med": 32, "high": 22, "highest": 15},
+        "humidity_avg": 62.5,
+        "humidity_buckets":    {"lowest": 0, "low": 6, "med": 42, "high": 41, "highest": 12}
+      },
+      "traits": {"altitude_ft": 596, "outfield_size": "Medium", "contact_rate": "Poor", "contact_quality": "Bad", "wind_receptiveness": 9.15, "variation": 2.67, "typical_carry_pct": -1.85}
+    },
+    "CHW": {
+      "stadium": "Rate Field",
+      "model": {"runs": 97, "hits": 98, "hr": 100, "xbh": 91, "1b": 100, "k": 101, "bb": 102},
+      "outcomes_actual_per_game":   {"hr": 2.40, "xbh": 3.35, "1b": 10.61},
+      "outcomes_actual_totals":     {"hr": 581,  "xbh": 810,  "1b": 2568},
+      "outcomes_expected_per_game": {"hr": 2.49, "xbh": 3.65, "1b": 10.50},
+      "outcomes_expected_totals":   {"hr": 601,  "xbh": 883,  "1b": 2541},
+      "outcomes_diff_pct":          {"hr": -2.8, "xbh": -8.3, "1b": 1.1},
+      "outcomes_diff_totals":       {"hr": -20.7, "xbh": -72.9, "1b": 27.2},
+      "wind": {
+        "direction_general":  {"in": 37, "out": 26, "sideways": 37},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [10, 15, 8, 8, 11, 16, 22, 9],
+        "speed_avg": 9.5,
+        "speed_buckets": {"0_3": 4, "4_7": 32, "8_11": 35, "12_18": 26, "19_plus": 3},
+        "receptiveness": {"in": -0.38, "out": 1.27, "overall": 0.90}
+      },
+      "air": {
+        "temperature_avg": 70.0,
+        "temperature_buckets": {"40s": 7, "50s": 13, "60s": 18, "70s": 42, "80s": 17, "90s": 3},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 10, "low": 20, "med": 32, "high": 26, "highest": 12},
+        "humidity_avg": 62.9,
+        "humidity_buckets":    {"lowest": 0, "low": 4, "med": 42, "high": 42, "highest": 12}
+      },
+      "traits": {"altitude_ft": 596, "outfield_size": "Small", "contact_rate": "Bad", "contact_quality": "Avg", "wind_receptiveness": 0.90, "variation": 1.18, "typical_carry_pct": -1.06}
+    },
+    "CIN": {
+      "stadium": "Great American BP",
+      "model": {"runs": 110, "hits": 102, "hr": 122, "xbh": 102, "1b": 98, "k": 105, "bb": 105},
+      "outcomes_actual_per_game":   {"hr": 2.91, "xbh": 3.73, "1b": 10.03},
+      "outcomes_actual_totals":     {"hr": 701,  "xbh": 899,  "1b": 2416},
+      "outcomes_expected_per_game": {"hr": 2.44, "xbh": 3.60, "1b": 10.26},
+      "outcomes_expected_totals":   {"hr": 588,  "xbh": 868,  "1b": 2472},
+      "outcomes_diff_pct":          {"hr": 19.3, "xbh": 3.7, "1b": -2.3},
+      "outcomes_diff_totals":       {"hr": 112.9, "xbh": 31.1, "1b": -56.2},
+      "wind": {
+        "direction_general":  {"in": 19, "out": 43, "sideways": 38},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [9, 26, 19, 16, 5, 6, 12, 8],
+        "speed_avg": 6.9,
+        "speed_buckets": {"0_3": 14, "4_7": 50, "8_11": 27, "12_18": 9, "19_plus": 0},
+        "receptiveness": {"in": 2.87, "out": -1.60, "overall": 1.27}
+      },
+      "air": {
+        "temperature_avg": 76.2,
+        "temperature_buckets": {"40s": 3, "50s": 8, "60s": 10, "70s": 36, "80s": 34, "90s": 9},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 8, "low": 22, "med": 33, "high": 27, "highest": 10},
+        "humidity_avg": 61.2,
+        "humidity_buckets":    {"lowest": 0, "low": 7, "med": 45, "high": 35, "highest": 13}
+      },
+      "traits": {"altitude_ft": 683, "outfield_size": "Small", "contact_rate": "Bad", "contact_quality": "Avg", "wind_receptiveness": 1.27, "variation": 0.88, "typical_carry_pct": -0.49}
+    },
+    "CLE": {
+      "stadium": "Progressive Field",
+      "model": {"runs": 97, "hits": 97, "hr": 98, "xbh": 99, "1b": 96, "k": 101, "bb": 103},
+      "outcomes_actual_per_game":   {"hr": 2.16, "xbh": 3.78, "1b": 10.04},
+      "outcomes_actual_totals":     {"hr": 520,  "xbh": 912,  "1b": 2419},
+      "outcomes_expected_per_game": {"hr": 2.29, "xbh": 3.69, "1b": 10.55},
+      "outcomes_expected_totals":   {"hr": 551,  "xbh": 890,  "1b": 2542},
+      "outcomes_diff_pct":          {"hr": -6.4, "xbh": 2.4, "1b": -4.7},
+      "outcomes_diff_totals":       {"hr": -31.3, "xbh": 22.5, "1b": -123.2},
+      "wind": {
+        "direction_general":  {"in": 43, "out": 32, "sideways": 25},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [17, 3, 3, 8, 12, 13, 22, 21],
+        "speed_avg": 8.4,
+        "speed_buckets": {"0_3": 8, "4_7": 39, "8_11": 32, "12_18": 20, "19_plus": 1},
+        "receptiveness": {"in": 2.47, "out": 0.75, "overall": 3.22}
+      },
+      "air": {
+        "temperature_avg": 70.2,
+        "temperature_buckets": {"40s": 7, "50s": 11, "60s": 18, "70s": 45, "80s": 19, "90s": 0},
+        "pressure_avg": 1016,
+        "pressure_buckets":    {"lowest": 8, "low": 19, "med": 28, "high": 27, "highest": 18},
+        "humidity_avg": 65.4,
+        "humidity_buckets":    {"lowest": 0, "low": 1, "med": 36, "high": 50, "highest": 13}
+      },
+      "traits": {"altitude_ft": 582, "outfield_size": "Small", "contact_rate": "Avg", "contact_quality": "Poor", "wind_receptiveness": 3.22, "variation": 1.51, "typical_carry_pct": -0.77}
+    },
+    "COL": {
+      "stadium": "Coors Field",
+      "model": {"runs": 132, "hits": 114, "hr": 116, "xbh": 128, "1b": 110, "k": 89, "bb": 102},
+      "outcomes_actual_per_game":   {"hr": 2.81, "xbh": 4.87, "1b": 12.55},
+      "outcomes_actual_totals":     {"hr": 677,  "xbh": 1174, "1b": 3024},
+      "outcomes_expected_per_game": {"hr": 2.69, "xbh": 4.03, "1b": 11.97},
+      "outcomes_expected_totals":   {"hr": 648,  "xbh": 972,  "1b": 2884},
+      "outcomes_diff_pct":          {"hr": 4.8, "xbh": 20.9, "1b": 4.8},
+      "outcomes_diff_totals":       {"hr": 29.7, "xbh": 202.0, "1b": 139.4},
+      "wind": {
+        "direction_general":  {"in": 39, "out": 28, "sideways": 33},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [25, 27, 12, 7, 7, 7, 6, 10],
+        "speed_avg": 7.6,
+        "speed_buckets": {"0_3": 10, "4_7": 52, "8_11": 22, "12_18": 14, "19_plus": 2},
+        "receptiveness": {"in": 1.81, "out": 0.82, "overall": 2.63}
+      },
+      "air": {
+        "temperature_avg": 75.2,
+        "temperature_buckets": {"40s": 3, "50s": 9, "60s": 15, "70s": 29, "80s": 32, "90s": 12},
+        "pressure_avg": 1012,
+        "pressure_buckets":    {"lowest": 26, "low": 28, "med": 27, "high": 13, "highest": 5},
+        "humidity_avg": 28.4,
+        "humidity_buckets":    {"lowest": 37, "low": 46, "med": 11, "high": 5, "highest": 1}
+      },
+      "traits": {"altitude_ft": 5183, "outfield_size": "X-Large", "contact_rate": "Great", "contact_quality": "Avg", "wind_receptiveness": 2.63, "variation": 1.36, "typical_carry_pct": 3.75}
+    },
+    "DET": {
+      "stadium": "Comerica Park",
+      "model": {"runs": 99, "hits": 100, "hr": 90, "xbh": 99, "1b": 102, "k": 94, "bb": 101},
+      "outcomes_actual_per_game":   {"hr": 2.42, "xbh": 3.54, "1b": 10.33},
+      "outcomes_actual_totals":     {"hr": 583,  "xbh": 854,  "1b": 2488},
+      "outcomes_expected_per_game": {"hr": 2.60, "xbh": 3.67, "1b": 10.18},
+      "outcomes_expected_totals":   {"hr": 626,  "xbh": 885,  "1b": 2453},
+      "outcomes_diff_pct":          {"hr": -7.0, "xbh": -3.5, "1b": 1.5},
+      "outcomes_diff_totals":       {"hr": -42.6, "xbh": -31.2, "1b": 35.8},
+      "wind": {
+        "direction_general":  {"in": 37, "out": 28, "sideways": 35},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [15, 19, 13, 6, 11, 11, 16, 9],
+        "speed_avg": 9.1,
+        "speed_buckets": {"0_3": 4, "4_7": 35, "8_11": 37, "12_18": 23, "19_plus": 1},
+        "receptiveness": {"in": 4.69, "out": 0.36, "overall": 5.05}
+      },
+      "air": {
+        "temperature_avg": 71.9,
+        "temperature_buckets": {"40s": 7, "50s": 10, "60s": 16, "70s": 39, "80s": 24, "90s": 4},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 12, "low": 20, "med": 30, "high": 22, "highest": 17},
+        "humidity_avg": 55.8,
+        "humidity_buckets":    {"lowest": 0, "low": 16, "med": 49, "high": 30, "highest": 6}
+      },
+      "traits": {"altitude_ft": 596, "outfield_size": "Large", "contact_rate": "Avg", "contact_quality": "Avg", "wind_receptiveness": 5.05, "variation": 1.31, "typical_carry_pct": -1.54}
+    },
+    "HOU": {
+      "stadium": "Daikin Park",
+      "model": {"runs": 97, "hits": 99, "hr": 108, "xbh": 92, "1b": 99, "k": 105, "bb": 99},
+      "outcomes_actual_per_game":   {"hr": 2.70, "xbh": 3.49, "1b": 10.52},
+      "outcomes_actual_totals":     {"hr": 653,  "xbh": 844,  "1b": 2546},
+      "outcomes_expected_per_game": {"hr": 2.52, "xbh": 3.66, "1b": 10.35},
+      "outcomes_expected_totals":   {"hr": 610,  "xbh": 887,  "1b": 2504},
+      "outcomes_diff_pct":          {"hr": 7.2, "xbh": -4.7, "1b": 1.7},
+      "outcomes_diff_totals":       {"hr": 42.6, "xbh": -42.5, "1b": 42.6},
+      "wind": {
+        "direction_general":  {"in": 32, "out": 61, "sideways": 7},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [4, 2, 5, 45, 18, 11, 5, 11],
+        "speed_avg": 11.3,
+        "speed_buckets": {"0_3": 0, "4_7": 23, "8_11": 25, "12_18": 50, "19_plus": 2},
+        "receptiveness": {"in": -3.21, "out": 1.83, "overall": -1.38}
+      },
+      "air": {
+        "temperature_avg": 80.2,
+        "temperature_buckets": {"40s": 0, "50s": 0, "60s": 4, "70s": 36, "80s": 57, "90s": 4},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 9, "low": 18, "med": 39, "high": 25, "highest": 9},
+        "humidity_avg": 48.3,
+        "humidity_buckets":    {"lowest": 0, "low": 34, "med": 46, "high": 16, "highest": 4}
+      },
+      "traits": {"altitude_ft": 38, "outfield_size": "Variable", "contact_rate": "Bad", "contact_quality": "Poor", "wind_receptiveness": -1.38, "variation": 0.50, "typical_carry_pct": -1.68}
+    },
+    "KC": {
+      "stadium": "Kauffman Stadium",
+      "model": {"runs": 107, "hits": 101, "hr": 110, "xbh": 100, "1b": 100, "k": 91, "bb": 102},
+      "outcomes_actual_per_game":   {"hr": 2.16, "xbh": 4.31, "1b": 10.80},
+      "outcomes_actual_totals":     {"hr": 526,  "xbh": 1047, "1b": 2625},
+      "outcomes_expected_per_game": {"hr": 2.72, "xbh": 4.05, "1b": 10.82},
+      "outcomes_expected_totals":   {"hr": 661,  "xbh": 984,  "1b": 2630},
+      "outcomes_diff_pct":          {"hr": -20.5, "xbh": 6.5, "1b": -0.2},
+      "outcomes_diff_totals":       {"hr": -134.9, "xbh": 63.2, "1b": -4.9},
+      "wind": {
+        "direction_general":  {"in": 31, "out": 48, "sideways": 21},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [10, 12, 27, 16, 11, 10, 9, 5],
+        "speed_avg": 9.5,
+        "speed_buckets": {"0_3": 6, "4_7": 32, "8_11": 35, "12_18": 23, "19_plus": 5},
+        "receptiveness": {"in": 1.99, "out": 0.65, "overall": 2.64}
+      },
+      "air": {
+        "temperature_avg": 78.5,
+        "temperature_buckets": {"40s": 2, "50s": 7, "60s": 10, "70s": 30, "80s": 30, "90s": 20},
+        "pressure_avg": 1014,
+        "pressure_buckets":    {"lowest": 13, "low": 24, "med": 36, "high": 20, "highest": 8},
+        "humidity_avg": 55.9,
+        "humidity_buckets":    {"lowest": 0, "low": 15, "med": 50, "high": 29, "highest": 6}
+      },
+      "traits": {"altitude_ft": 750, "outfield_size": "X-Large", "contact_rate": "Great", "contact_quality": "Good", "wind_receptiveness": 2.64, "variation": 1.21, "typical_carry_pct": 0.23}
+    },
+    "LAA": {
+      "stadium": "Angel Stadium",
+      "model": {"runs": 99, "hits": 100, "hr": 107, "xbh": 93, "1b": 100, "k": 104, "bb": 99},
+      "outcomes_actual_per_game":   {"hr": 2.91, "xbh": 3.29, "1b": 10.24},
+      "outcomes_actual_totals":     {"hr": 708,  "xbh": 800,  "1b": 2487},
+      "outcomes_expected_per_game": {"hr": 2.74, "xbh": 3.60, "1b": 9.87},
+      "outcomes_expected_totals":   {"hr": 666,  "xbh": 874,  "1b": 2397},
+      "outcomes_diff_pct":          {"hr": 6.5, "xbh": -8.3, "1b": 3.8},
+      "outcomes_diff_totals":       {"hr": 42.1, "xbh": -73.9, "1b": 90.2},
+      "wind": {
+        "direction_general":  {"in": 0, "out": 98, "sideways": 2},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [0, 1, 14, 77, 0, 0, 0, 8],
+        "speed_avg": 7.3,
+        "speed_buckets": {"0_3": 2, "4_7": 57, "8_11": 39, "12_18": 2, "19_plus": 0},
+        "receptiveness": {"in": 3.32, "out": -2.36, "overall": 0.96}
+      },
+      "air": {
+        "temperature_avg": 76.6,
+        "temperature_buckets": {"40s": 0, "50s": 1, "60s": 19, "70s": 42, "80s": 32, "90s": 6},
+        "pressure_avg": 1013,
+        "pressure_buckets":    {"lowest": 5, "low": 42, "med": 47, "high": 6, "highest": 1},
+        "humidity_avg": 50.8,
+        "humidity_buckets":    {"lowest": 1, "low": 14, "med": 70, "high": 14, "highest": 0}
+      },
+      "traits": {"altitude_ft": 160, "outfield_size": "Small", "contact_rate": "Avg", "contact_quality": "Good", "wind_receptiveness": 0.96, "variation": 0.79, "typical_carry_pct": -0.48}
+    },
+    "LAD": {
+      "stadium": "Dodger Stadium",
+      "model": {"runs": 100, "hits": 99, "hr": 118, "xbh": 98, "1b": 96, "k": 103, "bb": 93},
+      "outcomes_actual_per_game":   {"hr": 3.22, "xbh": 3.53, "1b": 9.57},
+      "outcomes_actual_totals":     {"hr": 775,  "xbh": 852,  "1b": 2306},
+      "outcomes_expected_per_game": {"hr": 2.88, "xbh": 3.75, "1b": 10.11},
+      "outcomes_expected_totals":   {"hr": 695,  "xbh": 904,  "1b": 2436},
+      "outcomes_diff_pct":          {"hr": 11.3, "xbh": -5.8, "1b": -5.4},
+      "outcomes_diff_totals":       {"hr": 79.8, "xbh": -52.1, "1b": -130.6},
+      "wind": {
+        "direction_general":  {"in": 0, "out": 99, "sideways": 1},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [0, 0, 4, 50, 0, 0, 1, 45],
+        "speed_avg": 8.4,
+        "speed_buckets": {"0_3": 0, "4_7": 32, "8_11": 64, "12_18": 3, "19_plus": 1},
+        "receptiveness": {"in": 3.19, "out": -0.32, "overall": 2.88}
+      },
+      "air": {
+        "temperature_avg": 77.8,
+        "temperature_buckets": {"40s": 0, "50s": 2, "60s": 13, "70s": 40, "80s": 36, "90s": 8},
+        "pressure_avg": 1012,
+        "pressure_buckets":    {"lowest": 9, "low": 47, "med": 39, "high": 4, "highest": 1},
+        "humidity_avg": 46.7,
+        "humidity_buckets":    {"lowest": 3, "low": 27, "med": 57, "high": 13, "highest": 1}
+      },
+      "traits": {"altitude_ft": 267, "outfield_size": "Medium", "contact_rate": "Avg", "contact_quality": "Great", "wind_receptiveness": 2.88, "variation": 0.87, "typical_carry_pct": -1.49}
+    },
+    "MIA": {
+      "stadium": "LoanDepot Park",
+      "model": {"runs": 99, "hits": 100, "hr": 88, "xbh": 107, "1b": 101, "k": 100, "bb": 102},
+      "outcomes_actual_per_game":   {"hr": 2.26, "xbh": 4.03, "1b": 11.17},
+      "outcomes_actual_totals":     {"hr": 547,  "xbh": 976,  "1b": 2704},
+      "outcomes_expected_per_game": {"hr": 2.59, "xbh": 3.91, "1b": 11.11},
+      "outcomes_expected_totals":   {"hr": 627,  "xbh": 947,  "1b": 2688},
+      "outcomes_diff_pct":          {"hr": -12.5, "xbh": 3.0, "1b": 0.6},
+      "outcomes_diff_totals":       {"hr": -79.6, "xbh": 28.8, "1b": 16.0},
+      "wind": {
+        "direction_general":  {"in": 86, "out": 5, "sideways": 10},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [15, 6, 1, 2, 32, 38, 4, 1],
+        "speed_avg": 11.6,
+        "speed_buckets": {"0_3": 1, "4_7": 11, "8_11": 31, "12_18": 56, "19_plus": 1},
+        "receptiveness": {"in": 2.01, "out": 0.04, "overall": 2.06}
+      },
+      "air": {
+        "temperature_avg": 80.5,
+        "temperature_buckets": {"40s": 0, "50s": 0, "60s": 0, "70s": 48, "80s": 48, "90s": 4},
+        "pressure_avg": 1017,
+        "pressure_buckets":    {"lowest": 0, "low": 4, "med": 39, "high": 52, "highest": 6},
+        "humidity_avg": 58.5,
+        "humidity_buckets":    {"lowest": 0, "low": 5, "med": 52, "high": 41, "highest": 2}
+      },
+      "traits": {"altitude_ft": 15, "outfield_size": "Large", "contact_rate": "Good", "contact_quality": "Avg", "wind_receptiveness": 2.06, "variation": 0.30, "typical_carry_pct": -1.07}
+    },
+    "MIL": {
+      "stadium": "American Family Fld",
+      "model": {"runs": 90, "hits": 93, "hr": 105, "xbh": 87, "1b": 92, "k": 109, "bb": 103},
+      "outcomes_actual_per_game":   {"hr": 2.52, "xbh": 3.21, "1b": 9.95},
+      "outcomes_actual_totals":     {"hr": 609,  "xbh": 777,  "1b": 2408},
+      "outcomes_expected_per_game": {"hr": 2.27, "xbh": 3.52, "1b": 10.14},
+      "outcomes_expected_totals":   {"hr": 550,  "xbh": 852,  "1b": 2454},
+      "outcomes_diff_pct":          {"hr": 10.6, "xbh": -8.8, "1b": -1.9},
+      "outcomes_diff_totals":       {"hr": 58.5, "xbh": -75.1, "1b": -46.1},
+      "wind": {
+        "direction_general":  {"in": 46, "out": 26, "sideways": 28},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [14, 16, 15, 9, 17, 15, 12, 2],
+        "speed_avg": 8.5,
+        "speed_buckets": {"0_3": 5, "4_7": 41, "8_11": 35, "12_18": 18, "19_plus": 0},
+        "receptiveness": {"in": -0.55, "out": 0.50, "overall": -0.04}
+      },
+      "air": {
+        "temperature_avg": 76.4,
+        "temperature_buckets": {"40s": 0, "50s": 2, "60s": 13, "70s": 51, "80s": 29, "90s": 5},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 8, "low": 24, "med": 31, "high": 28, "highest": 9},
+        "humidity_avg": 60.1,
+        "humidity_buckets":    {"lowest": 0, "low": 6, "med": 47, "high": 41, "highest": 5}
+      },
+      "traits": {"altitude_ft": 593, "outfield_size": "Medium", "contact_rate": "Poor", "contact_quality": "Good", "wind_receptiveness": -0.04, "variation": 0.67, "typical_carry_pct": -1.01}
+    },
+    "MIN": {
+      "stadium": "Target Field",
+      "model": {"runs": 103, "hits": 101, "hr": 94, "xbh": 102, "1b": 103, "k": 98, "bb": 104},
+      "outcomes_actual_per_game":   {"hr": 2.62, "xbh": 4.01, "1b": 10.43},
+      "outcomes_actual_totals":     {"hr": 632,  "xbh": 967,  "1b": 2512},
+      "outcomes_expected_per_game": {"hr": 2.80, "xbh": 3.87, "1b": 9.96},
+      "outcomes_expected_totals":   {"hr": 675,  "xbh": 932,  "1b": 2400},
+      "outcomes_diff_pct":          {"hr": -6.5, "xbh": 4.2, "1b": 4.6},
+      "outcomes_diff_totals":       {"hr": -43.6, "xbh": 34.9, "1b": 112.1},
+      "wind": {
+        "direction_general":  {"in": 35, "out": 39, "sideways": 26},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [17, 18, 12, 13, 10, 8, 8, 14],
+        "speed_avg": 9.1,
+        "speed_buckets": {"0_3": 6, "4_7": 30, "8_11": 39, "12_18": 23, "19_plus": 1},
+        "receptiveness": {"in": -0.11, "out": 1.62, "overall": 1.51}
+      },
+      "air": {
+        "temperature_avg": 72.8,
+        "temperature_buckets": {"40s": 7, "50s": 11, "60s": 13, "70s": 36, "80s": 26, "90s": 7},
+        "pressure_avg": 1014,
+        "pressure_buckets":    {"lowest": 17, "low": 24, "med": 29, "high": 19, "highest": 11},
+        "humidity_avg": 53.4,
+        "humidity_buckets":    {"lowest": 1, "low": 22, "med": 46, "high": 23, "highest": 7}
+      },
+      "traits": {"altitude_ft": 812, "outfield_size": "Medium", "contact_rate": "Avg", "contact_quality": "Good", "wind_receptiveness": 1.51, "variation": 0.98, "typical_carry_pct": -0.53}
+    },
+    "NYM": {
+      "stadium": "Citi Field",
+      "model": {"runs": 91, "hits": 94, "hr": 96, "xbh": 85, "1b": 97, "k": 107, "bb": 105},
+      "outcomes_actual_per_game":   {"hr": 2.63, "xbh": 3.24, "1b": 9.87},
+      "outcomes_actual_totals":     {"hr": 631,  "xbh": 778,  "1b": 2368},
+      "outcomes_expected_per_game": {"hr": 2.62, "xbh": 3.63, "1b": 9.91},
+      "outcomes_expected_totals":   {"hr": 629,  "xbh": 871,  "1b": 2378},
+      "outcomes_diff_pct":          {"hr": 0.8, "xbh": -10.8, "1b": -0.5},
+      "outcomes_diff_totals":       {"hr": 1.7, "xbh": -93.4, "1b": -9.8},
+      "wind": {
+        "direction_general":  {"in": 22, "out": 55, "sideways": 23},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [8, 9, 20, 22, 4, 10, 14, 12],
+        "speed_avg": 9.6,
+        "speed_buckets": {"0_3": 4, "4_7": 29, "8_11": 40, "12_18": 25, "19_plus": 2},
+        "receptiveness": {"in": -0.43, "out": 0.16, "overall": -0.27}
+      },
+      "air": {
+        "temperature_avg": 73.4,
+        "temperature_buckets": {"40s": 3, "50s": 12, "60s": 15, "70s": 35, "80s": 29, "90s": 6},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 11, "low": 20, "med": 28, "high": 22, "highest": 19},
+        "humidity_avg": 57.0,
+        "humidity_buckets":    {"lowest": 0, "low": 18, "med": 41, "high": 31, "highest": 11}
+      },
+      "traits": {"altitude_ft": 54, "outfield_size": "Medium", "contact_rate": "Poor", "contact_quality": "Poor", "wind_receptiveness": -0.27, "variation": 1.37, "typical_carry_pct": -1.21}
+    },
+    "NYY": {
+      "stadium": "Yankee Stadium",
+      "model": {"runs": 97, "hits": 96, "hr": 108, "xbh": 88, "1b": 96, "k": 102, "bb": 105},
+      "outcomes_actual_per_game":   {"hr": 3.05, "xbh": 3.24, "1b": 9.33},
+      "outcomes_actual_totals":     {"hr": 738,  "xbh": 784,  "1b": 2257},
+      "outcomes_expected_per_game": {"hr": 2.96, "xbh": 3.72, "1b": 9.63},
+      "outcomes_expected_totals":   {"hr": 715,  "xbh": 901,  "1b": 2331},
+      "outcomes_diff_pct":          {"hr": 3.2, "xbh": -13.0, "1b": -3.1},
+      "outcomes_diff_totals":       {"hr": 22.3, "xbh": -117.6, "1b": -73.2},
+      "wind": {
+        "direction_general":  {"in": 20, "out": 44, "sideways": 35},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [9, 28, 17, 13, 7, 4, 7, 14],
+        "speed_avg": 9.2,
+        "speed_buckets": {"0_3": 4, "4_7": 31, "8_11": 40, "12_18": 23, "19_plus": 1},
+        "receptiveness": {"in": 3.90, "out": 1.53, "overall": 5.43}
+      },
+      "air": {
+        "temperature_avg": 73.7,
+        "temperature_buckets": {"40s": 4, "50s": 11, "60s": 16, "70s": 36, "80s": 27, "90s": 7},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 12, "low": 19, "med": 29, "high": 21, "highest": 18},
+        "humidity_avg": 55.7,
+        "humidity_buckets":    {"lowest": 0, "low": 19, "med": 44, "high": 29, "highest": 7}
+      },
+      "traits": {"altitude_ft": 54, "outfield_size": "Variable", "contact_rate": "Avg", "contact_quality": "Great", "wind_receptiveness": 5.43, "variation": 1.95, "typical_carry_pct": -1.50}
+    },
+    "PHI": {
+      "stadium": "Citizens Bank Park",
+      "model": {"runs": 103, "hits": 100, "hr": 113, "xbh": 97, "1b": 99, "k": 105, "bb": 101},
+      "outcomes_actual_per_game":   {"hr": 2.85, "xbh": 3.63, "1b": 10.57},
+      "outcomes_actual_totals":     {"hr": 689,  "xbh": 878,  "1b": 2557},
+      "outcomes_expected_per_game": {"hr": 2.48, "xbh": 3.73, "1b": 10.56},
+      "outcomes_expected_totals":   {"hr": 601,  "xbh": 902,  "1b": 2555},
+      "outcomes_diff_pct":          {"hr": 14.7, "xbh": -2.7, "1b": 0.0},
+      "outcomes_diff_totals":       {"hr": 88.2, "xbh": -24.3, "1b": 2.0},
+      "wind": {
+        "direction_general":  {"in": 22, "out": 47, "sideways": 30},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [9, 10, 12, 16, 3, 11, 21, 19],
+        "speed_avg": 7.9,
+        "speed_buckets": {"0_3": 7, "4_7": 44, "8_11": 38, "12_18": 11, "19_plus": 0},
+        "receptiveness": {"in": 4.08, "out": 1.33, "overall": 5.41}
+      },
+      "air": {
+        "temperature_avg": 76.6,
+        "temperature_buckets": {"40s": 2, "50s": 10, "60s": 14, "70s": 29, "80s": 32, "90s": 14},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 10, "low": 19, "med": 28, "high": 26, "highest": 17},
+        "humidity_avg": 54.6,
+        "humidity_buckets":    {"lowest": 0, "low": 23, "med": 45, "high": 23, "highest": 9}
+      },
+      "traits": {"altitude_ft": 9, "outfield_size": "Small", "contact_rate": "Bad", "contact_quality": "Great", "wind_receptiveness": 5.41, "variation": 1.83, "typical_carry_pct": -1.17}
+    },
+    "PIT": {
+      "stadium": "PNC Park",
+      "model": {"runs": 100, "hits": 100, "hr": 86, "xbh": 112, "1b": 99, "k": 93, "bb": 103},
+      "outcomes_actual_per_game":   {"hr": 1.86, "xbh": 4.11, "1b": 10.56},
+      "outcomes_actual_totals":     {"hr": 453,  "xbh": 998,  "1b": 2567},
+      "outcomes_expected_per_game": {"hr": 2.34, "xbh": 3.74, "1b": 10.80},
+      "outcomes_expected_totals":   {"hr": 568,  "xbh": 908,  "1b": 2624},
+      "outcomes_diff_pct":          {"hr": -20.4, "xbh": 9.9, "1b": -2.1},
+      "outcomes_diff_totals":       {"hr": -114.8, "xbh": 90.1, "1b": -56.8},
+      "wind": {
+        "direction_general":  {"in": 19, "out": 58, "sideways": 23},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [5, 18, 27, 20, 8, 5, 6, 11],
+        "speed_avg": 6.4,
+        "speed_buckets": {"0_3": 15, "4_7": 56, "8_11": 25, "12_18": 4, "19_plus": 0},
+        "receptiveness": {"in": 2.48, "out": 0.84, "overall": 3.32}
+      },
+      "air": {
+        "temperature_avg": 73.8,
+        "temperature_buckets": {"40s": 4, "50s": 9, "60s": 15, "70s": 38, "80s": 31, "90s": 4},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 7, "low": 21, "med": 32, "high": 27, "highest": 13},
+        "humidity_avg": 57.9,
+        "humidity_buckets":    {"lowest": 0, "low": 11, "med": 51, "high": 27, "highest": 10}
+      },
+      "traits": {"altitude_ft": 743, "outfield_size": "Variable", "contact_rate": "Good", "contact_quality": "Bad", "wind_receptiveness": 3.32, "variation": 1.01, "typical_carry_pct": -0.73}
+    },
+    "SD": {
+      "stadium": "Petco Park",
+      "model": {"runs": 97, "hits": 98, "hr": 99, "xbh": 93, "1b": 99, "k": 103, "bb": 104},
+      "outcomes_actual_per_game":   {"hr": 2.46, "xbh": 3.31, "1b": 10.09},
+      "outcomes_actual_totals":     {"hr": 585,  "xbh": 787,  "1b": 2402},
+      "outcomes_expected_per_game": {"hr": 2.52, "xbh": 3.54, "1b": 10.25},
+      "outcomes_expected_totals":   {"hr": 601,  "xbh": 843,  "1b": 2439},
+      "outcomes_diff_pct":          {"hr": -2.8, "xbh": -6.8, "1b": -1.5},
+      "outcomes_diff_totals":       {"hr": -15.9, "xbh": -56.6, "1b": -37.0},
+      "wind": {
+        "direction_general":  {"in": 15, "out": 24, "sideways": 61},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [0, 0, 0, 1, 0, 15, 61, 22],
+        "speed_avg": 9.0,
+        "speed_buckets": {"0_3": 1, "4_7": 24, "8_11": 66, "12_18": 9, "19_plus": 0},
+        "receptiveness": {"in": 1.64, "out": 0.68, "overall": 2.32}
+      },
+      "air": {
+        "temperature_avg": 72.2,
+        "temperature_buckets": {"40s": 0, "50s": 3, "60s": 30, "70s": 54, "80s": 12, "90s": 0},
+        "pressure_avg": 1013,
+        "pressure_buckets":    {"lowest": 5, "low": 46, "med": 43, "high": 6, "highest": 1},
+        "humidity_avg": 62.1,
+        "humidity_buckets":    {"lowest": 0, "low": 3, "med": 35, "high": 61, "highest": 2}
+      },
+      "traits": {"altitude_ft": 13, "outfield_size": "Medium", "contact_rate": "Avg", "contact_quality": "Avg", "wind_receptiveness": 2.32, "variation": 1.00, "typical_carry_pct": -1.77}
+    },
+    "SEA": {
+      "stadium": "T-Mobile Park",
+      "model": {"runs": 87, "hits": 93, "hr": 100, "xbh": 84, "1b": 94, "k": 111, "bb": 100},
+      "outcomes_actual_per_game":   {"hr": 2.44, "xbh": 3.09, "1b": 9.22},
+      "outcomes_actual_totals":     {"hr": 593,  "xbh": 751,  "1b": 2242},
+      "outcomes_expected_per_game": {"hr": 2.42, "xbh": 3.63, "1b": 9.53},
+      "outcomes_expected_totals":   {"hr": 587,  "xbh": 883,  "1b": 2317},
+      "outcomes_diff_pct":          {"hr": 0.9, "xbh": -15.0, "1b": -3.2},
+      "outcomes_diff_totals":       {"hr": 5.6, "xbh": -131.5, "1b": -75.1},
+      "wind": {
+        "direction_general":  {"in": 32, "out": 40, "sideways": 28},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [1, 2, 14, 21, 0, 31, 26, 5],
+        "speed_avg": 5.2,
+        "speed_buckets": {"0_3": 24, "4_7": 63, "8_11": 12, "12_18": 1, "19_plus": 0},
+        "receptiveness": {"in": 1.35, "out": 2.32, "overall": 3.67}
+      },
+      "air": {
+        "temperature_avg": 71.0,
+        "temperature_buckets": {"40s": 2, "50s": 13, "60s": 26, "70s": 38, "80s": 17, "90s": 4},
+        "pressure_avg": 1016,
+        "pressure_buckets":    {"lowest": 3, "low": 15, "med": 34, "high": 32, "highest": 17},
+        "humidity_avg": 51.3,
+        "humidity_buckets":    {"lowest": 0, "low": 22, "med": 57, "high": 17, "highest": 4}
+      },
+      "traits": {"altitude_ft": 10, "outfield_size": "Small", "contact_rate": "Poor", "contact_quality": "Bad", "wind_receptiveness": 3.67, "variation": 0.88, "typical_carry_pct": -2.15}
+    },
+    "SF": {
+      "stadium": "Oracle Park",
+      "model": {"runs": 97, "hits": 102, "hr": 84, "xbh": 109, "1b": 103, "k": 97, "bb": 95},
+      "outcomes_actual_per_game":   {"hr": 1.99, "xbh": 3.80, "1b": 10.72},
+      "outcomes_actual_totals":     {"hr": 482,  "xbh": 921,  "1b": 2595},
+      "outcomes_expected_per_game": {"hr": 2.43, "xbh": 3.73, "1b": 10.58},
+      "outcomes_expected_totals":   {"hr": 587,  "xbh": 902,  "1b": 2561},
+      "outcomes_diff_pct":          {"hr": -18.0, "xbh": 1.8, "1b": 1.3},
+      "outcomes_diff_totals":       {"hr": -105.3, "xbh": 18.7, "1b": 34.5},
+      "wind": {
+        "direction_general":  {"in": 1, "out": 98, "sideways": 1},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [0, 1, 6, 82, 0, 0, 0, 9],
+        "speed_avg": 9.8,
+        "speed_buckets": {"0_3": 0, "4_7": 27, "8_11": 46, "12_18": 23, "19_plus": 2},
+        "receptiveness": {"in": 0.82, "out": 0.08, "overall": 0.90}
+      },
+      "air": {
+        "temperature_avg": 66.4,
+        "temperature_buckets": {"40s": 0, "50s": 22, "60s": 43, "70s": 30, "80s": 5, "90s": 1},
+        "pressure_avg": 1014,
+        "pressure_buckets":    {"lowest": 3, "low": 26, "med": 51, "high": 17, "highest": 3},
+        "humidity_avg": 64.5,
+        "humidity_buckets":    {"lowest": 0, "low": 4, "med": 37, "high": 42, "highest": 17}
+      },
+      "traits": {"altitude_ft": 63, "outfield_size": "Variable", "contact_rate": "Good", "contact_quality": "Poor", "wind_receptiveness": 0.90, "variation": 0.81, "typical_carry_pct": -2.30}
+    },
+    "STL": {
+      "stadium": "Busch Stadium",
+      "model": {"runs": 95, "hits": 100, "hr": 88, "xbh": 98, "1b": 103, "k": 95, "bb": 94},
+      "outcomes_actual_per_game":   {"hr": 2.17, "xbh": 3.88, "1b": 11.46},
+      "outcomes_actual_totals":     {"hr": 521,  "xbh": 932,  "1b": 2751},
+      "outcomes_expected_per_game": {"hr": 2.57, "xbh": 4.02, "1b": 11.39},
+      "outcomes_expected_totals":   {"hr": 617,  "xbh": 964,  "1b": 2734},
+      "outcomes_diff_pct":          {"hr": -15.4, "xbh": -3.3, "1b": 0.6},
+      "outcomes_diff_totals":       {"hr": -95.6, "xbh": -32.1, "1b": 16.5},
+      "wind": {
+        "direction_general":  {"in": 33, "out": 38, "sideways": 29},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [13, 17, 20, 8, 10, 10, 11, 11],
+        "speed_avg": 8.7,
+        "speed_buckets": {"0_3": 6, "4_7": 41, "8_11": 32, "12_18": 20, "19_plus": 2},
+        "receptiveness": {"in": 1.28, "out": 2.63, "overall": 3.91}
+      },
+      "air": {
+        "temperature_avg": 79.4,
+        "temperature_buckets": {"40s": 1, "50s": 6, "60s": 11, "70s": 25, "80s": 38, "90s": 19},
+        "pressure_avg": 1014,
+        "pressure_buckets":    {"lowest": 9, "low": 24, "med": 37, "high": 22, "highest": 7},
+        "humidity_avg": 57.9,
+        "humidity_buckets":    {"lowest": 0, "low": 10, "med": 50, "high": 32, "highest": 7}
+      },
+      "traits": {"altitude_ft": 455, "outfield_size": "Large", "contact_rate": "Good", "contact_quality": "Avg", "wind_receptiveness": 3.91, "variation": 1.25, "typical_carry_pct": -0.77}
+    },
+    "TB": {
+      "stadium": "Tropicana Field",
+      "model": {"runs": 93, "hits": 96, "hr": 97, "xbh": 96, "1b": 96, "k": 108, "bb": 102},
+      "outcomes_actual_per_game":   {"hr": 2.44, "xbh": 3.43, "1b": 9.78},
+      "outcomes_actual_totals":     {"hr": 393,  "xbh": 553,  "1b": 1574},
+      "outcomes_expected_per_game": {"hr": 2.45, "xbh": 3.59, "1b": 9.85},
+      "outcomes_expected_totals":   {"hr": 395,  "xbh": 579,  "1b": 1586},
+      "outcomes_diff_pct":          {"hr": -0.4, "xbh": -5.1, "1b": -0.8},
+      "outcomes_diff_totals":       {"hr": -1.5, "xbh": -26.0, "1b": -12.0},
+      "wind": null,
+      "air":  null,
+      "traits": {"altitude_ft": 44, "outfield_size": "Medium", "contact_rate": "Poor", "contact_quality": "Poor", "wind_receptiveness": 1.85, "variation": 0.03, "typical_carry_pct": -0.53}
+    },
+    "TEX": {
+      "stadium": "Globe Life Field",
+      "model": {"runs": 95, "hits": 97, "hr": 97, "xbh": 92, "1b": 99, "k": 102, "bb": 101},
+      "outcomes_actual_per_game":   {"hr": 2.62, "xbh": 3.40, "1b": 10.09},
+      "outcomes_actual_totals":     {"hr": 637,  "xbh": 826,  "1b": 2452},
+      "outcomes_expected_per_game": {"hr": 2.79, "xbh": 3.75, "1b": 9.96},
+      "outcomes_expected_totals":   {"hr": 678,  "xbh": 911,  "1b": 2420},
+      "outcomes_diff_pct":          {"hr": -6.6, "xbh": -9.6, "1b": 1.3},
+      "outcomes_diff_totals":       {"hr": -40.2, "xbh": -85.5, "1b": 31.8},
+      "wind": {
+        "direction_general":  {"in": 34, "out": 31, "sideways": 34},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [10, 24, 22, 5, 5, 19, 10, 3],
+        "speed_avg": 9.0,
+        "speed_buckets": {"0_3": 5, "4_7": 26, "8_11": 48, "12_18": 21, "19_plus": 0},
+        "receptiveness": {"in": 0.79, "out": 1.34, "overall": 2.13}
+      },
+      "air": {
+        "temperature_avg": 80.8,
+        "temperature_buckets": {"40s": 0, "50s": 0, "60s": 3, "70s": 43, "80s": 38, "90s": 16},
+        "pressure_avg": 1013,
+        "pressure_buckets":    {"lowest": 18, "low": 20, "med": 41, "high": 13, "highest": 8},
+        "humidity_avg": 41.7,
+        "humidity_buckets":    {"lowest": 7, "low": 39, "med": 41, "high": 11, "highest": 2}
+      },
+      "traits": {"altitude_ft": 616, "outfield_size": "Medium", "contact_rate": "Avg", "contact_quality": "Great", "wind_receptiveness": 2.13, "variation": 0.40, "typical_carry_pct": -1.18}
+    },
+    "TOR": {
+      "stadium": "Rogers Centre",
+      "model": {"runs": 97, "hits": 98, "hr": 102, "xbh": 96, "1b": 99, "k": 99, "bb": 96},
+      "outcomes_actual_per_game":   {"hr": 2.64, "xbh": 3.77, "1b": 10.28},
+      "outcomes_actual_totals":     {"hr": 641,  "xbh": 916,  "1b": 2497},
+      "outcomes_expected_per_game": {"hr": 2.67, "xbh": 3.88, "1b": 10.41},
+      "outcomes_expected_totals":   {"hr": 650,  "xbh": 944,  "1b": 2530},
+      "outcomes_diff_pct":          {"hr": -1.5, "xbh": -3.0, "1b": -1.3},
+      "outcomes_diff_totals":       {"hr": -8.4, "xbh": -28.1, "1b": -32.7},
+      "wind": {
+        "direction_general":  {"in": 32, "out": 48, "sideways": 20},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [2, 7, 19, 12, 16, 14, 13, 17],
+        "speed_avg": 8.1,
+        "speed_buckets": {"0_3": 7, "4_7": 48, "8_11": 27, "12_18": 16, "19_plus": 2},
+        "receptiveness": {"in": -1.37, "out": -1.02, "overall": -2.39}
+      },
+      "air": {
+        "temperature_avg": 73.4,
+        "temperature_buckets": {"40s": 0, "50s": 2, "60s": 22, "70s": 60, "80s": 15, "90s": 1},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 11, "low": 18, "med": 27, "high": 26, "highest": 17},
+        "humidity_avg": 59.0,
+        "humidity_buckets":    {"lowest": 0, "low": 4, "med": 52, "high": 41, "highest": 3}
+      },
+      "traits": {"altitude_ft": 247, "outfield_size": "Medium", "contact_rate": "Great", "contact_quality": "Good", "wind_receptiveness": -2.39, "variation": 0.81, "typical_carry_pct": -1.67}
+    },
+    "WAS": {
+      "stadium": "Nationals Park",
+      "model": {"runs": 104, "hits": 103, "hr": 105, "xbh": 103, "1b": 102, "k": 98, "bb": 96},
+      "outcomes_actual_per_game":   {"hr": 2.37, "xbh": 3.69, "1b": 11.66},
+      "outcomes_actual_totals":     {"hr": 571,  "xbh": 889,  "1b": 2811},
+      "outcomes_expected_per_game": {"hr": 2.47, "xbh": 3.95, "1b": 11.39},
+      "outcomes_expected_totals":   {"hr": 594,  "xbh": 951,  "1b": 2745},
+      "outcomes_diff_pct":          {"hr": -3.8, "xbh": -6.4, "1b": 2.4},
+      "outcomes_diff_totals":       {"hr": -23.4, "xbh": -62.5, "1b": 66.2},
+      "wind": {
+        "direction_general":  {"in": 27, "out": 44, "sideways": 30},
+        "direction_specific_order": ["SW", "W", "NW", "N", "S", "SE", "E", "NE"],
+        "direction_specific_pct":   [11, 12, 16, 15, 6, 10, 18, 13],
+        "speed_avg": 6.6,
+        "speed_buckets": {"0_3": 12, "4_7": 58, "8_11": 23, "12_18": 7, "19_plus": 0},
+        "receptiveness": {"in": 1.19, "out": 1.92, "overall": 3.11}
+      },
+      "air": {
+        "temperature_avg": 78.0,
+        "temperature_buckets": {"40s": 1, "50s": 8, "60s": 12, "70s": 27, "80s": 38, "90s": 14},
+        "pressure_avg": 1015,
+        "pressure_buckets":    {"lowest": 8, "low": 21, "med": 28, "high": 26, "highest": 17},
+        "humidity_avg": 55.0,
+        "humidity_buckets":    {"lowest": 0, "low": 20, "med": 47, "high": 24, "highest": 9}
+      },
+      "traits": {"altitude_ft": 25, "outfield_size": "Medium", "contact_rate": "Great", "contact_quality": "Great", "wind_receptiveness": 3.11, "variation": 0.98, "typical_carry_pct": -0.64}
+    }
+  }
+}
