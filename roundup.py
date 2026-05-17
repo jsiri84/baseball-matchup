@@ -328,8 +328,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--date", default=date_cls.today().isoformat(),
                     help="Report date (YYYY-MM-DD). Defaults to today.")
-    ap.add_argument("--top", type=int, default=50, help="Number of top hitters (default 50).")
-    ap.add_argument("--bottom", type=int, default=50, help="Number of bottom hitters (default 50).")
+    ap.add_argument("--top", type=int, default=50, help="Number of top hitters by xwOBA (default 50).")
+    ap.add_argument("--bottom", type=int, default=50, help="Number of bottom hitters by xwOBA (default 50).")
+    ap.add_argument("--top-hr", type=int, default=100,
+                    help="Number of top hitters by projected HR%% (default 100). "
+                         "Output filename: top<N>hr_<date>.html.  Pass 0 to skip.")
     ap.add_argument("--reports-dir", default=None,
                     help="Override reports directory (default reports/<date>/).")
     args = ap.parse_args()
@@ -387,6 +390,28 @@ def main() -> int:
 
     print(f"[roundup] wrote {top_path.relative_to(ROOT)}")
     print(f"[roundup] wrote {bot_path.relative_to(ROOT)}")
+
+    # ----- Top-N HR-rate roundup -----
+    # Same template as the xwOBA roundup but ranked by projected HR%
+    # (already in each summary row as ``hr_pct``).  Designed for HR-prop
+    # / DFS power-pick scouting where the headline question is "who has
+    # the best long-ball chance today", which is a different read than
+    # "best overall matchup by xwOBA".
+    if args.top_hr > 0:
+        sorted_hr = sorted(all_rows, key=lambda r: r["sr"].get("hr_pct", 0.0), reverse=True)
+        hr_n = min(args.top_hr, len(sorted_hr))
+        hr_rows = sorted_hr[:hr_n]
+        hr_html = _build_html(
+            title=f"Top {hr_n} hitters by projected HR%",
+            subtitle="Best home-run rates across the slate (highest projected HR% first)",
+            rows=hr_rows,
+            date_str=args.date,
+            total_pool=len(all_rows),
+        )
+        hr_path = report_dir / f"top{hr_n}hr_{args.date}.html"
+        hr_path.write_text(hr_html, encoding="utf-8")
+        print(f"[roundup] wrote {hr_path.relative_to(ROOT)}")
+
     return 0
 
 

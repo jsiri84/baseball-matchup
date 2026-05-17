@@ -200,7 +200,8 @@ def main() -> int:
     run(matchup_cmd, "generate matchup reports")
 
     # 4. day-level roundup (top-50 / bottom-50 hitters by projected xwOBA)
-    run([PY, "roundup.py", "--date", today], "build top/bottom-50 roundup")
+    run([PY, "roundup.py", "--date", today],
+        "build top/bottom-50 + top-100 HR roundups")
 
     # 4b. postgame for yesterday + rolling accuracy dashboard. Both are
     # network-bound (postgame hits StatsAPI + pybaseball Statcast) and may

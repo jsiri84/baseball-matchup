@@ -38,7 +38,12 @@ ROOT = Path(__file__).parent
 REPORTS_DIR = ROOT / "reports"
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-ROUNDUP_RE = re.compile(r"^(top|bottom)(\d+)_(\d{4}-\d{2}-\d{2})\.html$", re.IGNORECASE)
+# Roundup filenames: top<N>_<date>.html, bottom<N>_<date>.html, and the
+# HR-specific top<N>hr_<date>.html.  The ``kind`` capture distinguishes
+# the three ("top", "bottom", "tophr") so _render_day_index can pick the
+# right CTA label and sort order.
+ROUNDUP_RE = re.compile(
+    r"^(top|bottom)(\d+)(hr)?_(\d{4}-\d{2}-\d{2})\.html$", re.IGNORECASE)
 PITCHER_RE = re.compile(
     r"^(?P<away>[a-z]{2,4})_at_(?P<home>[a-z]{2,4})_vs_(?P<slug>.+)_(?P<year>\d{4})\.html$",
     re.IGNORECASE,
@@ -200,9 +205,12 @@ def _classify_date_files(date_dir: Path) -> dict:
 
         m = ROUNDUP_RE.match(name)
         if m:
-            kind, n, _date = m.groups()
+            kind, n, hr_suffix, _date = m.groups()
+            # "tophr" is its own kind so the CTA gets a power-hitter label
+            # rather than the generic "Top N hitters" xwOBA label.
+            full_kind = "tophr" if (hr_suffix and kind.lower() == "top") else kind.lower()
             roundups.append({
-                "kind": kind.lower(),
+                "kind": full_kind,
                 "n": int(n),
                 "filename": name,
             })
@@ -223,7 +231,9 @@ def _classify_date_files(date_dir: Path) -> dict:
             continue
         other.append(name)
 
-    roundups.sort(key=lambda r: (r["kind"] != "top", r["n"]))
+    # CTA display order: xwOBA top first, then HR-power top, then xwOBA bottom.
+    _kind_order = {"top": 0, "tophr": 1, "bottom": 2}
+    roundups.sort(key=lambda r: (_kind_order.get(r["kind"], 99), r["n"]))
     for g in games.values():
         g["pitchers"].sort(key=lambda p: p["name"].lower())
         if "postgames" in g:
@@ -274,11 +284,19 @@ def _render_day_index(date_str: str, date_dir: Path) -> str:
         parts.append("<h2>Slate roundup</h2>")
         parts.append('<div class="cta-row">')
         for r in roundups:
-            cls = "top" if r["kind"] == "top" else "bot"
-            label = f"Top {r['n']} hitters" if r["kind"] == "top" else f"Bottom {r['n']} hitters"
-            sub = ("Best projected matchups across the slate"
-                   if r["kind"] == "top"
-                   else "Worst projected matchups across the slate")
+            # CSS class drives the gradient on the CTA tile.  "top" -> green
+            # (best), "bot" -> red (worst), and "tophr" reuses "top" since it's
+            # also a "best-of" lookup, just on a different axis.
+            cls = "bot" if r["kind"] == "bottom" else "top"
+            if r["kind"] == "tophr":
+                label = f"Top {r['n']} HR hitters"
+                sub = "Best projected HR% across the slate (power-hitter board)"
+            elif r["kind"] == "top":
+                label = f"Top {r['n']} hitters"
+                sub = "Best projected matchups across the slate"
+            else:
+                label = f"Bottom {r['n']} hitters"
+                sub = "Worst projected matchups across the slate"
             parts.append(
                 f'<a class="cta {cls}" href="{_href(r["filename"])}">'
                 f'<p class="cta-title">{_h(label)}</p>'
