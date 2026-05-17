@@ -43,9 +43,17 @@ logs/
 *_summary.md
 *_pitcher_summary.md
 
-# Daily lineup pulls from fetch_lineups.py (.bak.* = pre-overwrite snapshots)
+# Daily lineup pulls from fetch_lineups.py.
+# Current convention: matchups/matchups_<date>_<HHMMSS>.csv (date + time
+# stamped, multiple per day as lineups firm up).
+# Legacy: matchups_<date>.csv at repo root + .bak.* pre-overwrite snapshots
+# from before the merge-aware rewrite.
+matchups/
 matchups_*.csv
 matchups_*.csv.*.bak
+
+# BPP park factor CSVs (licensed -- don't redistribute on the public repo)
+parkdata/
 
 # Misc
 *.log

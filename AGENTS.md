@@ -21,7 +21,7 @@ The first invocation for a player in the current season fetches live Statcast da
 | Script | Purpose |
 |--------|---------|
 | `matchup.py` | Core matchup report generator (single, lineup, or batch mode) |
-| `fetch_lineups.py` | Pulls today's MLB.com lineups → writes `matchups_YYYY-MM-DD.csv` |
+| `fetch_lineups.py` | Pulls today's MLB.com lineups → writes `matchups/matchups_<date>_<HHMMSS>.csv`. Merges with the most-recent prior same-day file: preserves confirmed lineups, upgrades projected → confirmed, reuses the prior file (no new write) when nothing changed. |
 | `roundup.py` | Builds top-50/bottom-50 hitter roundup from sidecar JSON |
 | `build_site.py` | Generates static HTML navigation (per-day hub + root index/archive) |
 | `daily.py` | Orchestrates the full pipeline (fetch → matchup → roundup → site → git commit) |

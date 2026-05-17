@@ -26,6 +26,17 @@ from log_setup import setup_logging
 STARTING_LINEUPS_URL = "https://www.mlb.com/starting-lineups"
 STATSAPI = "https://statsapi.mlb.com/api/v1"
 
+# Daily matchups now live in matchups/ with timestamped filenames so multiple
+# fetches per day each leave a trail.  fetch_lineups merges fresh pulls into
+# the most recent prior file for the same date and only writes a new
+# timestamped file when something actually changed (projected -> confirmed,
+# lineup swap, new game, etc.).
+ROOT = Path(__file__).parent
+MATCHUPS_DIR = ROOT / "matchups"
+MATCHUPS_FILE_RE = re.compile(
+    r"^matchups_(\d{4}-\d{2}-\d{2})_(\d{6})\.csv$"
+)
+
 _team_id_cache: Optional[Dict[str, int]] = None
 
 
@@ -445,6 +456,170 @@ def load_opener_bulk_map(path: Path) -> Dict[str, str]:
     return opener_bulk
 
 
+# Row schema:
+#   (matchup_key, hitter_name, pitcher_name, lineup_position, status,
+#    hitter_team, hitter_mlbam_id, pitcher_mlbam_id)
+_ROW_LEN = 8
+_IDX_MATCHUP   = 0
+_IDX_STATUS    = 4
+_IDX_HIT_TEAM  = 5
+
+
+def find_latest_matchups_for(report_date: str) -> Optional[Path]:
+    """Return the most-recent ``matchups/matchups_<date>_<HHMMSS>.csv`` for
+    a given ``YYYY-MM-DD`` string, or ``None`` if no such file exists.
+
+    Sort key is the embedded ``HHMMSS`` (not filesystem mtime), so wall-
+    clock ordering survives copies and replays.
+    """
+    if not MATCHUPS_DIR.exists():
+        return None
+    best: Optional[Tuple[str, Path]] = None
+    for p in MATCHUPS_DIR.glob(f"matchups_{report_date}_*.csv"):
+        m = MATCHUPS_FILE_RE.match(p.name)
+        if not m:
+            continue
+        stamp = m.group(2)
+        if best is None or stamp > best[0]:
+            best = (stamp, p)
+    return best[1] if best else None
+
+
+def load_matchups_csv(path: Path) -> List[Tuple]:
+    """Load a matchups CSV into row tuples.  Pads rows shorter than the
+    expected width with empty strings so downstream code can index safely.
+    """
+    rows: List[Tuple] = []
+    try:
+        with path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if not row:
+                    continue
+                padded = list(row) + [""] * (_ROW_LEN - len(row))
+                rows.append(tuple(padded[:_ROW_LEN]))
+    except OSError:
+        return []
+    return rows
+
+
+def _side_key(row: Tuple) -> Tuple[str, str]:
+    """Key uniquely identifying one team's lineup in a game: (matchup_key,
+    hitter_team).  Each (matchup, side) has up to 9 rows (one per spot).
+    """
+    return (row[_IDX_MATCHUP], row[_IDX_HIT_TEAM])
+
+
+def _group_by_side(rows: List[Tuple]) -> Dict[Tuple[str, str], List[Tuple]]:
+    out: Dict[Tuple[str, str], List[Tuple]] = {}
+    for row in rows:
+        out.setdefault(_side_key(row), []).append(row)
+    return out
+
+
+def _side_status(side_rows: List[Tuple]) -> str:
+    """Return ``"confirmed"`` or ``"projected"`` for a list of side-rows.
+
+    All rows on one side share the same status; we take the first one.
+    """
+    return side_rows[0][_IDX_STATUS] if side_rows else ""
+
+
+def merge_matchups(old_rows: List[Tuple],
+                   new_rows: List[Tuple]) -> Tuple[List[Tuple], bool]:
+    """Merge a freshly-fetched lineup file with the prior same-day file.
+
+    Policy, per (matchup, side):
+
+    * ``old=confirmed`` + ``new=projected``  -> keep OLD (don't downgrade)
+    * ``old=projected`` + ``new=confirmed``  -> use NEW (upgrade, mark changed)
+    * both same status, rows differ          -> use NEW, mark changed
+    * both same status, rows identical       -> use NEW (idempotent)
+    * side only in new                       -> use NEW, mark changed
+    * side only in old                       -> keep OLD (fresh pull
+      transiently missed; don't lose the data)
+
+    Returns ``(merged_rows, changed)``.  ``changed=False`` means the merged
+    set is byte-identical to the old file (caller can skip writing a new
+    timestamped file).
+    """
+    old_sides = _group_by_side(old_rows)
+    new_sides = _group_by_side(new_rows)
+    merged: List[Tuple] = []
+    changed = False
+    seen_keys = set()
+
+    # Walk in stable order: new-rows first (preserve their order), then any
+    # old-only sides appended at the end.  This keeps the file ordering
+    # close to MLB.com's daily ordering for easier diffing.
+    for row in new_rows:
+        key = _side_key(row)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        old_side = old_sides.get(key, [])
+        new_side = new_sides.get(key, [])
+        old_status = _side_status(old_side)
+        new_status = _side_status(new_side)
+
+        if old_side and old_status == "confirmed" and new_status == "projected":
+            merged.extend(old_side)
+            continue
+        if old_side and old_status == "projected" and new_status == "confirmed":
+            merged.extend(new_side)
+            changed = True
+            continue
+        if new_side and old_side and new_side != old_side:
+            merged.extend(new_side)
+            changed = True
+            continue
+        if new_side and not old_side:
+            merged.extend(new_side)
+            changed = True
+            continue
+        merged.extend(new_side or old_side)
+
+    for key, old_side in old_sides.items():
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        merged.extend(old_side)
+
+    # Defensive: if neither side flagged a change but the row counts
+    # differ (e.g. duplicate-row deduping in old/new), treat as changed.
+    if not changed and len(merged) != len(old_rows):
+        changed = True
+
+    return merged, changed
+
+
+def _format_change_summary(old_rows: List[Tuple],
+                           merged_rows: List[Tuple]) -> List[str]:
+    """Produce a human-readable list of what changed between old and merged.
+
+    Used for stdout logging when fetch_lineups produces a new file.
+    """
+    old_sides = _group_by_side(old_rows)
+    new_sides = _group_by_side(merged_rows)
+    lines: List[str] = []
+    for key in sorted(set(old_sides) | set(new_sides)):
+        old_side = old_sides.get(key, [])
+        new_side = new_sides.get(key, [])
+        old_status = _side_status(old_side)
+        new_status = _side_status(new_side)
+        matchup, team = key
+        if not old_side:
+            lines.append(f"  + new side {matchup} / {team} ({new_status})")
+        elif not new_side:
+            lines.append(f"  - dropped side {matchup} / {team} ({old_status}) "
+                         f"-- preserved from prior file")
+        elif old_status != new_status:
+            lines.append(f"  ~ {matchup} / {team}: {old_status} -> {new_status}")
+        elif old_side != new_side:
+            lines.append(f"  ~ {matchup} / {team}: lineup/pitcher updated")
+    return lines
+
+
 def main(argv=None):
     """Main entry point."""
     ap = argparse.ArgumentParser(description="Fetch MLB starting lineups and write matchups CSV")
@@ -513,32 +688,47 @@ def main(argv=None):
         print("✗ No lineup data collected")
         return 1
     
-    # Write CSV file.  If the target already exists (i.e. fetch_lineups was
-    # re-run later the same day), back the old copy up to a timestamped .bak
-    # rather than silently overwriting.  This makes accidental clobbering of
-    # a prior day's lineup file (which has burned us in the past) recoverable.
-    output_filename = f"matchups_{today}.csv"
-    output_path = Path(output_filename)
+    # Write CSV file.  New convention: matchups/matchups_<date>_<HHMMSS>.csv.
+    # Multiple fetches per day each leave a trail.  Before writing, look for
+    # the most recent prior file for today and merge with it -- preserve
+    # confirmed lineups (don't downgrade), upgrade projected -> confirmed,
+    # add brand-new games.  If nothing changed, reuse the prior file
+    # without writing a new one.
+    MATCHUPS_DIR.mkdir(parents=True, exist_ok=True)
 
-    if output_path.exists():
-        stamp = datetime.now().strftime("%H%M%S")
-        backup_path = output_path.with_suffix(f".csv.{stamp}.bak")
-        try:
-            output_path.replace(backup_path)
-            print(f"ℹ {output_filename} already existed; backed up to "
-                  f"{backup_path.name} before rewriting")
-        except OSError as exc:
-            print(f"✗ Could not back up existing {output_filename}: {exc}")
-            return 1
+    new_rows = list(all_rows)
+    prior_path = find_latest_matchups_for(today)
+    prior_rows = load_matchups_csv(prior_path) if prior_path else []
+
+    if prior_path is None:
+        merged_rows = new_rows
+        changed = True
+        print(f"ℹ no prior matchups file for {today}; writing fresh")
+    else:
+        merged_rows, changed = merge_matchups(prior_rows, new_rows)
+        if changed:
+            print(f"ℹ merged with prior {prior_path.name}; lineup changes detected:")
+            for line in _format_change_summary(prior_rows, merged_rows):
+                print(line)
+        else:
+            print(f"✓ no lineup changes vs {prior_path.name}; "
+                  f"reusing prior file (no new file written)")
+            print(f"  - active matchups file: {prior_path.relative_to(ROOT)}")
+            return 0
+
+    stamp = datetime.now().strftime("%H%M%S")
+    output_path = MATCHUPS_DIR / f"matchups_{today}_{stamp}.csv"
 
     try:
-        with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
+        with output_path.open("w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerows(all_rows)
+            writer.writerows(merged_rows)
 
-        print(f"✓ CSV written to {output_filename}")
+        print(f"✓ CSV written to {output_path.relative_to(ROOT)}")
         print(f"  - Games: {len(games)}")
-        print(f"  - Rows written: {len(all_rows)}")
+        print(f"  - Rows written: {len(merged_rows)}")
+        if prior_path is not None:
+            print(f"  - Prior file preserved: {prior_path.relative_to(ROOT)}")
         return 0
 
     except IOError as e:

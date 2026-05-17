@@ -30,6 +30,31 @@ from log_setup import setup_logging
 
 ROOT = Path(__file__).parent
 PY = sys.executable
+MATCHUPS_DIR = ROOT / "matchups"
+
+
+def _find_latest_matchups(report_date: str) -> Path | None:
+    """Return the most recent matchups/matchups_<date>_<HHMMSS>.csv for the
+    given ``YYYY-MM-DD`` string, or ``None`` if none exists.
+
+    Mirrors fetch_lineups.find_latest_matchups_for so daily.py doesn't need
+    to import from fetch_lineups (which would pull in heavy bs4/requests
+    dependencies just for a path lookup).
+    """
+    if not MATCHUPS_DIR.exists():
+        return None
+    best: tuple[str, Path] | None = None
+    for p in MATCHUPS_DIR.glob(f"matchups_{report_date}_*.csv"):
+        # Extract HHMMSS from the trailing _<HHMMSS>.csv suffix.
+        stem = p.stem  # "matchups_<date>_<HHMMSS>"
+        try:
+            stamp = stem.rsplit("_", 1)[1]
+        except IndexError:
+            continue
+        if len(stamp) == 6 and stamp.isdigit():
+            if best is None or stamp > best[0]:
+                best = (stamp, p)
+    return best[1] if best else None
 
 
 def run(cmd: list[str], label: str, allow_fail: bool = False) -> int:
@@ -133,19 +158,31 @@ def main() -> int:
     print(f"[daily] run for {today}")
     print(f"[daily] logging to {log_path.relative_to(ROOT)}")
 
-    # 1. fetch lineups -> matchups_YYYY-MM-DD.csv
+    # 1. fetch lineups -> matchups/matchups_<date>_<HHMMSS>.csv.
+    # fetch_lineups now merges with the most recent prior file for the same
+    # day: confirmed lineups are preserved, projected->confirmed upgrades
+    # produce a new timestamped file, and a no-op fetch (nothing changed)
+    # simply reuses the prior file without writing.
     fetch_cmd = [PY, "fetch_lineups.py"]
     opener_bulk_path = ROOT / "opener_bulk.csv"
     if opener_bulk_path.exists():
         fetch_cmd.extend(["--opener-bulk-file", str(opener_bulk_path)])
     run(fetch_cmd, "fetch lineups")
 
-    csv_path = ROOT / f"matchups_{today}.csv"
-    if not csv_path.exists():
-        sys.exit(f"[daily] expected {csv_path.name} not found after fetch_lineups")
+    # Find the latest matchups file for today.  Prefer matchups/<date>_*.csv
+    # (new convention); fall back to legacy root-level matchups_<date>.csv
+    # for any in-flight days bridging the rename.
+    csv_path = _find_latest_matchups(today)
+    if csv_path is None:
+        legacy = ROOT / f"matchups_{today}.csv"
+        if legacy.exists():
+            csv_path = legacy
+    if csv_path is None:
+        sys.exit(f"[daily] no matchups file found for {today} after fetch_lineups")
+    print(f"[daily] active matchups file: {csv_path.relative_to(ROOT)}")
 
     # 2. + 3. run matchups; --commit-cache handles prior-season parquet commit/push
-    matchup_cmd = [PY, "matchup.py", "--batch", csv_path.name]
+    matchup_cmd = [PY, "matchup.py", "--batch", str(csv_path)]
     if args.workers is not None:
         matchup_cmd.extend(["--workers", str(args.workers)])
     if not args.no_commit:

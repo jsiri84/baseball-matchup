@@ -9,11 +9,15 @@ The intended way to use this is a two-step daily run:
 ```bash
 # 1. Pull today's MLB.com starting lineups, fall back to projected lineups
 #    (most-recent same-handed batting order from MLB StatsAPI) for any team
-#    that hasn't posted yet. Writes matchups_YYYY-MM-DD.csv.
+#    that hasn't posted yet. Writes matchups/matchups_YYYY-MM-DD_HHMMSS.csv,
+#    merging with the most-recent prior same-day file: confirmed lineups are
+#    preserved, projected -> confirmed upgrades produce a new timestamped
+#    file, and a no-op pull (nothing changed) reuses the prior file.
 python fetch_lineups.py
 
 # 2. Generate one HTML/MD report per posted lineup, against the announced SP.
-python matchup.py --batch matchups_2026-05-14.csv
+#    Use the latest file in matchups/ for the date you're running.
+python matchup.py --batch matchups/matchups_2026-05-14_123045.csv
 
 # 3. Build the day-level top-50 / bottom-50 hitter roundup from the
 #    sidecars matchup.py just dropped under reports/<date>/_data/
@@ -95,8 +99,8 @@ A reference for `<batter>_vs_<pitcher>_<season>_matchup.{md,html}` and `lineup_v
 
 ```bash
 # --- daily workflow ---
-python fetch_lineups.py                                               # writes matchups_YYYY-MM-DD.csv
-python matchup.py --batch matchups_2026-05-14.csv                     # one report per posted lineup
+python fetch_lineups.py                                               # writes matchups/matchups_<date>_<HHMMSS>.csv
+python matchup.py --batch matchups/matchups_2026-05-14_123045.csv     # one report per posted lineup
 
 # --- ad-hoc ---
 python matchup.py                                                     # default: Yordan Alvarez vs Paul Skenes
