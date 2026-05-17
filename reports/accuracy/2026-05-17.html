@@ -152,7 +152,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <main class="container">
 <header class="page-head">
 <h1>Projection accuracy — trailing 30 days (2026-05-14 to 2026-05-16)</h1>
-<div class="meta">202 hitter-games across 2 slates, 742 scored PAs.</div>
+<div class="meta">202 hitter-games across 2 slates, 780 scored PAs.</div>
 </header>
 <section class="card">
 <div class="acc-section"><h2>Calibration: proj xwOBA → actual xwOBA</h2>
@@ -162,10 +162,10 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <tr><td class="label">.250-.274</td><td>16</td><td>0.263</td><td>0.219</td><td class="delta-neg">-44</td><td>[0.149, 0.289]</td></tr>
 <tr><td class="label">.275-.299</td><td>29</td><td>0.291</td><td>0.318</td><td class="delta-pos">+28</td><td>[0.251, 0.386]</td></tr>
 <tr><td class="label">.300-.324</td><td>55</td><td>0.313</td><td>0.302</td><td class="delta-neg">-11</td><td>[0.258, 0.346]</td></tr>
-<tr><td class="label">.325-.349</td><td>45</td><td>0.338</td><td>0.354</td><td class="delta-pos">+15</td><td>[0.292, 0.416]</td></tr>
-<tr><td class="label">.350-.374</td><td>18</td><td>0.360</td><td>0.336</td><td class="delta-neg">-24</td><td>[0.242, 0.431]</td></tr>
+<tr><td class="label">.325-.349</td><td>48</td><td>0.338</td><td>0.359</td><td class="delta-pos">+21</td><td>[0.300, 0.418]</td></tr>
+<tr><td class="label">.350-.374</td><td>22</td><td>0.361</td><td>0.326</td><td class="delta-neg">-35</td><td>[0.245, 0.407]</td></tr>
 <tr><td class="label">.375-.399</td><td>7</td><td>0.384</td><td>0.447</td><td class="delta-pos">+63</td><td>[0.166, 0.728]</td></tr>
-<tr><td class="label">&gt;=.400</td><td>3</td><td>0.422</td><td>0.427</td><td class="delta-zero">+5</td><td>[0.066, 0.787]</td></tr>
+<tr><td class="label">&gt;=.400</td><td>5</td><td>0.418</td><td>0.495</td><td class="delta-pos">+78</td><td>[0.276, 0.715]</td></tr>
 </tbody></table>
 <div class="acc-note">League baseline: 0.315. A well-calibrated model has &Delta; pts near zero in every bin.</div>
 </div>
@@ -176,10 +176,10 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <tr><td class="label">.250-.274</td><td>5</td><td>0.262</td><td>0.170</td><td class="delta-neg">-92</td><td>[0.025, 0.315]</td></tr>
 <tr><td class="label">.275-.299</td><td>5</td><td>0.289</td><td>0.286</td><td class="delta-zero">-3</td><td>[0.152, 0.421]</td></tr>
 <tr><td class="label">.300-.324</td><td>10</td><td>0.313</td><td>0.308</td><td class="delta-neg">-5</td><td>[0.184, 0.432]</td></tr>
-<tr><td class="label">.325-.349</td><td>27</td><td>0.338</td><td>0.356</td><td class="delta-pos">+17</td><td>[0.270, 0.441]</td></tr>
+<tr><td class="label">.325-.349</td><td>28</td><td>0.339</td><td>0.355</td><td class="delta-pos">+16</td><td>[0.273, 0.437]</td></tr>
 <tr><td class="label">.350-.374</td><td>27</td><td>0.363</td><td>0.368</td><td class="delta-pos">+5</td><td>[0.286, 0.450]</td></tr>
-<tr><td class="label">.375-.399</td><td>25</td><td>0.386</td><td>0.396</td><td class="delta-pos">+10</td><td>[0.280, 0.513]</td></tr>
-<tr><td class="label">&gt;=.400</td><td>66</td><td>0.436</td><td>0.396</td><td class="delta-neg">-40</td><td>[0.321, 0.470]</td></tr>
+<tr><td class="label">.375-.399</td><td>28</td><td>0.386</td><td>0.403</td><td class="delta-pos">+17</td><td>[0.296, 0.510]</td></tr>
+<tr><td class="label">&gt;=.400</td><td>71</td><td>0.435</td><td>0.400</td><td class="delta-neg">-35</td><td>[0.328, 0.472]</td></tr>
 </tbody></table>
 </div>
 <div class="acc-section"><h2>Calibration: proj hard-hit% → actual hard-hit%</h2>
@@ -187,8 +187,8 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <table class="acc-table"><thead><tr><th class="label">Proj bin</th><th>n</th><th>mean proj</th><th>mean actual</th><th>&Delta; pts</th><th>95% CI</th></tr></thead><tbody>
 <tr><td class="label">0-30%</td><td>9</td><td>23.5%</td><td>40.7%</td><td class="delta-pos">+172</td><td>[16.5%, 70.5%]</td></tr>
 <tr><td class="label">30-35%</td><td>31</td><td>33.0%</td><td>41.4%</td><td class="delta-pos">+84</td><td>[26.0%, 58.7%]</td></tr>
-<tr><td class="label">35-40%</td><td>54</td><td>38.0%</td><td>39.6%</td><td class="delta-pos">+16</td><td>[27.6%, 52.9%]</td></tr>
-<tr><td class="label">40-45%</td><td>43</td><td>42.0%</td><td>38.3%</td><td class="delta-neg">-38</td><td>[25.3%, 53.2%]</td></tr>
+<tr><td class="label">35-40%</td><td>59</td><td>38.1%</td><td>40.9%</td><td class="delta-pos">+28</td><td>[29.3%, 53.6%]</td></tr>
+<tr><td class="label">40-45%</td><td>47</td><td>42.0%</td><td>39.3%</td><td class="delta-neg">-28</td><td>[26.6%, 53.5%]</td></tr>
 <tr><td class="label">45-50%</td><td>27</td><td>46.6%</td><td>42.0%</td><td class="delta-neg">-46</td><td>[25.6%, 60.5%]</td></tr>
 <tr><td class="label">50-55%</td><td>7</td><td>51.9%</td><td>47.6%</td><td class="delta-neg">-43</td><td>[18.7%, 78.2%]</td></tr>
 </tbody></table>
@@ -219,9 +219,9 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <div class="acc-section"><h2>Distribution spread: projection variance vs implied true variance</h2>
 <div class="acc-note">For each metric, compares projected std (across hitter-games with PA &ge; 3) to the implied true between-hitter std after subtracting per-PA sampling noise. Raw actual std also shown so you can see how much of it is genuine between-hitter spread vs single-game noise. <b>Ratio = proj std / corrected actual std.</b> <span class="skill-neg">&lt; 0.85</span> = projections too narrow (hedging toward league); <span class="skill-pos">&gt; 1.15</span> = projections too wide (overconfident at tails); 0.85-1.15 = calibrated spread. On short windows (few days) the bias correction can fail (corrected std non-finite) — gather more data.</div>
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n</th><th title="Mean sample-size denominator: PA for headline / K / BB; n_bip for hard-hit and on-contact xwOBA">mean n</th><th>mean proj</th><th>mean actual</th><th>proj std</th><th>actual std (raw)</th><th>actual std (corrected)</th><th>ratio</th><th>read</th></tr></thead><tbody>
-<tr><td class="label">xwOBA</td><td>175</td><td>4.1</td><td>0.319</td><td>0.321</td><td>0.037</td><td>0.200</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
-<tr><td class="label">on-contact xwOBA</td><td>171</td><td>2.8</td><td>0.377</td><td>0.366</td><td>0.066</td><td>0.266</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
-<tr><td class="label">hard-hit %</td><td>171</td><td>2.8</td><td>0.393</td><td>0.404</td><td>0.063</td><td>0.332</td><td>0.067</td><td class="">0.93</td><td class="">calibrated</td></tr>
+<tr><td class="label">xwOBA</td><td>184</td><td>4.1</td><td>0.321</td><td>0.325</td><td>0.038</td><td>0.199</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
+<tr><td class="label">on-contact xwOBA</td><td>180</td><td>2.8</td><td>0.378</td><td>0.370</td><td>0.065</td><td>0.266</td><td>—</td><td class="">—</td><td class="">n/a (noisy)</td></tr>
+<tr><td class="label">hard-hit %</td><td>180</td><td>2.8</td><td>0.393</td><td>0.410</td><td>0.061</td><td>0.336</td><td>0.090</td><td class="skill-neg">0.68</td><td class="skill-neg">hedging</td></tr>
 <tr><td class="label">K %</td><td>184</td><td>4.1</td><td>0.228</td><td>0.217</td><td>0.064</td><td>0.233</td><td>0.107</td><td class="skill-neg">0.59</td><td class="skill-neg">hedging</td></tr>
 <tr><td class="label">BB %</td><td>184</td><td>4.1</td><td>0.084</td><td>0.098</td><td>0.036</td><td>0.143</td><td>0.037</td><td class="">0.98</td><td class="">calibrated</td></tr>
 </tbody></table></div>
@@ -230,21 +230,21 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 <table class="acc-table"><thead><tr><th class="label">PA bucket</th><th>n</th><th>actual std</th><th>RMSE</th><th>MAE</th><th>bias</th></tr></thead><tbody>
 <tr><td class="label">1 PA</td><td>13</td><td>0.304</td><td>0.300</td><td>0.279</td><td class="delta-neg">-0.109</td></tr>
 <tr><td class="label">2 PA</td><td>5</td><td>0.178</td><td>0.206</td><td>0.181</td><td class="delta-neg">-0.123</td></tr>
-<tr><td class="label">3 PA</td><td>15</td><td>0.143</td><td>0.152</td><td>0.129</td><td class="delta-neg">-0.050</td></tr>
-<tr><td class="label">&gt;=4 PA</td><td>160</td><td>0.204</td><td>0.199</td><td>0.152</td><td class="delta-zero">0.007</td></tr>
+<tr><td class="label">3 PA</td><td>16</td><td>0.144</td><td>0.148</td><td>0.124</td><td class="delta-neg">-0.044</td></tr>
+<tr><td class="label">&gt;=4 PA</td><td>168</td><td>0.203</td><td>0.197</td><td>0.151</td><td class="delta-zero">0.008</td></tr>
 </tbody></table></div>
 <div class="acc-section"><h2>Per-PA log-loss vs baselines</h2>
 <div class="acc-note">Proper score on the 8-class outcome distribution. Lower is better. Skill = 1 − model / baseline. Positive skill means the model is doing real work beyond the league prior. Sample shrinks fast in early-season windows.</div>
 <table class="acc-table"><thead><tr><th class="label">Source</th><th>n PA</th><th>log-loss</th><th>Brier</th><th>skill (LL)</th><th>skill (Brier)</th></tr></thead><tbody>
-<tr><td class="label">Model</td><td>742</td><td>1.492</td><td>0.705</td><td class="skill-pos">0.7%</td><td class="skill-pos">0.4%</td></tr>
-<tr><td class="label">League prior</td><td>742</td><td>1.502</td><td>0.708</td><td class="">0.0%</td><td class="">0.0%</td></tr>
+<tr><td class="label">Model</td><td>780</td><td>1.494</td><td>0.705</td><td class="skill-pos">0.7%</td><td class="skill-pos">0.5%</td></tr>
+<tr><td class="label">League prior</td><td>780</td><td>1.504</td><td>0.708</td><td class="">0.0%</td><td class="">0.0%</td></tr>
 </tbody></table></div>
 <div class="acc-section"><h2>Hitter-grain accuracy (RMSE / MAE / bias)</h2>
 <div class="acc-note">RMSE / MAE on the proj vs actual headline numbers, computed only on hitters with PA ≥ 1. Lower is better. Bias = mean(actual − proj); persistent non-zero bias signals systematic under/over-projection.</div>
 <table class="acc-table"><thead><tr><th class="label">Metric</th><th>n</th><th>RMSE</th><th>MAE</th><th>bias</th></tr></thead><tbody>
-<tr><td class="label">xwOBA</td><td>193</td><td>0.204</td><td>0.159</td><td class="delta-neg">-0.009</td></tr>
-<tr><td class="label">on-contact xwOBA</td><td>183</td><td>0.265</td><td>0.210</td><td class="delta-neg">-0.019</td></tr>
-<tr><td class="label">hard-hit %</td><td>183</td><td>0.352</td><td>0.292</td><td class="delta-pos">0.016</td></tr>
+<tr><td class="label">xwOBA</td><td>202</td><td>0.202</td><td>0.158</td><td class="delta-neg">-0.007</td></tr>
+<tr><td class="label">on-contact xwOBA</td><td>192</td><td>0.263</td><td>0.208</td><td class="delta-neg">-0.016</td></tr>
+<tr><td class="label">hard-hit %</td><td>192</td><td>0.354</td><td>0.294</td><td class="delta-pos">0.021</td></tr>
 <tr><td class="label">K %</td><td>202</td><td>0.250</td><td>0.202</td><td class="delta-zero">-0.005</td></tr>
 <tr><td class="label">BB %</td><td>202</td><td>0.155</td><td>0.117</td><td class="delta-pos">0.016</td></tr>
 </tbody></table></div>
@@ -261,7 +261,7 @@ table.pitcher-bf tbody td:first-child { text-align: center; color: var(--muted);
 </tbody></table></details>
 </div>
 </section>
-<div class="report-timestamp">Generated 2026-05-17 03:50:23 EDT</div>
+<div class="report-timestamp">Generated 2026-05-17 10:24:21 EDT</div>
 </main>
 <style>
 th.sortable { cursor: pointer; user-select: none; }
