@@ -54,7 +54,12 @@ Rather than fixed `k` values (e.g., `XWOBA_SHRINK_K=100`), consider per-player a
 
 #### Platoon-aware park factors
 
-Currently a single `park_pf` scalar is applied to xwOBA. Park effects are asymmetric by handedness and batted-ball type (Coors inflates FB power more than GB; Crawford Boxes at Minute Maid favor LHB pull). A per-handedness park factor, even a simple one, would be higher-signal.
+~~Currently a single `park_pf` scalar is applied to xwOBA. Park effects are asymmetric by handedness and batted-ball type (Coors inflates FB power more than GB; Crawford Boxes at Minute Maid favor LHB pull). A per-handedness park factor, even a simple one, would be higher-signal.~~
+
+**UPDATE:** This is already addressed via the BPP per-player park factor model (`parkdata/PlayerParkFactors_<date>*.xlsx`), which provides HR / 2B-3B / 1B factors per batter at tonight's venue with handedness, batted-ball profile, and spray tendency baked in. The remaining gaps are:
+- No K% / BB% / hard-hit% park adjustment (BPP exposes annual K%/BB% factors but daily isn't broken out)
+- Batters not in the BPP player file fall back to game-level (team-blended) PF
+- 2B and 3B share one PF in the daily data
 
 #### Pitcher fatigue / velocity decay model
 
@@ -99,7 +104,7 @@ Instead of projecting K/BB/HBP separately via log5, then deriving hits from xBA,
 | Thin proper-score skill | 0.5–0.7% over prior | Structural | — (awareness) |
 | Asymmetric shrinkage | Batter shrunk, pitcher not | Low (add pitcher shrink) | Medium |
 | Adaptive sample-size shrinkage | Fixed k for all players | Moderate | High |
-| Park factors by hand | Single scalar | Moderate | Medium-High |
+| Park factors | Already per-player (BPP); gap is K%/BB% park adj | Low | Low-Medium |
 | Catcher framing | Not modeled | Moderate | Medium |
 | Backtest harness | Only 16 dates evaluated | Moderate (infra) | High (enables tuning) |
 | Shape comps → headline blend | Diagnostic only | High (careful design) | Medium |
