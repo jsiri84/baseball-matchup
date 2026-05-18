@@ -159,10 +159,11 @@ PITCHER_MIX_SHIFT_CLIP: float = 0.50  # max per-pitch shift, +/- relative to bas
 # missed by ~160 pts under pure log5); BB% / xwOBA / HBP% are near-calibrated
 # under pure log5 so they default to 1.0 and can be retuned later from the
 # accuracy dashboard if drift appears.
-K_PCT_ALPHA = 1.0     # with pitcher K% now shrunk (PITCHER_K_SHRINK_K=50),
-                      # the asymmetric amplification that required damping is
-                      # reduced; revert to pure log5 and let shrinkage on both
-                      # sides control the tails
+K_PCT_ALPHA = 0.8     # kept at 0.8 even with pitcher shrinkage; pure log5
+                      # (alpha=1.0) degraded log-loss in backtesting (2-date
+                      # sample showed +0.010 LL regression). The damping still
+                      # controls genuine odds-ratio amplification at the tails
+                      # that shrinkage alone doesn't eliminate.
 BB_PCT_ALPHA = 1.0
 HBP_PCT_ALPHA = 1.0
 XWOBA_ALPHA = 1.0
