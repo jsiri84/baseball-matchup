@@ -60,9 +60,12 @@ logs/
 # stamped, multiple per day as lineups firm up).
 # Legacy: matchups_<date>.csv at repo root + .bak.* pre-overwrite snapshots
 # from before the merge-aware rewrite.
-matchups/
-matchups_*.csv
-matchups_*.csv.*.bak
+# Anchor the pattern to the repo root with a leading slash so the rule
+# only ignores the working matchups/ dir; the frozen backtest snapshots
+# in data/historical/matchups/ stay tracked.
+/matchups/
+/matchups_*.csv
+/matchups_*.csv.*.bak
 
 # BPP park factor data is tracked so the Cursor Cloud Agent's daily.py
 # run (and any other CI / shared machine) has the same park factors the
