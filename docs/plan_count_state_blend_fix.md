@@ -17,24 +17,29 @@ count_shift = sum(
 The problem surfaces when:
 
 1. **Small per-count samples** — `COUNT_XWOBA_MIN_PA_W = 5` is extremely low. A batter with 5 weighted PA in a count has a wildly noisy xwOBA estimate (a single HR makes the cell ~1.500+).
-2. **Platoon-filtered data is inherently thinner** — Bauers as LHB vs LHP has far fewer PAs per count than he would vs RHP. The gate of 5 PA passes, but the estimates are garbage.
+2. **Platoon-filtered data is inherently thinner** — Bauers as LHB vs LHP has far fewer PAs per count than he would vs RHP. The gate of 5 PA passes, but the estimates are unreliable.
 3. **No shrinkage on per-count cells** — unlike per-pitch xwOBA (which gets empirical-Bayes shrinkage), the per-count xwOBA is taken at face value.
-4. **No cap on the shift magnitude** — the shift can be arbitrarily large if a few count cells are inflated. An 82-pt shift is larger than the entire difference between an elite hitter and a replacement-level one.
+4. **No sensitivity to total coverage** — the alpha is a fixed 0.5 regardless of whether the count cells cover 90% of the batter's PAs or 20%.
 
-### Current Flow
+### Empirical Evidence (2026-05-18 slate)
 
-```
-batter_xwoba_by_count():
-    for each count_state:
-        if PA_weight >= 5:  ← too low
-            emit batter_xwOBA_at_count  ← no shrinkage
+Distribution of count-shifts across 184 matchups:
 
-project():
-    count_shift = sum(P_pitcher(count) * delta_batter(count)) * 0.5  ← no cap
-    final_xwoba = (per_pitch_projection + count_shift) * park_pf
-```
+| Stat | Value |
+|------|-------|
+| Mean | +12.4 pts |
+| Median | +15.0 pts |
+| Std | 21.6 pts |
+| P5 / P95 | -20 / +37 pts |
+| P1 / P99 | -105 / +56 pts |
+| \|shift\| > 40 | 6.0% (11/184) |
+| \|shift\| > 60 | 3.3% (6/184) |
 
-## Proposed Fix: Three-Layer Defense
+**Critical finding:** Large shifts do NOT correlate with small samples (r = -0.13). Players like Ben Rice (1959 eff rows, +84 pts) and Andrew Vaughn (1626 eff rows, +82 pts) also get large shifts. A hard cap at 40 pts would be **too aggressive** — it would clip legitimate signal from well-sampled players.
+
+The problem is specifically **thin per-count cells within the platoon filter**, not overall sample size. Bauers has plenty of total data but very few LvL PAs at specific count states.
+
+## Proposed Fix: Adaptive Alpha + Shrinkage
 
 ### Layer 1: Raise the minimum PA gate
 
@@ -43,55 +48,69 @@ project():
 
 With 5 PA, the standard error of xwOBA is ~0.14 (σ/√n ≈ 0.35/√5). With 15 PA it drops to ~0.09. This eliminates the most egregious noise from count cells that happen to have one HR in 5 PA.
 
-Impact: Some count cells will drop out (reducing coverage of the `common` set), which naturally pulls `count_shift` toward 0 when data is sparse.
+Impact: Some count cells will drop out (reducing coverage), which naturally pulls the shift toward 0 when data is sparse.
 
-### Layer 2: Shrink per-count xwOBA toward overall
+### Layer 2: Shrink per-count xwOBA toward batter overall
 
-Apply the same `shrunk_rate` logic to per-count cells:
+Apply empirical-Bayes shrinkage to per-count cells:
 
 ```python
-def batter_xwoba_by_count(...):
+def batter_xwoba_by_count(..., bat_overall_xwoba: float):
     for c, grp in ...:
         n_pa_w = pa["weight"].sum()
         if n_pa_w < min_pa_w:
             continue
         raw_x = w_xwoba(grp)
-        # Shrink toward the batter's overall xwOBA
         shrunk_x = shrunk_rate(raw_x, n_pa_w, bat_overall_xwoba, COUNT_XWOBA_SHRINK_K)
         out[c] = shrunk_x
 ```
 
 **Proposed:** `COUNT_XWOBA_SHRINK_K = 30`
 
-This means:
-- 15 PA cell: shrunk rate = (15*raw + 30*overall) / 45 = 33% raw + 67% overall (heavy regression)
-- 50 PA cell: (50*raw + 30*overall) / 80 = 63% raw + 37% overall (moderate)
-- 150+ PA cell: mostly raw (~83%+)
+Effect by sample size:
+- 15 PA cell: 33% raw + 67% overall → heavy regression (this is Bauers' thin LvL cells)
+- 50 PA cell: 63% raw + 37% overall → moderate
+- 150+ PA cell: 83%+ raw → barely touched (Ben Rice, Andrew Vaughn)
 
-The shrinkage target is the **batter's own overall xwOBA** (not league), so the delta `(shrunk_count_x - overall)` is naturally damped but still directional when the signal is real.
+The shrinkage target is the **batter's own overall xwOBA** (not league), so the delta `(shrunk_count_x - overall)` is naturally damped for thin cells while preserving signal for deep cells. This is the key differentiator — it specifically fixes the Bauers-type problem without constraining well-sampled players.
 
-### Layer 3: Cap the shift magnitude
+### Layer 3: Coverage-scaled alpha (replaces hard cap)
 
-Add a hard cap on `|count_shift|` to prevent any single mechanism from dominating the projection:
+Instead of a fixed `COUNT_XWOBA_BLEND_ALPHA = 0.5` regardless of how much data contributed to the shift, scale the alpha by **what fraction of the batter's total PA is covered by the qualifying count cells**:
 
 ```python
-COUNT_SHIFT_CAP_PTS = 40.0  # max ±40 wOBA points from count blend
+COUNT_XWOBA_BLEND_ALPHA_MAX = 0.5       # ceiling (same as current)
+COUNT_XWOBA_COVERAGE_FULL = 0.60        # at 60%+ coverage, full alpha
 
-count_shift = sum(...) * COUNT_XWOBA_BLEND_ALPHA
-count_shift = max(-COUNT_SHIFT_CAP_PTS/1000, min(COUNT_SHIFT_CAP_PTS/1000, count_shift))
+# In project():
+total_pa_in_counts = sum(n_pa_per_qualifying_count)
+total_pa = batter_overall["n_pa_w"]
+coverage = total_pa_in_counts / total_pa if total_pa > 0 else 0.0
+alpha_scaled = COUNT_XWOBA_BLEND_ALPHA_MAX * min(1.0, coverage / COUNT_XWOBA_COVERAGE_FULL)
+
+count_shift = sum(...) * alpha_scaled
 ```
 
-40 pts is still a meaningful adjustment (larger than most park factors) but prevents the 80+ pt blowups. For reference:
-- A +40 pt shift is the difference between a .315 league-average hitter and a .355 good hitter
-- The Bauers case would be capped at +40 instead of +82
+How this works:
+- **Bauers vs LHP** — platoon filter leaves few qualifying counts → coverage ~20-30% → alpha drops to ~0.17-0.25 → shift halved or more
+- **Ben Rice (full sample)** — most counts qualify → coverage ~80%+ → alpha stays at 0.5 → no constraint
+- **Average player** — typically 50-70% coverage → alpha at 0.42-0.50 → mild or no reduction
 
-### Summary of Changes
+This is a **soft** constraint that naturally self-adjusts based on data quality, rather than a cliff at an arbitrary threshold.
 
-| Defense | Constant | Old | New | Effect |
-|---------|----------|-----|-----|--------|
-| Min PA gate | `COUNT_XWOBA_MIN_PA_W` | 5 | 15 | Drops noisy cells entirely |
-| Shrinkage | `COUNT_XWOBA_SHRINK_K` | (none) | 30 | Regresses thin cells toward batter overall |
-| Hard cap | `COUNT_SHIFT_CAP_PTS` | (none) | 40 | Prevents blowups regardless |
+### What about the hard cap?
+
+Removed from the plan. The empirical data shows that 6% of projections exceed ±40 pts, and many of these are well-sampled players where the count-state interaction is real (e.g., a pitcher with extreme count-conditional pitch mix facing a hitter with extreme count-conditional outcomes). Capping these would remove legitimate differentiation.
+
+If after implementing layers 1-3 there are still >80 pt shifts, they would come from well-sampled, high-coverage data — which is a defensible signal.
+
+## Summary of Changes
+
+| Layer | Mechanism | Handles |
+|-------|-----------|---------|
+| **1. Min PA gate** | 5 → 15 | Drops noisiest cells entirely |
+| **2. Per-cell shrinkage** | k=30 toward batter overall | Regresses thin cells proportionally (Bauers case) |
+| **3. Coverage-scaled alpha** | alpha × min(1, coverage/0.60) | Reduces influence when few counts qualify (thin platoon splits) |
 
 ## Implementation
 
@@ -99,80 +118,42 @@ count_shift = max(-COUNT_SHIFT_CAP_PTS/1000, min(COUNT_SHIFT_CAP_PTS/1000, count
 
 `matchup.py` only.
 
-### Code Changes
+### Constants (near line 997):
 
-1. **Add constants** (near line 997):
 ```python
-COUNT_XWOBA_MIN_PA_W = 15.0      # was 5; raised to require meaningful sample
-COUNT_XWOBA_SHRINK_K = 30.0      # shrink per-count cells toward batter overall
-COUNT_SHIFT_CAP_PTS = 40.0       # max |shift| in wOBA points (0.040)
+COUNT_XWOBA_MIN_PA_W = 15.0               # was 5; raised to require meaningful sample
+COUNT_XWOBA_SHRINK_K = 30.0               # shrink per-count cells toward batter overall
+COUNT_XWOBA_BLEND_ALPHA_MAX = 0.5         # ceiling alpha (same as current default)
+COUNT_XWOBA_COVERAGE_FULL = 0.60          # coverage fraction for full alpha
 ```
 
-2. **Update `batter_xwoba_by_count()`** to accept `bat_overall_xwoba` and apply shrinkage:
-```python
-def batter_xwoba_by_count(bat_vs_pit: pd.DataFrame,
-                          bat_overall_xwoba: float,
-                          min_pa_w: float = COUNT_XWOBA_MIN_PA_W) -> dict[str, float]:
-    ...
-    for c, grp in ...:
-        n_pa_w = float(pa["weight"].sum())
-        if n_pa_w < min_pa_w:
-            continue
-        raw_x = w_xwoba(grp)
-        if raw_x is None or math.isnan(raw_x):
-            continue
-        shrunk_x = shrunk_rate(raw_x, n_pa_w, bat_overall_xwoba, COUNT_XWOBA_SHRINK_K)
-        out[str(c)] = float(shrunk_x)
-    return out
-```
+### Function changes:
 
-3. **Update `project()`** — add cap after computing `count_shift`:
-```python
-count_shift = sum(...) * COUNT_XWOBA_BLEND_ALPHA
-# Cap to prevent noisy count cells from dominating the projection
-cap = COUNT_SHIFT_CAP_PTS / 1000.0
-count_shift = max(-cap, min(cap, count_shift))
-```
+1. **`batter_xwoba_by_count()`** — add `bat_overall_xwoba` param, apply `shrunk_rate` to each cell, also return per-count PA weights for coverage calc.
 
-4. **Update call site** in `compute_matchup_pieces()` to pass `bat_overall_xwoba` to `batter_xwoba_by_count()`.
+2. **`project()`** — compute coverage from the qualifying count cells, scale alpha, apply shift.
 
-### Backward Compatibility
-
-- The function signature change is internal (no external callers)
-- Reports will show lower count-blend shifts (the `Count-state blend: +Xpts` narrative adjusts automatically)
-- No CSV format changes
-
-## Validation Plan
-
-### Unit Check
-
-Re-run the Bauers vs Imanaga matchup and confirm:
-- Count-state blend drops from +82 pts to something ≤ +40 pts
-- Overall projection drops from .448 to something more reasonable (~.350-.380 range)
-- Established matchups with large samples (e.g., Alvarez vs Skenes) barely change
-
-### Backtest
-
-Score against the existing `pa_results.parquet` on 2-3 dates:
-- xwOBA RMSE should improve (the +82pt type blowups inflate RMSE)
-- Log-loss / Brier should hold or improve (overclaiming hurts calibration)
-- The "extreme decile" pass rate should improve (these are the projections most affected)
+3. **Call site in `compute_matchup_pieces()`** — pass batter overall xwOBA to `batter_xwoba_by_count()`.
 
 ## Expected Impact
 
-| Matchup type | Old count_shift | New count_shift (est.) |
-|-------------|-----------------|------------------------|
-| Bauers vs Imanaga (thin LvL) | +82 pts | +30-40 pts (capped) |
-| Established hitter vs SP (thick) | +5-15 pts | +5-12 pts (minimal change) |
-| Average matchup | ±0-10 pts | ±0-10 pts (no change) |
+| Matchup type | Old shift | New shift (est.) | Why |
+|-------------|-----------|------------------|-----|
+| Bauers vs Imanaga (thin LvL) | +82 pts | +20-30 pts | Low coverage → reduced alpha; thin cells shrunk |
+| Ben Rice (full sample, extreme) | +84 pts | +75-84 pts | High coverage, deep cells → barely touched |
+| Andrew Vaughn (full sample) | +82 pts | +70-80 pts | Same — real signal preserved |
+| Average matchup | +12 pts | +10-12 pts | No meaningful change |
+| Joe Mack (thin sample, extreme) | -105 pts | -40-60 pts | Both low coverage and cell shrinkage kick in |
 
-The fix is conservative — it only materially affects projections where the count-blend was producing >40 pt shifts from noisy data. Well-sampled matchups are barely touched.
+## Validation
+
+1. Re-run Bauers vs Imanaga — confirm shift drops to ~20-30 pts
+2. Re-run Ben Rice and Andrew Vaughn — confirm they stay >60 pts (signal preserved)
+3. Backtest on 2-3 dates — xwOBA RMSE should improve (blowups reduced), Brier should hold
 
 ## Risk
 
-Low. The three layers are independent and each individually defensible:
-- Raising min PA from 5→15 is standard (5 was too permissive for any real estimate)
-- Shrinking toward own overall is the mildest form of shrinkage (not even toward league)
-- A 40-pt cap is generous (still allows the mechanism to contribute meaningfully)
-
-The only risk is **under-powering** a real effect — but the calibration sweep showed that count-blend shifts above 40 pts almost always regress back (they're noise, not signal).
+Low. Each layer is conservative and independently defensible:
+- Min PA 15 is standard (5 was permissive for any PA-level estimate)
+- Shrinkage toward own overall is the mildest regression form — requires strong evidence to deviate
+- Coverage-scaled alpha is a smooth function with no cliff; at worst it's neutral for well-sampled data
