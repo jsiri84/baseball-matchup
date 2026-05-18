@@ -1,0 +1,44 @@
+date,csv_path,n_games,matchup_status,postgame_status,error
+2026-05-01,matchups\matchups_2026-05-01_backfill.csv,15,ok,ok,
+2026-05-02,matchups\matchups_2026-05-02_backfill.csv,15,ok,ok,
+2026-05-03,matchups\matchups_2026-05-03_backfill.csv,15,ok,ok,
+2026-05-04,matchups\matchups_2026-05-04_backfill.csv,12,ok,ok,
+2026-05-05,matchups\matchups_2026-05-05_backfill.csv,13,ok,ok,
+2026-05-06,matchups\matchups_2026-05-06_backfill.csv,15,ok,ok,
+2026-05-07,matchups\matchups_2026-05-07_backfill.csv,10,ok,ok,
+2026-05-08,matchups\matchups_2026-05-08_backfill.csv,15,ok,ok,
+2026-05-09,matchups\matchups_2026-05-09_backfill.csv,14,ok,ok,
+2026-05-10,matchups\matchups_2026-05-10_backfill.csv,15,ok,ok,
+2026-05-11,matchups\matchups_2026-05-11_backfill.csv,6,ok,failed,"postgame rc=1
+    ...<3 lines>...
+        is_dir=partition_cols is not None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File ""C:\Users\jason\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\io\parquet.py"", line 140, in _get_path_or_handle
+    handles = get_handle(
+        path_or_handle, mode, is_text=False, storage_options=storage_options
+    )
+  File ""C:\Users\jason\AppData\Local\Programs\Python\Python313\Lib\site-packages\pandas\io\common.py"", line 882, in get_handle
+    handle = open(handle, ioargs.mode)
+OSError: [Errno 22] Invalid argument: 'C:\\Users\\jason\\baseball-bot\\data\\accuracy\\pa_results.parquet'"
+2026-05-12,matchups\matchups_2026-05-12_backfill.csv,15,ok,ok,
+2026-05-13,matchups\matchups_2026-05-13_190708.csv,0,failed,pending,"matchup rc=1
+[matchup] output dir: reports/2026-05-13/
+Traceback (most recent call last):
+  File ""C:\Users\jason\baseball-bot\matchup.py"", line 6033, in <module>
+    main()
+    ~~~~^^
+  File ""C:\Users\jason\baseball-bot\matchup.py"", line 5964, in main
+    batch_matchups = _count_batch_matchups(batch_path)
+  File ""C:\Users\jason\baseball-bot\matchup.py"", line 5273, in _count_batch_matchups
+    for row in reader:
+               ^^^^^^
+  File ""<frozen codecs>"", line 325, in decode
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf1 in position 258: invalid continuation byte"
+2026-05-14,matchups\matchups_2026-05-14_222648.csv,16,skipped (existing),skipped (existing),
+2026-05-15,matchups\matchups_2026-05-15_backfill.csv,15,skipped (existing),skipped (existing),
+2026-05-16,matchups\matchups_2026-05-16_163755.csv,15,skipped (existing),skipped (existing),
+2026-05-11,matchups\matchups_2026-05-11_backfill.csv,6,skipped (existing),skipped (existing),
+2026-05-12,matchups\matchups_2026-05-12_backfill.csv,15,skipped (existing),skipped (existing),
+2026-05-13,matchups\matchups_2026-05-13_backfill.csv,15,ok,ok,
