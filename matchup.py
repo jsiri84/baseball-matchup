@@ -130,6 +130,27 @@ PITCHER_XWOBA_SHRINK_K = 75.0     # pitcher PA; targets per-pitch xwOBA noise
                                   # 0.082 to 0.034; k=75 keeps the right-tail
                                   # fix without flattening the bulk)
 
+# ---------- Scouting-adaptive pitch mix (Option 3) ------------------------
+# Game-theoretic shift of the pitcher's marginal mix toward batter-weakness
+# pitches.  The current model uses a count-conditional marginal that is
+# batter-aware only through the batter's count-state distribution; the per-
+# count pitch frequency P(pitch|count) is the pitcher's global behavior.
+# This knob biases that marginal toward pitches the batter performs worst
+# on (and the pitcher performs best on), capturing the "throw your strength
+# at their weakness" scouting effect.
+#
+#   edge[i]    = pitcher_xwoba_allowed[i] - batter_xwoba[i]   (<0 favors pitcher)
+#   shifted[i] = marginal[i] * exp(-alpha * edge[i])
+#   clip[i]    = shifted[i] clamped to marginal[i] * [1 - CLIP, 1 + CLIP]
+#   renormalize so the Series still sums to 1.
+#
+# alpha = 0.0 is the bit-identical revert path; apply_mix_shift short-
+# circuits in that case.  Calibrated empirically against historical PAs
+# via calibrate_mix_shift.py; see plan in
+# .cursor/plans/scouting_adaptive_mix_*.plan.md.
+PITCHER_MIX_SHIFT_ALPHA: float = 0.0
+PITCHER_MIX_SHIFT_CLIP: float = 0.50  # max per-pitch shift, +/- relative to baseline
+
 # Per-metric soft_log5 blending parameter (alpha=1 -> pure log5, alpha=0 ->
 # additive).  Damps the odds-ratio amplification when both batter and
 # pitcher rates are far from league average.  K% needs damping (top bin
@@ -911,6 +932,63 @@ def count_conditional_marginal(pit_vs_bat: pd.DataFrame, bat_vs_pit: pd.DataFram
     marginal = pit_pivot.T @ weights
     s = float(marginal.sum())
     return marginal / s if s else marginal
+
+
+def apply_mix_shift(marginal: pd.Series,
+                    batter_pt: pd.DataFrame,
+                    pitcher_pt: pd.DataFrame,
+                    alpha: float = PITCHER_MIX_SHIFT_ALPHA,
+                    clip: float = PITCHER_MIX_SHIFT_CLIP) -> pd.Series:
+    """Game-theoretic shift of the pitcher's marginal toward batter-weakness pitches.
+
+    Computes, for every pitch type in ``marginal``::
+
+        edge[i]      = pitcher_xwoba_allowed[i] - batter_xwoba[i]   (<0 favors pitcher)
+        shifted[i]   = marginal[i] * exp(-alpha * edge[i])
+        clipped[i]   = clip shifted[i] to marginal[i] * [1 - clip, 1 + clip]
+        renormalized so the returned Series still sums to 1.
+
+    ``alpha`` is the scouting aggressiveness; larger means the pitcher leans
+    harder into edge pitches.  ``clip`` caps any single pitch's weight from
+    moving more than +/- ``clip`` relative to baseline, so the shifted mix
+    can't degenerate to "throw curveballs 100% of the time" (real pitchers
+    can't either -- command, fatigue, predictability all push back).
+
+    Edge cases:
+      * ``alpha == 0`` returns ``marginal`` unchanged (bit-identical revert path).
+      * Pitch types present in marginal but missing from one or both per-pitch
+        tables get ``edge = 0``, i.e. no shift.  This matches the existing
+        per-pitch fallback behavior in ``project()``.
+      * NaN xwOBA entries in either table also yield ``edge = 0`` (don't let
+        a thin-sample NaN turn into an exp(NaN) blow-up).
+      * If marginal is empty, returns it as-is.
+    """
+    if alpha == 0.0 or marginal is None or len(marginal) == 0:
+        return marginal
+
+    bat_idx = batter_pt.set_index("pitch_name")["xwOBA"] if (
+        not batter_pt.empty and "pitch_name" in batter_pt.columns
+        and "xwOBA" in batter_pt.columns) else pd.Series(dtype=float)
+    pit_idx = pitcher_pt.set_index("pitch_name")["xwOBA"] if (
+        not pitcher_pt.empty and "pitch_name" in pitcher_pt.columns
+        and "xwOBA" in pitcher_pt.columns) else pd.Series(dtype=float)
+
+    out = marginal.copy().astype(float)
+    for pitch_name, m_w in marginal.items():
+        b_x = float(bat_idx.get(pitch_name, float("nan")))
+        p_x = float(pit_idx.get(pitch_name, float("nan")))
+        if math.isnan(b_x) or math.isnan(p_x):
+            edge = 0.0
+        else:
+            edge = p_x - b_x  # <0 means pitcher has the advantage on this pitch
+        raw = float(m_w) * math.exp(-alpha * edge)
+        # Symmetric clip in MULTIPLICATIVE space relative to baseline weight.
+        lo = float(m_w) * (1.0 - clip)
+        hi = float(m_w) * (1.0 + clip)
+        out[pitch_name] = max(lo, min(hi, raw))
+
+    s = float(out.sum())
+    return out / s if s > 0 else marginal
 
 
 # ---------- Layer 1b: batter count-state blend (B1) -----------------------
@@ -4198,6 +4276,13 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
     pitcher_overall = overall_rates(pit_vs_bat)
 
     marginal = count_conditional_marginal(pit_vs_bat, bat_vs_pit)
+    # Apply scouting-adaptive mix shift.  alpha defaults to the module
+    # constant (0 = no change) and is overridable per-run via the CLI flag
+    # / env var resolved in main().  All five downstream marginal consumers
+    # (project, edge_analysis, outcome_distribution, contact_quality_projection)
+    # pick up the shifted Series automatically.
+    marginal = apply_mix_shift(marginal, batter_pt, pitcher_pt,
+                               alpha=PITCHER_MIX_SHIFT_ALPHA)
     bat_count_xwoba = batter_xwoba_by_count(bat_vs_pit)
     pit_count_dist = pitcher_count_state_distribution(pit_vs_bat)
     proj = project(batter_pt, pitcher_pt, batter_overall, pitcher_overall,
@@ -5051,11 +5136,22 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
 
     rollup = _lineup_rollup(summary_rows, pa_per_batter)
     pitcher_range = project_pitcher_range(pieces_per_batter, summary_rows)
-    md = to_lineup_markdown(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
-                            projected=projected, pitcher_range=pitcher_range)
-    html_doc = to_lineup_html(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
-                              projected=projected, pitcher_range=pitcher_range,
-                              game_park_info=park_info)
+    # In slate-only mode (calibration sweeps) skip the markdown + HTML
+    # rendering entirely; the only consumer is slate.json's summary_rows
+    # which doesn't need them.  Saves ~70% of per-matchup wall time.
+    if _SLATE_ONLY:
+        md = ""
+        html_doc = ""
+        per_batter_html: list[str] = ["" for _ in pieces_per_batter]
+    else:
+        md = to_lineup_markdown(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
+                                projected=projected, pitcher_range=pitcher_range)
+        html_doc = to_lineup_html(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
+                                  projected=projected, pitcher_range=pitcher_range,
+                                  game_park_info=park_info)
+        per_batter_html = [
+            _render_html_from_pieces(p, body_only=True) for p in pieces_per_batter
+        ]
 
     pit_slug = pitcher_meta["last"].lower().replace(" ", "_")
     out_stem = f"lineup_vs_{pit_slug}_{season}"
@@ -5072,9 +5168,7 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
         "projected": projected,
         "pa_per_batter": pa_per_batter,
         "summary_rows": summary_rows,
-        "per_batter_html": [
-            _render_html_from_pieces(p, body_only=True) for p in pieces_per_batter
-        ],
+        "per_batter_html": per_batter_html,
     }
     return out_stem, md, html_doc, roundup_data
 
@@ -5112,6 +5206,13 @@ _REPORT_DATE: date = date.today()
 # ``sandbox/``) so they cannot clobber archived slate.json / HTML.  Set via
 # main()'s --out-dir CLI flag or the BASEBALL_BOT_REPORT_ROOT env var.
 _REPORT_ROOT: Path = ROOT / "reports"
+
+# When True, skip all HTML rendering and write ONLY slate.json.  Used by
+# calibrate_mix_shift.py's alpha sweep where the HTML is throwaway and
+# rendering is the dominant cost.  per_batter_html in slate.json is
+# replaced with empty strings so roundup.py wouldn't try to use those
+# sandbox slates anyway.
+_SLATE_ONLY: bool = False
 
 
 def _set_report_date(d: date) -> None:
@@ -5183,7 +5284,12 @@ def _count_batch_matchups(batch_path: Path | None) -> int:
     try:
         import csv as _csv
         keys: set[str] = set()
-        with batch_path.open("r", encoding="utf-8", newline="") as f:
+        # ``errors="replace"`` because some legacy matchups CSVs were
+        # written by PowerShell with cp1252 encoding (accents in player
+        # names); the matchup_key column itself is ASCII so name decode
+        # garble does not affect the unique-keys count.
+        with batch_path.open("r", encoding="utf-8", newline="",
+                              errors="replace") as f:
             reader = _csv.reader(f)
             for row in reader:
                 if row and row[0]:
@@ -5550,9 +5656,10 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
             pit_slug = _slugify(pitcher_name)
             out_stem = f"{match_slug}_vs_{pit_slug}_{season}"
 
-            html_path = _report_dir() / f"{out_stem}.html"
-            html_path.write_text(html_doc, encoding="utf-8")
-            print(f"  wrote {html_path.relative_to(ROOT)}")
+            if not _SLATE_ONLY:
+                html_path = _report_dir() / f"{out_stem}.html"
+                html_path.write_text(html_doc, encoding="utf-8")
+                print(f"  wrote {html_path.relative_to(ROOT)}")
 
             entry = _make_sidecar_entry(out_stem, matchup_key, hitter_team,
                                         pitcher_name, roundup_data)
@@ -5820,6 +5927,21 @@ def main() -> None:
                          "directory if the existing slate has more games "
                          "than the batch input (otherwise you would lose "
                          "data). Has no effect with --out-dir set.")
+    ap.add_argument("--mix-shift-alpha", type=float, default=None,
+                    help="override PITCHER_MIX_SHIFT_ALPHA for this run "
+                         "(scouting-adaptive pitch mix knob).  0.0 = "
+                         "current uniform-mix model; larger values bias "
+                         "the pitcher's marginal mix toward pitches the "
+                         "batter performs worst on.  Equivalent env var: "
+                         "BASEBALL_BOT_MIX_ALPHA.  See calibrate_mix_shift.py "
+                         "for the empirical sweep.")
+    ap.add_argument("--slate-only", action="store_true",
+                    help="skip all HTML / Markdown rendering and write "
+                         "only slate.json.  Used by calibrate_mix_shift.py "
+                         "to make the alpha sweep tractable (~70%% faster "
+                         "per matchup).  Sandboxed slates with empty "
+                         "per_batter_html are not consumable by roundup.py "
+                         "or build_site.py.")
     args = ap.parse_args()
 
     if args.fix_data_layout:
@@ -5840,6 +5962,31 @@ def main() -> None:
     if _REPORT_DATE != date.today():
         rel = _REPORT_ROOT.name if not _is_sandbox_root() else str(_REPORT_ROOT)
         print(f"[matchup] output dir: {rel}/{_REPORT_DATE.isoformat()}/")
+
+    # Resolve scouting-adaptive mix alpha.  Priority: --mix-shift-alpha
+    # flag > env var > module default.  Mutates the module constant in
+    # place so compute_matchup_pieces (which reads the constant directly)
+    # picks it up across worker threads.
+    alpha_arg = args.mix_shift_alpha
+    if alpha_arg is None:
+        env_alpha = os.environ.get("BASEBALL_BOT_MIX_ALPHA")
+        if env_alpha is not None and env_alpha.strip() != "":
+            try:
+                alpha_arg = float(env_alpha)
+            except ValueError:
+                sys.exit(f"[matchup] invalid BASEBALL_BOT_MIX_ALPHA={env_alpha!r}; "
+                         f"expected float")
+    if alpha_arg is not None:
+        global PITCHER_MIX_SHIFT_ALPHA
+        PITCHER_MIX_SHIFT_ALPHA = float(alpha_arg)
+    if PITCHER_MIX_SHIFT_ALPHA != 0.0:
+        print(f"[matchup] scouting-adaptive mix: alpha = "
+              f"{PITCHER_MIX_SHIFT_ALPHA:.3f}")
+
+    if args.slate_only:
+        global _SLATE_ONLY
+        _SLATE_ONLY = True
+        print("[matchup] SLATE-ONLY mode: skipping HTML/Markdown rendering")
 
     if args.batch:
         # Smoke-clobber guard: if we're about to write to a REAL
