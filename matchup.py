@@ -994,24 +994,34 @@ def apply_mix_shift(marginal: pd.Series,
 # ---------- Layer 1b: batter count-state blend (B1) -----------------------
 
 # Min effective PA per count_state before we trust the batter's xwOBA there.
-COUNT_XWOBA_MIN_PA_W = 5.0
-# Damping factor for the count-state shift. The per-pitch metrics already
-# implicitly average the batter's performance across the counts they faced
-# each pitch in, so applying the full count-state delta would partly
-# double-count. 0.5 lets the signal show up in the headline without dominating
-# the per-pitch additive ladder.
-COUNT_XWOBA_BLEND_ALPHA = 0.5
+COUNT_XWOBA_MIN_PA_W = 15.0
+# Shrinkage strength for per-count xwOBA cells toward batter overall.
+# With k=30, a 15-PA cell is 33% raw / 67% overall; a 150-PA cell is 83% raw.
+COUNT_XWOBA_SHRINK_K = 30.0
+# Ceiling alpha for the count-state shift (same as prior fixed value).
+COUNT_XWOBA_BLEND_ALPHA_MAX = 0.5
+# Coverage fraction at which full alpha is applied. Below this, alpha scales
+# linearly toward 0. Prevents thin platoon splits (where few counts qualify)
+# from producing outsized shifts.
+COUNT_XWOBA_COVERAGE_FULL = 0.60
 
 
 def batter_xwoba_by_count(bat_vs_pit: pd.DataFrame,
-                          min_pa_w: float = COUNT_XWOBA_MIN_PA_W) -> dict[str, float]:
-    """Per-count_state batter xwOBA, gated by min PA weight.
+                          bat_overall_xwoba: float = LG_XWOBA,
+                          min_pa_w: float = COUNT_XWOBA_MIN_PA_W,
+                          ) -> tuple[dict[str, float], dict[str, float]]:
+    """Per-count_state batter xwOBA, gated by min PA weight and shrunk.
 
-    Returns {} when there's no `count_state` column or no count meets the gate.
+    Returns (xwoba_by_count, pa_w_by_count):
+      - xwoba_by_count: {count_state: shrunk_xwoba}
+      - pa_w_by_count: {count_state: effective_PA_weight} for coverage calc
+
+    Returns ({}, {}) when there's no usable data.
     """
     if bat_vs_pit.empty or "count_state" not in bat_vs_pit.columns:
-        return {}
-    out: dict[str, float] = {}
+        return {}, {}
+    xwoba_out: dict[str, float] = {}
+    pa_out: dict[str, float] = {}
     for c, grp in bat_vs_pit.dropna(subset=["count_state"]).groupby("count_state"):
         pa = grp[grp["events"].notna()]
         n_pa_w = float(pa["weight"].sum())
@@ -1020,8 +1030,10 @@ def batter_xwoba_by_count(bat_vs_pit: pd.DataFrame,
         x = w_xwoba(grp)
         if x is None or (isinstance(x, float) and math.isnan(x)):
             continue
-        out[str(c)] = float(x)
-    return out
+        shrunk_x = shrunk_rate(float(x), n_pa_w, bat_overall_xwoba, COUNT_XWOBA_SHRINK_K)
+        xwoba_out[str(c)] = shrunk_x
+        pa_out[str(c)] = n_pa_w
+    return xwoba_out, pa_out
 
 
 def pitcher_count_state_distribution(pit_vs_bat: pd.DataFrame) -> dict[str, float]:
@@ -1044,6 +1056,7 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
             batter_overall: dict, pitcher_overall: dict,
             marginal: pd.Series,
             batter_count_xwoba: dict[str, float] | None = None,
+            batter_count_pa_w: dict[str, float] | None = None,
             pitcher_count_dist: dict[str, float] | None = None,
             park_pf: float = 1.0) -> dict:
     """Headline projection: log5 for rates, additive for xwOBA/xBA/xSLG.
@@ -1253,11 +1266,20 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
                         "Batter xwOBA": batter_count_xwoba[c],
                         "Delta vs overall": delta_c,
                     })
+                # Coverage-scaled alpha: reduce influence when few counts
+                # qualify (thin platoon splits produce unreliable shifts).
+                total_batter_pa = float(batter_overall.get("n_pa_w", 0.0) or 0.0)
+                count_pa_sum = (sum(batter_count_pa_w[c] for c in common)
+                                if batter_count_pa_w else 0.0)
+                coverage = (count_pa_sum / total_batter_pa
+                            if total_batter_pa > 0 else 0.0)
+                alpha = COUNT_XWOBA_BLEND_ALPHA_MAX * min(
+                    1.0, coverage / COUNT_XWOBA_COVERAGE_FULL)
                 count_shift = sum(
                     (pitcher_count_dist[c] / p_renorm)
                     * (batter_count_xwoba[c] - bat_x_overall)
                     for c in common
-                ) * COUNT_XWOBA_BLEND_ALPHA
+                ) * alpha
     # Apply park factor as the LAST step on the headline number, after the
     # count-state shift.  Half-strength park_pf is computed upstream by
     # park_factors.effective_xwoba_pf().  Defaults to 1.0 (neutral) so
@@ -4283,11 +4305,13 @@ def compute_matchup_pieces(batter_id: int, pitcher_id: int,
     # pick up the shifted Series automatically.
     marginal = apply_mix_shift(marginal, batter_pt, pitcher_pt,
                                alpha=PITCHER_MIX_SHIFT_ALPHA)
-    bat_count_xwoba = batter_xwoba_by_count(bat_vs_pit)
+    bat_count_xwoba, bat_count_pa_w = batter_xwoba_by_count(
+        bat_vs_pit, bat_overall_xwoba=float(batter_overall.get("xwOBA", LG_XWOBA) or LG_XWOBA))
     pit_count_dist = pitcher_count_state_distribution(pit_vs_bat)
     proj = project(batter_pt, pitcher_pt, batter_overall, pitcher_overall,
                     marginal,
                     batter_count_xwoba=bat_count_xwoba,
+                    batter_count_pa_w=bat_count_pa_w,
                     pitcher_count_dist=pit_count_dist,
                     park_pf=park_pf)
     comps = shape_comps(bat_vs_pit, pitcher_pt)
