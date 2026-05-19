@@ -5110,6 +5110,7 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
                    park_info: dict | None = None,
                    park_pf_per_batter: list[float] | None = None,
                    park_info_per_batter: list[dict | None] | None = None,
+                   batter_workers: int | None = None,
                    ) -> tuple[str, str, str, dict]:
     """Run analyze_matchup for each batter against the same pitcher and assemble
     a lineup-level report.
@@ -5119,39 +5120,101 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
     expensive matchup compute. It contains the pitcher meta, the summary rows
     (one per batter), and the pre-rendered per-batter HTML body for each batter
     so they can be lifted directly into top/bottom-50 reports.
+
+    ``batter_workers`` controls per-batter parallelism inside this single
+    lineup report. When >1, ``compute_matchup_pieces`` and the per-batter HTML
+    render run in a ThreadPoolExecutor; results are reassembled in lineup
+    order so ``summary_rows[i]`` still corresponds to ``per_batter_html[i]``.
+    Defaults to 1 (sequential) when not provided -- run_batch passes a
+    real value through.
     """
     if not batter_ids:
         raise SystemExit("No batters in lineup.")
 
+    if batter_workers is None or batter_workers < 1:
+        batter_workers = 1
+
+    # Resolve per-batter park PF / info up front so we can hand each task
+    # a self-contained set of inputs (essential when workers may execute
+    # out of order).
+    n = len(batter_ids)
+    per_batter_pf: list[float] = []
+    per_batter_info: list[dict | None] = []
+    for idx in range(n):
+        bf = park_pf
+        bi = park_info
+        if park_pf_per_batter is not None and idx < len(park_pf_per_batter):
+            bf = float(park_pf_per_batter[idx])
+        if (park_info_per_batter is not None
+                and idx < len(park_info_per_batter)
+                and park_info_per_batter[idx] is not None):
+            bi = park_info_per_batter[idx]
+        per_batter_pf.append(bf)
+        per_batter_info.append(bi)
+
+    # results[raw_spot-1] = pieces dict, or None if skipped
+    results: list[dict | None] = [None] * n
+    skipped: list[tuple[int, str]] = []
+
+    def _compute_one(idx: int) -> tuple[int, dict | None, str | None]:
+        bid = batter_ids[idx]
+        try:
+            piece = compute_matchup_pieces(
+                bid, pitcher_id, season,
+                park_pf=per_batter_pf[idx], park_info=per_batter_info[idx],
+            )
+        except SystemExit as exc:
+            return idx, None, str(exc)
+        return idx, piece, None
+
+    if batter_workers <= 1 or n <= 1:
+        for idx in range(n):
+            bid = batter_ids[idx]
+            print(f"  [{idx + 1}/{n}] computing batter id {bid} ...")
+            _, piece, err = _compute_one(idx)
+            if err is not None:
+                print(f"    skipping batter id {bid}: {err}")
+                skipped.append((bid, err))
+                continue
+            results[idx] = piece
+    else:
+        eff_workers = min(batter_workers, n)
+        print(f"  computing {n} batter(s) across {eff_workers} thread(s) ...")
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=eff_workers, thread_name_prefix="batter",
+        ) as ex:
+            futs = {ex.submit(_compute_one, i): i for i in range(n)}
+            done = 0
+            for fut in concurrent.futures.as_completed(futs):
+                idx = futs[fut]
+                bid = batter_ids[idx]
+                done += 1
+                # _compute_one already converts SystemExit -> (idx, None, msg);
+                # any OTHER exception is re-raised here, matching the
+                # sequential path's original behavior of letting bugs bubble
+                # out to the report-level worker (which prints a crash line
+                # and continues the slate).
+                _, piece, err = fut.result()
+                if err is not None:
+                    print(f"  [{done}/{n}] batter id {bid} (spot {idx + 1}): "
+                          f"skipped ({err})")
+                    skipped.append((bid, err))
+                    continue
+                results[idx] = piece
+                print(f"  [{done}/{n}] batter id {bid} (spot {idx + 1}): done")
+
     pieces_per_batter: list[dict] = []
     summary_rows: list[dict] = []
     pitcher_meta: dict | None = None
-    skipped: list[tuple[int, str]] = []
     spot_counter = 0
-    for raw_spot, bid in enumerate(batter_ids, start=1):
-        print(f"  [{raw_spot}/{len(batter_ids)}] computing batter id {bid} ...")
-        # Prefer per-batter park PF (BPP player file) if provided; otherwise
-        # fall back to the lineup-level (game) PF.
-        batter_pf = park_pf
-        batter_info = park_info
-        if park_pf_per_batter is not None and (raw_spot - 1) < len(park_pf_per_batter):
-            batter_pf = float(park_pf_per_batter[raw_spot - 1])
-        if (park_info_per_batter is not None
-                and (raw_spot - 1) < len(park_info_per_batter)
-                and park_info_per_batter[raw_spot - 1] is not None):
-            batter_info = park_info_per_batter[raw_spot - 1]
-        try:
-            p = compute_matchup_pieces(bid, pitcher_id, season,
-                                       park_pf=batter_pf, park_info=batter_info)
-        except SystemExit as exc:
-            print(f"    skipping batter id {bid}: {exc}")
-            skipped.append((bid, str(exc)))
+    for piece in results:
+        if piece is None:
             continue
         spot_counter += 1
-        pieces_per_batter.append(p)
-        summary_rows.append(_lineup_summary_row(p, spot_counter))
+        pieces_per_batter.append(piece)
+        summary_rows.append(_lineup_summary_row(piece, spot_counter))
         if pitcher_meta is None:
-            pitcher_meta = p["pitcher_meta"]
+            pitcher_meta = piece["pitcher_meta"]
 
     if not summary_rows:
         raise SystemExit("No batters in lineup produced usable data; aborting.")
@@ -5173,9 +5236,25 @@ def analyze_lineup(batter_ids: list[int], pitcher_id: int,
         html_doc = to_lineup_html(pitcher_meta, season, summary_rows, rollup, pieces_per_batter,
                                   projected=projected, pitcher_range=pitcher_range,
                                   game_park_info=park_info)
-        per_batter_html = [
-            _render_html_from_pieces(p, body_only=True) for p in pieces_per_batter
-        ]
+        # Per-batter HTML body render is independent across batters and
+        # CPU-heavy enough to be worth the same thread pool used for
+        # compute_matchup_pieces above.  executor.map preserves order so
+        # per_batter_html[i] still matches summary_rows[i] (roundup.py
+        # depends on this alignment).
+        n_pieces = len(pieces_per_batter)
+        if batter_workers > 1 and n_pieces > 1:
+            render_workers = min(batter_workers, n_pieces)
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=render_workers, thread_name_prefix="render",
+            ) as ex:
+                per_batter_html = list(ex.map(
+                    lambda p: _render_html_from_pieces(p, body_only=True),
+                    pieces_per_batter,
+                ))
+        else:
+            per_batter_html = [
+                _render_html_from_pieces(p, body_only=True) for p in pieces_per_batter
+            ]
 
     pit_slug = pitcher_meta["last"].lower().replace(" ", "_")
     out_stem = f"lineup_vs_{pit_slug}_{season}"
@@ -5451,7 +5530,27 @@ def _resolve_workers(workers: int | None) -> int:
     return min(8, os.cpu_count() or 1)
 
 
-def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
+def _resolve_batter_workers(workers: int | None) -> int:
+    """Pick a thread-pool size for per-batter parallelism inside one report.
+
+    Defaults to 1 (sequential -- the old behavior).  The infrastructure
+    is in place because ``compute_matchup_pieces`` and
+    ``_render_html_from_pieces`` are independent across batters in a
+    lineup, but empirically threads don't help on the current workload:
+    per-batter compute is dominated by pure-Python pandas operations on
+    small DataFrames, the GIL serializes them, and thread-pool overhead
+    pushes wall time slightly higher than sequential.  Pass
+    ``--batter-workers N`` to opt into per-batter threading (useful for
+    experimentation; consider this knob a placeholder for a future
+    move to processes / nogil Python).
+    """
+    if workers is not None:
+        return max(1, int(workers))
+    return 1
+
+
+def run_batch(csv_path: Path, season: int, workers: int | None = None,
+              batter_workers: int | None = None) -> None:
     legacy_rows: list[tuple[str, str]] = []
     # Lineup format groups:
     #   (matchup_key, pitcher_name) -> list of (position, hitter_name, status, hitter_team, hitter_id, pitcher_id)
@@ -5523,7 +5622,12 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
         preload_player_data(unique_b, unique_p, season)
 
         n_workers = _resolve_workers(workers)
-        print(f"  generating reports across {n_workers} worker thread(s)")
+        n_batter_workers = _resolve_batter_workers(batter_workers)
+        if n_batter_workers > 1:
+            print(f"  generating reports across {n_workers} worker thread(s); "
+                  f"per-batter parallelism: {n_batter_workers}")
+        else:
+            print(f"  generating reports across {n_workers} worker thread(s)")
 
         # Clean any stale per-game sidecars from previous runs so a slimmer CSV
         # can't leave orphans behind that downstream tools would pick up.
@@ -5671,6 +5775,7 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None) -> None:
                     park_pf=game_pf, park_info=game_pf_info,
                     park_pf_per_batter=batter_park_pfs,
                     park_info_per_batter=batter_park_infos,
+                    batter_workers=n_batter_workers,
                 )
             except SystemExit as exc:
                 print(f"  skipped {tag}: {exc}")
@@ -5931,8 +6036,16 @@ def main() -> None:
     ap.add_argument("--no-push", action="store_true",
                     help="with --commit-cache, commit locally but do not push")
     ap.add_argument("--workers", type=int, default=None,
-                    help="parallel workers for report generation in --batch mode "
-                         "(default min(8, cpu_count)). Set 1 to disable threading.")
+                    help="parallel workers at the REPORT level in --batch mode "
+                         "(default min(8, cpu_count)). Each worker drives one "
+                         "lineup. Set 1 to disable report-level threading.")
+    ap.add_argument("--batter-workers", type=int, default=None,
+                    help="parallel workers per lineup report for the "
+                         "per-batter compute + HTML render loop inside "
+                         "analyze_lineup (default 1, i.e. sequential). "
+                         "Threading inside a single report is GIL-bound on "
+                         "the current workload, so this knob is opt-in / "
+                         "experimental.  Pass a value >1 to try it.")
     ap.add_argument("--date", type=str, default=None,
                     help="report output date (YYYY-MM-DD). Defaults to the "
                          "date parsed from the --batch CSV filename "
@@ -6033,7 +6146,8 @@ def main() -> None:
                     f"  2. Re-run with --force  (overwrite anyway -- dangerous)\n"
                 )
 
-        run_batch(batch_path, args.season, workers=args.workers)
+        run_batch(batch_path, args.season, workers=args.workers,
+                  batter_workers=args.batter_workers)
         if args.commit_cache:
             commit_prior_season_cache(args.season, push=not args.no_push)
         return
@@ -6065,6 +6179,7 @@ def main() -> None:
         print(f"Lineup ({len(batter_ids)}) vs pitcher id {pid}")
         out_stem, md, html_doc, _data = analyze_lineup(
             batter_ids, pid, args.season, args.pa_per_batter,
+            batter_workers=_resolve_batter_workers(args.batter_workers),
         )
         html_path = _report_dir() / f"{out_stem}.html"
         html_path.write_text(html_doc, encoding="utf-8")
