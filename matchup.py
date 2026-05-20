@@ -114,13 +114,11 @@ LG_HARD_HIT = 0.40
 # across-MLB variance of the TRUE rate (sigma estimated empirically), so a
 # player with k weighted observations gets a 50/50 blend, established players
 # with several-times-k samples are barely shrunk, and rookies/small samples
-# collapse toward league average.  Pitcher OVERALL K%/BB% are NOT shrunk: the
-# residual log5 tail amplification (proj K% top bin still misses by ~160 pts)
-# is not closable via shrinkage without over-hedging the bulk of the
-# distribution -- making the pitcher shrinkage aggressive enough to fix the
-# tail collapses the spread diagnostic to 0.40 ratio.  Pitcher per-pitch
-# xwOBA IS shrunk because per-pitch xwOBA from low-PA pitch types is the
-# noisiest input and most amenable to a prior.
+# collapse toward league average.  Pitcher OVERALL K%/BB% are shrunk with a
+# lighter k (50 vs batter's 100/75) to appropriately regress low-sample
+# pitchers (spot starters, call-ups) while preserving spread for established
+# arms with multi-season data.  Pitcher per-pitch xwOBA is also shrunk (k=75)
+# because per-pitch xwOBA from low-PA pitch types is the noisiest input.
 HARD_HIT_SHRINK_K = 75.0          # batter BBE; sigma ~ 0.06 around mu = 0.40
 K_PCT_SHRINK_K = 100.0            # batter PA;  sigma ~ 0.06 around mu = 0.225
 BB_PCT_SHRINK_K = 75.0            # batter PA;  sigma ~ 0.03 around mu = 0.085
@@ -129,6 +127,10 @@ PITCHER_XWOBA_SHRINK_K = 75.0     # pitcher PA; targets per-pitch xwOBA noise
                                   # (k=200 over-compressed proj_xwoba std from
                                   # 0.082 to 0.034; k=75 keeps the right-tail
                                   # fix without flattening the bulk)
+PITCHER_K_SHRINK_K = 50.0         # pitcher PA; lighter than batter (100) to
+                                  # preserve spread while still regressing
+                                  # low-sample pitchers (spot starters, call-ups)
+PITCHER_BB_SHRINK_K = 50.0        # pitcher PA; same rationale as K above
 
 # ---------- Scouting-adaptive pitch mix (Option 3) ------------------------
 # Game-theoretic shift of the pitcher's marginal mix toward batter-weakness
@@ -157,8 +159,11 @@ PITCHER_MIX_SHIFT_CLIP: float = 0.50  # max per-pitch shift, +/- relative to bas
 # missed by ~160 pts under pure log5); BB% / xwOBA / HBP% are near-calibrated
 # under pure log5 so they default to 1.0 and can be retuned later from the
 # accuracy dashboard if drift appears.
-K_PCT_ALPHA = 0.8     # 0.6 closed top-bin miss but crushed K% spread ratio
-                      # from 0.61 -> 0.37; 0.8 splits the difference
+K_PCT_ALPHA = 0.8     # kept at 0.8 even with pitcher shrinkage; pure log5
+                      # (alpha=1.0) degraded log-loss in backtesting (2-date
+                      # sample showed +0.010 LL regression). The damping still
+                      # controls genuine odds-ratio amplification at the tails
+                      # that shrinkage alone doesn't eliminate.
 BB_PCT_ALPHA = 1.0
 HBP_PCT_ALPHA = 1.0
 XWOBA_ALPHA = 1.0
@@ -1071,16 +1076,19 @@ def project(batter_pt: pd.DataFrame, pitcher_pt: pd.DataFrame,
     """
     # Per-PA rates: log5 on overall numbers, not per-pitch.  Batter rates are
     # empirical-Bayes shrunk toward league baselines before log5 to tame the
-    # right-tail overshoot (e.g. proj K% >=35% bin came in at -165 pts
-    # pre-fix).  Pitcher OVERALL rates are NOT shrunk -- experimentally this
-    # tightens the spread further (proj K% std collapsed to 0.40 ratio) without
-    # closing the residual tail miss, which is an inherent log5 amplification
-    # property at the extremes, not a sample-noise problem.
+    # right-tail overshoot.  Pitcher overall K%/BB% are now ALSO shrunk (with a
+    # lighter k=50 vs batter's 100/75) so that low-sample pitchers (spot
+    # starters, call-ups) are appropriately regressed rather than taken at face
+    # value.  This resolves the asymmetry that caused the K% spread diagnostic
+    # to show systematic hedging (0.59 ratio).
     b_pa_overall = float(batter_overall.get("n_pa_w", 0.0) or 0.0)
+    p_pa_overall = float(pitcher_overall.get("n_pa_w", 0.0) or 0.0)
     b_k_shrunk  = shrunk_rate(batter_overall["K_pct"],  b_pa_overall, LG_K_PCT,   K_PCT_SHRINK_K)
     b_bb_shrunk = shrunk_rate(batter_overall["BB_pct"], b_pa_overall, LG_BB_PCT,  BB_PCT_SHRINK_K)
-    proj_k   = soft_log5(b_k_shrunk,  pitcher_overall["K_pct"],   LG_K_PCT, K_PCT_ALPHA)
-    proj_bb  = soft_log5(b_bb_shrunk, pitcher_overall["BB_pct"],  LG_BB_PCT, BB_PCT_ALPHA)
+    p_k_shrunk  = shrunk_rate(pitcher_overall["K_pct"],  p_pa_overall, LG_K_PCT,  PITCHER_K_SHRINK_K)
+    p_bb_shrunk = shrunk_rate(pitcher_overall["BB_pct"], p_pa_overall, LG_BB_PCT, PITCHER_BB_SHRINK_K)
+    proj_k   = soft_log5(b_k_shrunk,  p_k_shrunk,   LG_K_PCT, K_PCT_ALPHA)
+    proj_bb  = soft_log5(b_bb_shrunk, p_bb_shrunk,  LG_BB_PCT, BB_PCT_ALPHA)
     proj_hbp = soft_log5(batter_overall["HBP_pct"], pitcher_overall["HBP_pct"], LG_HBP_PCT, HBP_PCT_ALPHA)
 
     # Guard against an empty / all-zero marginal: previously the per-pitch loop
