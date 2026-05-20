@@ -5549,8 +5549,32 @@ def _resolve_batter_workers(workers: int | None) -> int:
     return 1
 
 
+def _load_existing_slate_entries() -> dict[str, dict]:
+    """Load the active slate.json (if any) and return a dict keyed by
+    ``out_stem`` -> entry payload.  Used by ``--skip-projected`` to carry
+    forward entries for sides we intentionally aren't regenerating.
+
+    Returns an empty dict when slate.json is missing or unreadable.
+    """
+    slate = _REPORT_ROOT / _REPORT_DATE.isoformat() / "_data" / "slate.json"
+    if not slate.exists():
+        return {}
+    try:
+        with slate.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    out: dict[str, dict] = {}
+    for entry in data.get("games", []):
+        stem = entry.get("out_stem")
+        if stem:
+            out[stem] = entry
+    return out
+
+
 def run_batch(csv_path: Path, season: int, workers: int | None = None,
-              batter_workers: int | None = None) -> None:
+              batter_workers: int | None = None,
+              skip_projected: bool = False) -> None:
     legacy_rows: list[tuple[str, str]] = []
     # Lineup format groups:
     #   (matchup_key, pitcher_name) -> list of (position, hitter_name, status, hitter_team, hitter_id, pitcher_id)
@@ -5595,6 +5619,64 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None,
     # ----- lineup batch mode --------------------------------------------------
     if lineup_groups:
         print(f"Batch (lineup mode): {len(lineup_groups)} team lineups from {csv_path.name}")
+
+        # When --skip-projected is set, partition the groups: confirmed sides
+        # are processed and rewrite their HTML/slate entry; projected sides
+        # are skipped and their existing slate entry (if any) is carried
+        # forward unchanged so downstream tooling (postgame, roundup, site)
+        # still sees them.  HTML for projected sides is left untouched on
+        # disk -- a stale projected report keeps serving until the side
+        # eventually confirms.
+        carryover_entries: list[dict] = []
+        if skip_projected:
+            confirmed_groups: dict[tuple[str, str],
+                                   list[tuple[int, str, str, str,
+                                              int | None, int | None]]] = {}
+            projected_groups: dict[tuple[str, str],
+                                   list[tuple[int, str, str, str,
+                                              int | None, int | None]]] = {}
+            for key, batters in lineup_groups.items():
+                # All rows on one side share a status (fetch_lineups writes
+                # them that way), so peek at the first batter row.
+                side_status = batters[0][2] if batters else "confirmed"
+                if side_status == "projected":
+                    projected_groups[key] = batters
+                else:
+                    confirmed_groups[key] = batters
+
+            existing_entries = _load_existing_slate_entries()
+            for (matchup_key, pitcher_name) in projected_groups:
+                match_slug = matchup_key.replace("@", "_at_").lower()
+                pit_slug = _slugify(pitcher_name)
+                out_stem = f"{match_slug}_vs_{pit_slug}_{season}"
+                prior = existing_entries.get(out_stem)
+                if prior is not None:
+                    carryover_entries.append(prior)
+
+            n_skip = len(projected_groups)
+            n_carry = len(carryover_entries)
+            n_keep = len(confirmed_groups)
+            print(f"  --skip-projected: processing {n_keep} confirmed side(s); "
+                  f"skipping {n_skip} projected side(s) "
+                  f"({n_carry} carried over from existing slate.json)")
+            lineup_groups = confirmed_groups
+
+            if not lineup_groups and not carryover_entries:
+                print("  no confirmed sides to process and no projected "
+                      "carry-over entries; nothing to do")
+                return
+            if not lineup_groups:
+                # Nothing to render this run, but we still need to rewrite
+                # slate.json with the carry-over so the file's
+                # generated_at timestamp stays fresh.
+                data_dir = _roundup_data_dir()
+                carryover_entries.sort(key=lambda e: e.get("out_stem", ""))
+                date_str = _REPORT_DATE.isoformat()
+                path = _write_slate_sidecar(data_dir, date_str,
+                                            carryover_entries)
+                print(f"  wrote slate sidecar: {path.relative_to(ROOT)} "
+                      f"({len(carryover_entries)} game(s), all carry-over)")
+                return
 
         # Pre-resolve unique players once.
         all_hitters: set[str] = set()
@@ -5813,12 +5895,28 @@ def run_batch(csv_path: Path, season: int, workers: int | None = None,
                               f"{exc.__class__.__name__}: {exc}", file=sys.stderr)
 
         # Write the consolidated slate sidecar.  Sort entries for deterministic
-        # output regardless of thread-completion order.
-        slate_entries.sort(key=lambda e: e.get("out_stem", ""))
+        # output regardless of thread-completion order.  When skip_projected
+        # carried entries over, freshly-generated entries take precedence
+        # over the prior ones at the same out_stem (e.g. a side that
+        # flipped projected -> confirmed in this run).
+        new_stems = {e.get("out_stem") for e in slate_entries}
+        merged_entries = list(slate_entries)
+        if skip_projected and carryover_entries:
+            for entry in carryover_entries:
+                if entry.get("out_stem") not in new_stems:
+                    merged_entries.append(entry)
+        merged_entries.sort(key=lambda e: e.get("out_stem", ""))
         date_str = _REPORT_DATE.isoformat()
-        path = _write_slate_sidecar(data_dir, date_str, slate_entries)
-        print(f"  wrote slate sidecar: {path.relative_to(ROOT)} "
-              f"({len(slate_entries)} game(s))")
+        path = _write_slate_sidecar(data_dir, date_str, merged_entries)
+        if skip_projected and carryover_entries:
+            n_new = len(slate_entries)
+            n_carry = len(merged_entries) - n_new
+            print(f"  wrote slate sidecar: {path.relative_to(ROOT)} "
+                  f"({len(merged_entries)} game(s): "
+                  f"{n_new} fresh, {n_carry} carry-over)")
+        else:
+            print(f"  wrote slate sidecar: {path.relative_to(ROOT)} "
+                  f"({len(merged_entries)} game(s))")
         return
 
     # ----- legacy per-row mode ------------------------------------------------
@@ -6079,6 +6177,15 @@ def main() -> None:
                          "per matchup).  Sandboxed slates with empty "
                          "per_batter_html are not consumable by roundup.py "
                          "or build_site.py.")
+    ap.add_argument("--skip-projected", action="store_true",
+                    help="in --batch mode, only (re)generate reports for "
+                         "lineup sides marked 'confirmed' in the CSV.  "
+                         "Projected sides are skipped entirely -- their "
+                         "existing HTML under reports/<date>/ is left "
+                         "untouched, and their existing slate.json entry "
+                         "(if any) is carried forward.  Use this on "
+                         "mid-day re-runs so projected reports don't get "
+                         "redundantly regenerated each cycle.")
     args = ap.parse_args()
 
     if args.fix_data_layout:
@@ -6147,7 +6254,8 @@ def main() -> None:
                 )
 
         run_batch(batch_path, args.season, workers=args.workers,
-                  batter_workers=args.batter_workers)
+                  batter_workers=args.batter_workers,
+                  skip_projected=args.skip_projected)
         if args.commit_cache:
             commit_prior_season_cache(args.season, push=not args.no_push)
         return
