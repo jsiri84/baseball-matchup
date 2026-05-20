@@ -2,7 +2,9 @@
 """Daily run:
 
 1. fetch today's lineups (with projected-lineup fallback for missing teams)
-2. generate one matchup report per posted lineup
+2. generate one matchup report per CONFIRMED lineup side (projected
+   sides are skipped by default -- their existing HTML and slate.json
+   entry are carried forward; opt in with --include-projected)
 3. commit + push any new prior-season cache pulls (handled by matchup.py
    --commit-cache, which appends to data/<year>/ folders for 2024/2025)
 4. build the day-level top-50 / bottom-50 hitter roundup reports from the
@@ -13,9 +15,10 @@
    reports/ is .gitignored) plus the root index.html / archive.html
 
 Usage:
-    python daily.py                # full run
-    python daily.py --no-push      # commit locally, do not push
-    python daily.py --no-commit    # skip both git commits (just generate)
+    python daily.py                      # full run (skip projected sides)
+    python daily.py --no-push            # commit locally, do not push
+    python daily.py --no-commit          # skip both git commits (just generate)
+    python daily.py --include-projected  # also (re)generate projected sides
 """
 
 from __future__ import annotations
@@ -155,6 +158,13 @@ def main() -> int:
                          "intend to overwrite a larger archived slate with "
                          "a smaller one (e.g. mid-day re-run after games "
                          "have already finished and dropped off the feed).")
+    ap.add_argument("--include-projected", action="store_true",
+                    help="opt out of the default --skip-projected behavior "
+                         "and regenerate reports for projected lineup "
+                         "sides too.  Default daily runs only refresh "
+                         "confirmed sides and leave projected reports "
+                         "untouched (their existing HTML and slate.json "
+                         "entry are carried forward).")
     args = ap.parse_args()
 
     log_path = setup_logging("daily")
@@ -193,6 +203,8 @@ def main() -> int:
         matchup_cmd.extend(["--workers", str(args.workers)])
     if args.force:
         matchup_cmd.append("--force")
+    if not args.include_projected:
+        matchup_cmd.append("--skip-projected")
     if not args.no_commit:
         matchup_cmd.append("--commit-cache")
         if args.no_push:
